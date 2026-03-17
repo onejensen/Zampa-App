@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Orange background -->
+    <item>
+        <color android:color="#FAAF32" />
+    </item>
+    <!-- Centered logo -->
+    <item
+        android:gravity="center"
+        android:width="180dp"
+        android:height="180dp">
+        <bitmap
+            android:src="@drawable/logo_eatout"
+            android:gravity="center" />
+    </item>
+</layer-list>

@@ -1,0 +1,73 @@
+import FirebaseFirestore
+
+/// Servicio de menús — wrapper sobre FirebaseService para operaciones de menú
+class MenuService {
+    static let shared = MenuService()
+    
+    private let firebase = FirebaseService.shared
+    
+    private init() {}
+    
+    // MARK: - Public Methods
+    
+    /// Obtiene menús activos para el feed
+    func getMenus(
+        limit: Int = 20,
+        lastDocument: DocumentSnapshot? = nil,
+        cuisineFilter: String? = nil,
+        maxPrice: Double? = nil
+    ) async throws -> (menus: [Menu], lastDoc: DocumentSnapshot?) {
+        return try await firebase.getActiveMenus(
+            limit: limit,
+            lastDocument: lastDocument,
+            cuisineFilter: cuisineFilter,
+            maxPrice: maxPrice
+        )
+    }
+    
+    /// Obtiene menús de un merchant específico
+    func getMenusByMerchant(merchantId: String) async throws -> [Menu] {
+        return try await firebase.getMenusByMerchant(merchantId: merchantId)
+    }
+    
+    /// Crea un nuevo menú con imagen
+    func createMenu(
+        title: String,
+        description: String,
+        price: Double,
+        currency: String = "EUR",
+        photoData: Data,
+        tags: [String]? = nil,
+        isPro: Bool = false,
+        dietaryInfo: DietaryInfo = DietaryInfo(),
+        offerType: String? = nil,
+        includesDrink: Bool = false,
+        includesDessert: Bool = false,
+        includesCoffee: Bool = false
+    ) async throws -> Menu {
+        return try await firebase.createMenu(
+            title: title,
+            description: description,
+            price: price,
+            currency: currency,
+            photoData: photoData,
+            tags: tags,
+            isPro: isPro,
+            dietaryInfo: dietaryInfo,
+            offerType: offerType,
+            includesDrink: includesDrink,
+            includesDessert: includesDessert,
+            includesCoffee: includesCoffee
+        )
+    }
+    
+    /// Elimina un menú
+    func deleteMenu(menuId: String) async throws {
+        try await firebase.deleteMenu(menuId: menuId)
+    }
+    
+    /// Actualiza campos de un menú
+    func updateMenu(menuId: String, data: [String: Any]) async throws {
+        try await firebase.updateMenu(menuId: menuId, data: data)
+    }
+}

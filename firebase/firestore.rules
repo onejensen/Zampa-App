@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──
+    function isAuth() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isMerchant() {
+      return isAuth() && getUserRole() == 'merchant';
+    }
+
+    // ── Users ──
+    match /users/{userId} {
+      allow read: if isAuth();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // ── Merchant Profiles ──
+    match /merchants/{merchantId} {
+      allow read: if true; // Public profiles
+      allow create: if isOwner(merchantId) && isMerchant();
+      allow update: if isOwner(merchantId);
+      allow delete: if false;
+    }
+
+    // ── Menus ──
+    match /menus/{menuId} {
+      allow read: if true; // Public feed
+      allow create: if isMerchant();
+      allow update: if isAuth() && resource.data.merchantId == request.auth.uid;
+      allow delete: if isAuth() && resource.data.merchantId == request.auth.uid;
+    }
+
+    // ── Favorites ──
+    match /favorites/{favId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuth() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuth() && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Stats (merchant-owned) ──
+    match /stats/{merchantId} {
+      allow read: if isOwner(merchantId);
+      match /daily/{dateStr} {
+        allow read: if isOwner(merchantId);
+        allow write: if isAuth(); // Any auth user can track actions
+      }
+    }
+
+    // ── Device Tokens ──
+    match /deviceTokens/{tokenId} {
+      allow read: if false; // Backend-only
+      allow create: if isAuth();
+      allow update: if isAuth() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuth() && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Reports ──
+    match /reports/{reportId} {
+      allow read: if false; // Admin only (Cloud Functions)
+      allow create: if isAuth();
+      allow update, delete: if false;
+    }
+  }
+}

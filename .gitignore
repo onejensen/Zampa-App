@@ -1,0 +1,49 @@
+# Common
+.DS_Store
+*.log
+tmp/
+
+# Node.js
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Android
+.gradle/
+build/
+local.properties
+*.hprof
+*.jks
+*.keystore
+.idea/
+*.iml
+captures/
+
+# iOS
+.bundle/
+vendor/
+*.xcworkspace
+*.xcresult
+DerivedData/
+Pods/
+*.moved-aside
+*.xcuserstate
+*.xcscheme
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+# Firebase
+.firebase/
+.runtimeconfig.json
+firebase-debug.log*
+
+# Other
+.claude/
+AGENT.md
+AGENT_STATE.md
+BRAIN/
+task.md
+walkthrough.md
+implementation_plan.md
