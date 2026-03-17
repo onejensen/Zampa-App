@@ -280,21 +280,37 @@ fun OfferDetailsSection(
     includesDrink: Boolean, onDrinkChange: (Boolean) -> Unit,
     includesDessert: Boolean, onDessertChange: (Boolean) -> Unit,
     includesCoffee: Boolean, onCoffeeChange: (Boolean) -> Unit,
+    isPro: Boolean = false,
 ) {
-    val offerTypes = listOf("Menú", "Plato del día", "Oferta")
+    val offerTypes = listOf("Menú del día", "Plato del día", "Oferta permanente")
     Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Tipo de oferta", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
 
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 offerTypes.forEach { type ->
+                    val isPermanent = type == "Oferta permanente"
+                    val locked = isPermanent && !isPro
                     val isSelected = offerType == type
                     FilterChip(
                         selected = isSelected,
-                        onClick = { onOfferTypeChange(if (isSelected) null else type) },
-                        label = { Text(type) }
+                        onClick = { if (!locked) onOfferTypeChange(if (isSelected) null else type) },
+                        enabled = !locked,
+                        label = {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                if (locked) Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(12.dp))
+                                Text(type)
+                            }
+                        }
                     )
                 }
+            }
+            if (!isPro) {
+                Text(
+                    "«Oferta permanente» requiere Plan Pro — no caduca a las 24h",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Text("Incluye", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -528,6 +544,7 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
     val selectedTags = remember { mutableStateListOf<String>().apply { addAll(menu.tags ?: emptyList()) } }
     var availableTags by remember { mutableStateOf<List<String>>(emptyList()) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    val isPremium by viewModel.isPremium.collectAsState()
     var dietIsVegetarian by remember { mutableStateOf(menu.dietaryInfo.isVegetarian) }
     var dietIsVegan by remember { mutableStateOf(menu.dietaryInfo.isVegan) }
     var dietHasMeat by remember { mutableStateOf(menu.dietaryInfo.hasMeat) }
@@ -613,6 +630,7 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
                 includesDrink = inclDrink, onDrinkChange = { inclDrink = it },
                 includesDessert = inclDessert, onDessertChange = { inclDessert = it },
                 includesCoffee = inclCoffee, onCoffeeChange = { inclCoffee = it },
+                isPro = isPremium,
             )
             Spacer(Modifier.height(12.dp))
 
@@ -717,6 +735,7 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
     val selectedTags = remember { mutableStateListOf<String>() }
     var availableTags by remember { mutableStateOf<List<String>>(emptyList()) }
     var mealType by remember { mutableStateOf("Comida") }
+    val isPremium by viewModel.isPremium.collectAsState()
 
     var dietIsVegetarian by remember { mutableStateOf(false) }
     var dietIsVegan by remember { mutableStateOf(false) }
@@ -841,6 +860,7 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
                 includesDrink = inclDrink, onDrinkChange = { inclDrink = it },
                 includesDessert = inclDessert, onDessertChange = { inclDessert = it },
                 includesCoffee = inclCoffee, onCoffeeChange = { inclCoffee = it },
+                isPro = isPremium,
             )
             Spacer(Modifier.height(12.dp))
 

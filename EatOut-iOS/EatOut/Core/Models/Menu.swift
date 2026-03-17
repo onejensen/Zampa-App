@@ -110,6 +110,7 @@ struct Menu: Codable, Identifiable, Equatable {
     }
 
     var isToday: Bool {
+        if offerType == "Oferta permanente" { return true }
         let formatter = ISO8601DateFormatter()
         guard let parsedDate = formatter.date(from: createdAt) ?? formatter.date(from: self.date) else { return false }
         return Calendar.current.isDateInToday(parsedDate)

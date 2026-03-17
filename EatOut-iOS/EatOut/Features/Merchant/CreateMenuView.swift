@@ -60,7 +60,8 @@ struct CreateMenuView: View {
                         offerType: $viewModel.offerType,
                         includesDrink: $viewModel.includesDrink,
                         includesDessert: $viewModel.includesDessert,
-                        includesCoffee: $viewModel.includesCoffee
+                        includesCoffee: $viewModel.includesCoffee,
+                        isPro: appState.isPremium
                     )
 
                     // ── TITLE FIELD ─────────────────────────────────────
@@ -260,8 +261,9 @@ struct OfferDetailsSection: View {
     @Binding var includesDrink: Bool
     @Binding var includesDessert: Bool
     @Binding var includesCoffee: Bool
+    var isPro: Bool = false
 
-    private let types = ["Menú", "Plato del día", "Oferta"]
+    private let types = ["Menú del día", "Plato del día", "Oferta permanente"]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -272,18 +274,34 @@ struct OfferDetailsSection: View {
                     .foregroundColor(.appTextPrimary)
                 HStack(spacing: 8) {
                     ForEach(types, id: \.self) { type in
+                        let isPermanent = type == "Oferta permanente"
+                        let locked = isPermanent && !isPro
                         let selected = offerType == type
-                        Button(action: { offerType = selected ? nil : type }) {
-                            Text(type)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(selected ? .white : .appTextPrimary)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 9)
-                                .frame(maxWidth: .infinity)
-                                .background(RoundedRectangle(cornerRadius: 10).fill(selected ? Color.appPrimary : Color.appSurface))
+                        Button(action: { if !locked { offerType = selected ? nil : type } }) {
+                            HStack(spacing: 4) {
+                                if locked {
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 10))
+                                }
+                                Text(type)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .lineLimit(1)
+                            }
+                            .foregroundColor(locked ? .appTextSecondary : (selected ? .white : .appTextPrimary))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 9)
+                            .frame(maxWidth: .infinity)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(
+                                locked ? Color.appSurface.opacity(0.5) : (selected ? Color.appPrimary : Color.appSurface)
+                            ))
                         }
                         .buttonStyle(.borderless)
                     }
+                }
+                if !isPro {
+                    Text("«Oferta permanente» requiere Plan Pro — no caduca a las 24h")
+                        .font(.caption)
+                        .foregroundColor(.appTextSecondary)
                 }
             }
 

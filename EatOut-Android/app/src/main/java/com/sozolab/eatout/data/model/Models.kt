@@ -112,6 +112,7 @@ data class Menu(
 ) {
     val isToday: Boolean
         get() {
+            if (offerType == "Oferta permanente") return true
             try {
                 val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
                 val dateObj = iso.parse(createdAt) ?: iso.parse(date) ?: return false
