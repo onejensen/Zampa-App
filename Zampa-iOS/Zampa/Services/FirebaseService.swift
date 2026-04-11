@@ -251,6 +251,47 @@ class FirebaseService {
         try await db.collection("users").document(uid).updateData(["name": name])
     }
 
+    // MARK: - Account deletion (soft delete + 30-day grace period)
+
+    /// Marca la cuenta del usuario actual como pendiente de eliminación.
+    /// Setea `deletedAt` y `scheduledPurgeAt` en `users/{uid}` y borra todos los
+    /// documentos de `deviceTokens` del usuario para cortar notificaciones push
+    /// inmediatamente. NO borra el Auth user ni datos de usuario: eso lo hace
+    /// la Cloud Function `purgeDeletedAccounts` pasados los 30 días.
+    func requestAccountDeletion() async throws {
+        guard let uid = currentFirebaseUser?.uid else {
+            throw FirebaseServiceError.notAuthenticated
+        }
+
+        // 1. Borrar device tokens del usuario (query + delete por cada doc)
+        let tokensSnap = try await db.collection("deviceTokens")
+            .whereField("userId", isEqualTo: uid)
+            .getDocuments()
+        for doc in tokensSnap.documents {
+            try await doc.reference.delete()
+        }
+
+        // 2. Marcar cuenta como pendiente de eliminación
+        let now = Date()
+        let purge = now.addingTimeInterval(30 * 24 * 60 * 60)
+        try await db.collection("users").document(uid).updateData([
+            "deletedAt": Timestamp(date: now),
+            "scheduledPurgeAt": Timestamp(date: purge),
+        ])
+    }
+
+    /// Cancela una eliminación pendiente limpiando `deletedAt` y `scheduledPurgeAt`.
+    /// Sólo tiene sentido llamarla durante el periodo de gracia.
+    func cancelAccountDeletion() async throws {
+        guard let uid = currentFirebaseUser?.uid else {
+            throw FirebaseServiceError.notAuthenticated
+        }
+        try await db.collection("users").document(uid).updateData([
+            "deletedAt": FieldValue.delete(),
+            "scheduledPurgeAt": FieldValue.delete(),
+        ])
+    }
+
     /// Actualiza el perfil de comercio
     func updateMerchantProfile(_ merchant: Merchant) async throws {
         var data: [String: Any] = [
