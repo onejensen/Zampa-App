@@ -417,6 +417,52 @@ class FirebaseService @Inject constructor() {
         db.collection("users").document(uid).update("name", name).await()
     }
 
+    // ── Account deletion (soft delete + 30-day grace period) ──
+
+    /**
+     * Marca la cuenta actual como pendiente de eliminación:
+     * setea deletedAt y scheduledPurgeAt en users/{uid} y borra los
+     * deviceTokens del usuario para cortar notificaciones push.
+     * NO borra el Auth user ni datos del usuario — eso lo hace la Cloud
+     * Function purgeDeletedAccounts a los 30 días.
+     */
+    suspend fun requestAccountDeletion() {
+        val uid = currentUid ?: throw Exception("No autenticado")
+
+        // 1. Borrar device tokens del usuario (query + batch delete)
+        val tokensSnap = db.collection("deviceTokens")
+            .whereEqualTo("userId", uid)
+            .get().await()
+        if (!tokensSnap.isEmpty) {
+            val batch = db.batch()
+            tokensSnap.documents.forEach { batch.delete(it.reference) }
+            batch.commit().await()
+        }
+
+        // 2. Marcar users/{uid} con deletedAt y scheduledPurgeAt
+        val nowMs = System.currentTimeMillis()
+        val purgeMs = nowMs + 30L * 24 * 60 * 60 * 1000
+        db.collection("users").document(uid).update(
+            mapOf(
+                "deletedAt" to com.google.firebase.Timestamp(java.util.Date(nowMs)),
+                "scheduledPurgeAt" to com.google.firebase.Timestamp(java.util.Date(purgeMs)),
+            )
+        ).await()
+    }
+
+    /**
+     * Cancela una eliminación pendiente limpiando deletedAt y scheduledPurgeAt.
+     */
+    suspend fun cancelAccountDeletion() {
+        val uid = currentUid ?: throw Exception("No autenticado")
+        db.collection("users").document(uid).update(
+            mapOf(
+                "deletedAt" to com.google.firebase.firestore.FieldValue.delete(),
+                "scheduledPurgeAt" to com.google.firebase.firestore.FieldValue.delete(),
+            )
+        ).await()
+    }
+
     suspend fun updateMerchantProfile(merchant: Merchant) {
         val data = mutableMapOf<String, Any>(
             "name" to merchant.name, "acceptsReservations" to merchant.acceptsReservations,
