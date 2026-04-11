@@ -30,6 +30,7 @@ fun MainScreen(
     onNavigateToStats: () -> Unit,
     onNavigateToDietaryPreferences: () -> Unit = {},
     onNavigateToNotificationPreferences: () -> Unit = {},
+    onNavigateToCurrencyPreference: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {}
 ) {
     val authViewModel: AuthViewModel = hiltViewModel()
@@ -154,6 +155,7 @@ fun MainScreen(
                     onNavigateToSubscription = {},
                     onNavigateToDietaryPreferences = onNavigateToDietaryPreferences,
                     onNavigateToNotificationPreferences = onNavigateToNotificationPreferences,
+                    onNavigateToCurrencyPreference = onNavigateToCurrencyPreference,
                     onNavigateToHistory = onNavigateToHistory,
                     onRequestAccountDeletion = { onError -> authViewModel.requestAccountDeletion(onError) },
                     modifier = Modifier.padding(paddingValues)

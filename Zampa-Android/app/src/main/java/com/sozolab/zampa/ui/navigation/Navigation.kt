@@ -26,6 +26,7 @@ sealed class Route(val route: String) {
     data object Stats : Route("stats")
     data object DietaryPreferences : Route("dietary_preferences")
     data object NotificationPreferences : Route("notification_preferences")
+    data object CurrencyPreference : Route("currency_preference")
     data object History : Route("history")
     data object PrivacyPolicy : Route("privacy_policy")
     data object Terms : Route("terms")
@@ -148,6 +149,9 @@ fun ZampaNavHost(
                 onNavigateToNotificationPreferences = {
                     navController.navigate(Route.NotificationPreferences.route)
                 },
+                onNavigateToCurrencyPreference = {
+                    navController.navigate(Route.CurrencyPreference.route)
+                },
                 onNavigateToHistory = {
                     navController.navigate(Route.History.route)
                 }
@@ -187,6 +191,14 @@ fun ZampaNavHost(
         }
         composable(Route.NotificationPreferences.route) {
             com.sozolab.zampa.ui.profile.NotificationPreferencesScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Route.CurrencyPreference.route) {
+            val user by authViewModel.currentUser.collectAsState()
+            com.sozolab.zampa.ui.profile.CurrencyPreferenceScreen(
+                currentCode = user?.currencyPreference ?: "EUR",
+                onSelect = { code, onError -> authViewModel.updateCurrencyPreference(code, onError) },
                 onBack = { navController.popBackStack() }
             )
         }
