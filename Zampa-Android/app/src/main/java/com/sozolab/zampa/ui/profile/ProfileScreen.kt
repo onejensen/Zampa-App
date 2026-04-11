@@ -42,6 +42,7 @@ fun ProfileScreen(
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToSubscription: () -> Unit = {},
     onNavigateToNotificationPreferences: () -> Unit = {},
+    onNavigateToCurrencyPreference: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
     onRequestAccountDeletion: ((onError: (String) -> Unit) -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -394,6 +395,39 @@ fun ProfileScreen(
                 title = "Notificaciones",
                 iconTint = MaterialTheme.colorScheme.tertiary,
                 onClick = onNavigateToNotificationPreferences
+            )
+        }
+        item {
+            val code = user?.currencyPreference ?: "EUR"
+            val symbol = when (code) {
+                "EUR" -> "€"
+                "USD" -> "$"
+                "GBP" -> "£"
+                "JPY" -> "¥"
+                "CHF" -> "CHF"
+                "SEK", "NOK", "DKK" -> "kr"
+                "CAD" -> "C$"
+                "AUD" -> "A$"
+                else -> code
+            }
+            ListItem(
+                headlineContent = { Text("Moneda") },
+                supportingContent = { Text("$code ($symbol)") },
+                leadingContent = {
+                    Icon(
+                        Icons.Default.AttachMoney,
+                        contentDescription = "Moneda",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                trailingContent = {
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                modifier = Modifier.clickable(onClick = onNavigateToCurrencyPreference)
             )
         }
         if (isMerchant) {
