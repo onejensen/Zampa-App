@@ -140,7 +140,7 @@ Added to `functions/index.js` alongside `onMenuPublished` and `expireMenus`. Nod
       - deviceTokens/{uid}
       - customers/{uid}
       - users/{uid}
-      - Storage: list and delete everything under avatars/{uid}/
+      - Storage: list and delete everything under users/{uid}/ (profile photos)
       - Firebase Auth: admin.auth().deleteUser(uid)
    c. Write purgedAccounts/{uid} with {
         purgedAt: serverTimestamp(),
