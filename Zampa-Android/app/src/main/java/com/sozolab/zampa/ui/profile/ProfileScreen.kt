@@ -43,6 +43,7 @@ fun ProfileScreen(
     onNavigateToSubscription: () -> Unit = {},
     onNavigateToNotificationPreferences: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
+    onRequestAccountDeletion: ((onError: (String) -> Unit) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -50,6 +51,10 @@ fun ProfileScreen(
     var editNameText by remember { mutableStateOf("") }
     var showPhotoSourceDialog by remember { mutableStateOf(false) }
     var rawBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var deleteTypedConfirmation by remember { mutableStateOf("") }
+    var deleteIsSubmitting by remember { mutableStateOf(false) }
+    var deleteErrorMessage by remember { mutableStateOf<String?>(null) }
 
     fun uploadBitmap(bitmap: Bitmap) {
         val stream = java.io.ByteArrayOutputStream()
@@ -156,6 +161,97 @@ fun ProfileScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEditNameDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!deleteIsSubmitting) {
+                    showDeleteAccountDialog = false
+                    deleteTypedConfirmation = ""
+                    deleteErrorMessage = null
+                }
+            },
+            title = { Text("¿Eliminar tu cuenta?") },
+            text = {
+                Column {
+                    Text(
+                        "Esta acción programará la eliminación definitiva de tu cuenta en 30 días. Durante ese tiempo podrás recuperarla iniciando sesión. Pasado el plazo, se borrarán para siempre:",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text("• Tu perfil y foto", style = MaterialTheme.typography.bodyMedium)
+                    Text("• Tus favoritos", style = MaterialTheme.typography.bodyMedium)
+                    Text("• Tu historial", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Para confirmar, escribe ELIMINAR:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = deleteTypedConfirmation,
+                        onValueChange = { deleteTypedConfirmation = it },
+                        placeholder = { Text("ELIMINAR") },
+                        singleLine = true,
+                        enabled = !deleteIsSubmitting,
+                        isError = deleteErrorMessage != null
+                    )
+                    val err = deleteErrorMessage
+                    if (err != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            err,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (deleteIsSubmitting) return@TextButton
+                        val handler = onRequestAccountDeletion ?: return@TextButton
+                        deleteIsSubmitting = true
+                        deleteErrorMessage = null
+                        handler { err ->
+                            deleteIsSubmitting = false
+                            deleteErrorMessage = err
+                        }
+                        // En éxito NO necesitamos cerrar el diálogo manualmente:
+                        // el NavHost observa pendingDeletionUser y navega fuera de
+                        // ProfileScreen, desmontando este dialog.
+                    },
+                    enabled = deleteTypedConfirmation == "ELIMINAR" && !deleteIsSubmitting,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    if (deleteIsSubmitting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Eliminar")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteAccountDialog = false
+                        deleteTypedConfirmation = ""
+                        deleteErrorMessage = null
+                    },
+                    enabled = !deleteIsSubmitting
+                ) {
+                    Text("Cancelar")
+                }
             }
         )
     }
@@ -362,8 +458,27 @@ fun ProfileScreen(
                 Spacer(Modifier.width(8.dp))
                 Text("Cerrar Sesión")
             }
-            Spacer(Modifier.height(32.dp))
         }
+
+        // Delete account (solo clientes)
+        if (!isMerchant && onRequestAccountDeletion != null) {
+            item {
+                Spacer(Modifier.height(24.dp))
+                TextButton(
+                    onClick = { showDeleteAccountDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error.copy(alpha = 0.75f)
+                    )
+                ) {
+                    Text("Eliminar cuenta")
+                }
+            }
+        }
+
+        item { Spacer(Modifier.height(32.dp)) }
     }
 }
 

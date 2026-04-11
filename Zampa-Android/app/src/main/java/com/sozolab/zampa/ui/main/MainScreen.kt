@@ -151,6 +151,7 @@ fun MainScreen(
                     onNavigateToDietaryPreferences = onNavigateToDietaryPreferences,
                     onNavigateToNotificationPreferences = onNavigateToNotificationPreferences,
                     onNavigateToHistory = onNavigateToHistory,
+                    onRequestAccountDeletion = { onError -> authViewModel.requestAccountDeletion(onError) },
                     modifier = Modifier.padding(paddingValues)
                 )
             }
