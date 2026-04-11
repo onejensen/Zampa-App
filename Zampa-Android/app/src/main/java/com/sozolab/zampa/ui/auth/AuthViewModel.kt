@@ -22,7 +22,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val firebaseService: FirebaseService
+    private val firebaseService: FirebaseService,
+    private val currencyService: com.sozolab.zampa.data.CurrencyService,
 ) : ViewModel() {
 
     private val _isAuthenticated = MutableStateFlow(firebaseService.isAuthenticated)
@@ -207,6 +208,7 @@ class AuthViewModel @Inject constructor(
             _currentUser.value = user
             _isAuthenticated.value = true
             refreshDeviceToken()
+            viewModelScope.launch { currencyService.loadIfNeeded() }
         }
     }
 
@@ -244,6 +246,24 @@ class AuthViewModel @Inject constructor(
                 routePostLogin(refreshed)
             } catch (e: Exception) {
                 onError(e.localizedMessage ?: "Error al recuperar cuenta")
+            }
+        }
+    }
+
+    /**
+     * Solicita un cambio de moneda preferida. Tras el éxito, refresca el
+     * User cargado para propagar el cambio a todas las pantallas que
+     * observan currentUser.
+     */
+    fun updateCurrencyPreference(code: String, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                firebaseService.updateCurrencyPreference(code)
+                val uid = firebaseService.currentUid ?: return@launch
+                val refreshed = firebaseService.getUserProfile(uid) ?: return@launch
+                _currentUser.value = refreshed
+            } catch (e: Exception) {
+                onError(e.localizedMessage ?: "Error al cambiar la moneda")
             }
         }
     }
