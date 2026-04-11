@@ -198,7 +198,10 @@ fun ProfileScreen(
                         placeholder = { Text("ELIMINAR") },
                         singleLine = true,
                         enabled = !deleteIsSubmitting,
-                        isError = deleteErrorMessage != null
+                        isError = deleteErrorMessage != null,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Characters
+                        )
                     )
                     val err = deleteErrorMessage
                     if (err != null) {

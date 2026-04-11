@@ -53,6 +53,9 @@ fun ZampaNavHost(
     // Reaccionar a cambios runtime:
     //  - Aparece pendingDeletionUser → ir a pantalla de recuperación
     //  - Se recupera la cuenta (pendingDeletion pasa a null, isAuthenticated true) → Main
+    //  - Se elimina la cuenta (pendingDeletion null, isAuthenticated flipa a false,
+    //    no estamos en Auth) → Auth. Para cubrir el caso de solicitar eliminación
+    //    desde Profile y que la app vuelva al login.
     LaunchedEffect(pendingDeletionUser, isAuthenticated) {
         val current = navController.currentDestination?.route
         when {
@@ -63,6 +66,11 @@ fun ZampaNavHost(
             }
             pendingDeletionUser == null && isAuthenticated && current == Route.AccountDeletionRecovery.route -> {
                 navController.navigate(Route.Main.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+            pendingDeletionUser == null && !isAuthenticated && current != null && current != Route.Auth.route && current != Route.PrivacyPolicy.route && current != Route.Terms.route -> {
+                navController.navigate(Route.Auth.route) {
                     popUpTo(0) { inclusive = true }
                 }
             }

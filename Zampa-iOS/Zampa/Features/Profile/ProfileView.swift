@@ -519,14 +519,13 @@ private struct DeleteAccountConfirmationSheet: View {
         Task {
             do {
                 try await FirebaseService.shared.requestAccountDeletion()
-                // Recargar el usuario para que ContentView detecte deletedAt
-                // y enrute a AccountDeletionRecoveryView. También cerramos el sheet.
-                if let updated = try? await FirebaseService.shared.getCurrentUser() {
-                    await MainActor.run {
-                        appState.currentUser = updated
-                        isDeleting = false
-                        dismiss()
-                    }
+                // Per spec §3.2: cerrar sesión tras el batch y volver al auth entry.
+                // Cuando el usuario inicie sesión de nuevo, ContentView detectará
+                // deletedAt y mostrará la pantalla de recuperación.
+                await MainActor.run {
+                    isDeleting = false
+                    dismiss()
+                    appState.logout()
                 }
             } catch {
                 await MainActor.run {

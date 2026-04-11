@@ -221,9 +221,13 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 firebaseService.requestAccountDeletion()
-                val uid = firebaseService.currentUid ?: return@launch
-                val refreshed = firebaseService.getUserProfile(uid) ?: return@launch
-                routePostLogin(refreshed)
+                // Per spec §3.2: cerrar sesión tras el batch y volver al auth entry.
+                // Cuando el usuario inicie sesión de nuevo, routePostLogin detectará
+                // deletedAt y expondrá pendingDeletionUser.
+                firebaseService.logout()
+                _isAuthenticated.value = false
+                _currentUser.value = null
+                _pendingDeletionUser.value = null
             } catch (e: Exception) {
                 onError(e.localizedMessage ?: "Error al eliminar cuenta")
             }
