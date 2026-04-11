@@ -25,7 +25,10 @@ struct ContentView: View {
                     }
                 }
             } else if appState.isAuthenticated {
-                if appState.needsMerchantSetup {
+                if appState.currentUser?.deletedAt != nil {
+                    // Cuenta pendiente de eliminación → pantalla de recuperación
+                    AccountDeletionRecoveryView()
+                } else if appState.needsMerchantSetup {
                     // Merchant que no ha completado su perfil
                     MerchantProfileSetupView()
                 } else {
