@@ -47,7 +47,10 @@ service cloud.firestore {
             && !('scheduledPurgeAt' in request.resource.data))
           ||
           (!('deletedAt' in resource.data) || resource.data.deletedAt == null)
-        );
+        )
+        && (!('currencyPreference' in request.resource.data)
+            || request.resource.data.currencyPreference in
+               ['EUR','USD','GBP','JPY','CHF','SEK','NOK','DKK','CAD','AUD']);
       // Las cuentas NO se borran desde el cliente: sólo la Cloud Function
       // purgeDeletedAccounts lo hace con credenciales de admin (que bypasan rules).
       allow delete: if false;
@@ -147,6 +150,14 @@ service cloud.firestore {
     match /cuisineTypes/{typeId} {
       allow read: if true; // Catálogo público
       allow write: if false; // Solo admin
+    }
+
+    // ── Config singleton docs (exchangeRates, future config entries) ──
+    // Lectura pública para cualquier usuario autenticado. Sólo Cloud
+    // Functions escriben (admin bypass).
+    match /config/{docId} {
+      allow read: if isAuth();
+      allow write: if false;
     }
 
     // ── Reports ──
