@@ -31,9 +31,25 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId);
+      // Update permitido sólo al dueño. No se puede auto-elevar el rol.
+      // Además, el flow de eliminación de cuenta limita qué updates son válidos
+      // dependiendo del estado actual del doc:
+      //   - Solicitar eliminación: setea deletedAt y scheduledPurgeAt (ambos timestamp)
+      //   - Recuperar cuenta: ambos campos deben quedar ausentes tras el write
+      //   - Escritura normal: sólo si la cuenta está activa (deletedAt no presente / null)
       allow update: if isOwner(userId)
-        // Impedir auto-elevación de rol
-        && unchanged('role');
+        && unchanged('role')
+        && (
+          (request.resource.data.deletedAt is timestamp
+            && request.resource.data.scheduledPurgeAt is timestamp)
+          ||
+          (!('deletedAt' in request.resource.data)
+            && !('scheduledPurgeAt' in request.resource.data))
+          ||
+          (!('deletedAt' in resource.data) || resource.data.deletedAt == null)
+        );
+      // Las cuentas NO se borran desde el cliente: sólo la Cloud Function
+      // purgeDeletedAccounts lo hace con credenciales de admin (que bypasan rules).
       allow delete: if false;
     }
 
