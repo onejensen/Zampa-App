@@ -404,3 +404,66 @@ async function deleteQueryInBatches(query) {
         if (snap.size < 400) return;
     }
 }
+
+/**
+ * Obtiene tasas de cambio diarias (EUR → 9 monedas soportadas) desde
+ * frankfurter.app (API pública del BCE, sin key) y las escribe en
+ * config/exchangeRates. Si la request falla, NO tocamos el doc previo —
+ * las tasas de ayer siguen siendo perfectamente usables para una
+ * conversión orientativa.
+ *
+ * Scheduled: diario a las 05:00 Europe/Madrid (tras el cierre europeo).
+ */
+exports.refreshExchangeRates = onSchedule(
+    {
+        schedule: "every day 05:00",
+        timeZone: "Europe/Madrid",
+        timeoutSeconds: 60,
+    },
+    async (event) => {
+        const SUPPORTED = ["USD", "GBP", "JPY", "CHF", "SEK", "NOK", "DKK", "CAD", "AUD"];
+        const url = `https://api.frankfurter.app/latest?from=EUR&to=${SUPPORTED.join(",")}`;
+
+        let payload;
+        try {
+            const resp = await fetch(url);
+            if (!resp.ok) {
+                logger.error(`refreshExchangeRates: HTTP ${resp.status} ${resp.statusText}`);
+                return;
+            }
+            payload = await resp.json();
+        } catch (e) {
+            logger.error("refreshExchangeRates: fetch falló, se mantiene el doc previo.", e);
+            return;
+        }
+
+        const rates = payload?.rates;
+        if (!rates || typeof rates !== "object") {
+            logger.error("refreshExchangeRates: respuesta sin objeto 'rates'.", payload);
+            return;
+        }
+
+        // Sanity-check: los 9 códigos deben venir como números finitos positivos.
+        const clean = {};
+        for (const code of SUPPORTED) {
+            const value = rates[code];
+            if (typeof value !== "number" || !isFinite(value) || value <= 0) {
+                logger.error(`refreshExchangeRates: tasa inválida para ${code}: ${value}`);
+                return;
+            }
+            clean[code] = value;
+        }
+
+        try {
+            await admin.firestore().collection("config").doc("exchangeRates").set({
+                base: "EUR",
+                rates: clean,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            logger.info("refreshExchangeRates OK:", clean);
+        } catch (e) {
+            logger.error("refreshExchangeRates: escritura a Firestore falló.", e);
+            throw e;
+        }
+    }
+);
