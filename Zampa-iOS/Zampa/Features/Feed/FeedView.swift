@@ -633,9 +633,9 @@ struct MenuCard: View {
 
         if let entry = schedule.first(where: { $0.day == todayKey }) {
             if now >= entry.open && now <= entry.close {
-                return ScheduleInfo(isOpen: true, label: "Abierto · Cierra \(entry.close)")
+                return ScheduleInfo(isOpen: true, label: "Abierto · Cierra \(formatHHmm(entry.close))")
             } else if now < entry.open {
-                return ScheduleInfo(isOpen: false, label: "Abre a las \(entry.open)")
+                return ScheduleInfo(isOpen: false, label: "Abre a las \(formatHHmm(entry.open))")
             }
         }
         // Closed today or past closing — find next opening
@@ -645,12 +645,22 @@ struct MenuCard: View {
             if let entry = schedule.first(where: { $0.day == nextDay }) {
                 let dayLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
                 if offset == 1 {
-                    return ScheduleInfo(isOpen: false, label: "Abre mañana \(entry.open)")
+                    return ScheduleInfo(isOpen: false, label: "Abre mañana \(formatHHmm(entry.open))")
                 }
-                return ScheduleInfo(isOpen: false, label: "Abre \(dayLabels[nextIdx]) \(entry.open)")
+                return ScheduleInfo(isOpen: false, label: "Abre \(dayLabels[nextIdx]) \(formatHHmm(entry.open))")
             }
         }
         return ScheduleInfo(isOpen: false, label: "Cerrado")
+    }
+
+    /// Normaliza el string de horario a "HH:mm" (24h) independientemente del
+    /// formato de entrada (p.ej. "10:00:00Z" o ISO completo).
+    private func formatHHmm(_ time: String) -> String {
+        let parts = time.components(separatedBy: ":")
+        guard parts.count >= 2,
+              let h = Int(parts[0].suffix(2)),
+              let m = Int(parts[1].prefix(2)) else { return time }
+        return String(format: "%02d:%02d", h, m)
     }
 
     private func loadMerchant() {

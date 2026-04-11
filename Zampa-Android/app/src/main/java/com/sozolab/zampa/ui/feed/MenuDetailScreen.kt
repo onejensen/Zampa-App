@@ -688,11 +688,13 @@ fun DietaryInfoSection(dietaryInfo: com.sozolab.zampa.data.model.DietaryInfo) {
     }
 }
 
+/**
+ * Normaliza el string de horario a "HH:mm" (24h) independientemente del
+ * formato de entrada: "10:00", "10:00:00", "10:00Z", "2026-04-11T10:00:00Z".
+ */
 private fun formatScheduleTime(time: String): String {
     val parts = time.split(":")
-    val h = parts.getOrNull(0)?.toIntOrNull() ?: return time
-    val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
-    val suffix = if (h < 12) "AM" else "PM"
-    val hour = when { h > 12 -> h - 12; h == 0 -> 12; else -> h }
-    return if (m == 0) "$hour:00 $suffix" else "$hour:${"%02d".format(m)} $suffix"
+    val h = parts.getOrNull(0)?.takeLast(2)?.toIntOrNull() ?: return time
+    val m = parts.getOrNull(1)?.take(2)?.toIntOrNull() ?: 0
+    return "%02d:%02d".format(h, m)
 }

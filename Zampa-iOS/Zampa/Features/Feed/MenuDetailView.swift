@@ -429,11 +429,13 @@ struct MenuDetailView: View {
     }
 
     private func formatTime(_ time: String) -> String {
-        let parts = time.split(separator: ":").map(String.init)
-        guard parts.count == 2, let h = Int(parts[0]), let m = Int(parts[1]) else { return time }
-        let suffix = h < 12 ? "AM" : "PM"
-        let hour = h > 12 ? h - 12 : (h == 0 ? 12 : h)
-        return m == 0 ? "\(hour):00 \(suffix)" : "\(hour):\(String(format: "%02d", m)) \(suffix)"
+        // Extrae HH y MM de cualquier input razonable: "10:00", "10:00:00",
+        // "10:00Z", "2026-04-11T10:00:00Z". Devuelve siempre "HH:mm" (24h).
+        let parts = time.components(separatedBy: ":")
+        guard parts.count >= 2,
+              let h = Int(parts[0].suffix(2)),
+              let m = Int(parts[1].prefix(2)) else { return time }
+        return String(format: "%02d:%02d", h, m)
     }
 
     private func loadInitialData() {

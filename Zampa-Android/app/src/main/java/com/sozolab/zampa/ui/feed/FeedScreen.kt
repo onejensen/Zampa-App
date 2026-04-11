@@ -392,9 +392,9 @@ fun MenuCard(
         val todayEntry = schedule.firstOrNull { it.day == todayKey }
         if (todayEntry != null) {
             if (now >= todayEntry.open && now <= todayEntry.close) {
-                return@remember ScheduleInfo(true, "Abierto · Cierra ${todayEntry.close}")
+                return@remember ScheduleInfo(true, "Abierto · Cierra ${formatHHmm(todayEntry.close)}")
             } else if (now < todayEntry.open) {
-                return@remember ScheduleInfo(false, "Abre a las ${todayEntry.open}")
+                return@remember ScheduleInfo(false, "Abre a las ${formatHHmm(todayEntry.open)}")
             }
         }
         // Closed today or past closing — find next opening
@@ -404,9 +404,9 @@ fun MenuCard(
             val entry = schedule.firstOrNull { it.day == nextDay }
             if (entry != null) {
                 return@remember if (offset == 1) {
-                    ScheduleInfo(false, "Abre mañana ${entry.open}")
+                    ScheduleInfo(false, "Abre mañana ${formatHHmm(entry.open)}")
                 } else {
-                    ScheduleInfo(false, "Abre ${dayLabels[nextIdx]} ${entry.open}")
+                    ScheduleInfo(false, "Abre ${dayLabels[nextIdx]} ${formatHHmm(entry.open)}")
                 }
             }
         }
@@ -749,4 +749,15 @@ fun FilterSheet(
 
 private fun formatAddress(formatted: String): String {
     return formatted.split(",").firstOrNull()?.trim() ?: formatted
+}
+
+/**
+ * Normaliza el string de horario a "HH:mm" (24h) independientemente del
+ * formato de entrada: "10:00", "10:00:00", "10:00Z", "2026-04-11T10:00:00Z".
+ */
+private fun formatHHmm(time: String): String {
+    val parts = time.split(":")
+    val h = parts.getOrNull(0)?.takeLast(2)?.toIntOrNull() ?: return time
+    val m = parts.getOrNull(1)?.take(2)?.toIntOrNull() ?: 0
+    return "%02d:%02d".format(h, m)
 }
