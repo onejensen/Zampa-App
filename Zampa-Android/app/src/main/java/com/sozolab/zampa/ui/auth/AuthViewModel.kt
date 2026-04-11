@@ -41,6 +41,11 @@ class AuthViewModel @Inject constructor(
     private val _pendingSocialUser = MutableStateFlow<User?>(null)
     val pendingSocialUser: StateFlow<User?> = _pendingSocialUser
 
+    // Cuenta pendiente de eliminación detectada tras login. Mientras sea no-nulo,
+    // la navegación muestra AccountDeletionRecoveryScreen en lugar de Main.
+    private val _pendingDeletionUser = MutableStateFlow<User?>(null)
+    val pendingDeletionUser: StateFlow<User?> = _pendingDeletionUser
+
     // Preview local mientras se sube la foto; sobrevive cambios de pestaña
     private val _pendingPhotoBitmap = MutableStateFlow<Bitmap?>(null)
     val pendingPhotoBitmap = _pendingPhotoBitmap.asStateFlow()
@@ -49,9 +54,11 @@ class AuthViewModel @Inject constructor(
         if (firebaseService.isAuthenticated) {
             viewModelScope.launch {
                 val uid = firebaseService.currentUid ?: return@launch
-                _currentUser.value = firebaseService.getUserProfile(uid)
+                val user = firebaseService.getUserProfile(uid)
+                if (user != null) {
+                    routePostLogin(user)
+                }
             }
-            refreshDeviceToken()
         }
     }
 
@@ -61,9 +68,7 @@ class AuthViewModel @Inject constructor(
             _error.value = null
             try {
                 val user = firebaseService.login(email, password)
-                _currentUser.value = user
-                _isAuthenticated.value = true
-                refreshDeviceToken()
+                routePostLogin(user)
             } catch (e: Exception) {
                 _error.value = e.localizedMessage ?: "Error al iniciar sesión"
             }
@@ -77,9 +82,9 @@ class AuthViewModel @Inject constructor(
             _error.value = null
             try {
                 val user = firebaseService.register(email, password, name, role, phone)
-                _currentUser.value = user
-                _isAuthenticated.value = true
-                refreshDeviceToken()
+                // Un registro recién creado nunca tiene deletedAt, pero pasamos por
+                // routePostLogin para mantener un único punto de entrada.
+                routePostLogin(user)
             } catch (e: Exception) {
                 _error.value = e.localizedMessage ?: "Error al registrarse"
             }
@@ -91,6 +96,7 @@ class AuthViewModel @Inject constructor(
         firebaseService.logout()
         _isAuthenticated.value = false
         _currentUser.value = null
+        _pendingDeletionUser.value = null
     }
 
     fun clearError() { _error.value = null }
@@ -120,9 +126,7 @@ class AuthViewModel @Inject constructor(
                 if (isNewUser) {
                     _pendingSocialUser.value = user   // show role selection
                 } else {
-                    _currentUser.value = user
-                    _isAuthenticated.value = true
-                    refreshDeviceToken()
+                    routePostLogin(user)
                 }
             } catch (e: ApiException) {
                 if (e.statusCode != 12501) {  // 12501 = user cancelled
@@ -142,9 +146,7 @@ class AuthViewModel @Inject constructor(
             try {
                 val user = firebaseService.finalizeSocialRegistration(pending.id, role, name, pending.email)
                 _pendingSocialUser.value = null
-                _currentUser.value = user
-                _isAuthenticated.value = true
-                refreshDeviceToken()
+                routePostLogin(user)
             } catch (e: Exception) {
                 _error.value = e.localizedMessage ?: "Error al completar el registro"
             }
@@ -185,6 +187,59 @@ class AuthViewModel @Inject constructor(
                 _pendingPhotoBitmap.value = null  // Solo limpiar tras éxito
             } catch (_: Exception) {
                 // En error mantenemos pendingPhotoBitmap para no revertir la UI
+            }
+        }
+    }
+
+    /**
+     * Ruta el resultado de login: si el usuario tiene deletedAt activo, no
+     * marca la sesión como autenticada (para que NavHost no vaya a Main) y
+     * expone el usuario via pendingDeletionUser para que el host muestre la
+     * pantalla de recuperación.
+     */
+    private fun routePostLogin(user: User) {
+        if (user.deletedAt != null) {
+            _pendingDeletionUser.value = user
+            _currentUser.value = user
+            _isAuthenticated.value = false
+        } else {
+            _pendingDeletionUser.value = null
+            _currentUser.value = user
+            _isAuthenticated.value = true
+            refreshDeviceToken()
+        }
+    }
+
+    // ── Account deletion ──
+
+    /**
+     * Solicita eliminación de cuenta. Tras el éxito, reemplaza el usuario
+     * cargado por uno nuevo con deletedAt seteado, lo cual hace que
+     * NavHost salte a AccountDeletionRecoveryScreen.
+     */
+    fun requestAccountDeletion(onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                firebaseService.requestAccountDeletion()
+                val uid = firebaseService.currentUid ?: return@launch
+                val refreshed = firebaseService.getUserProfile(uid) ?: return@launch
+                routePostLogin(refreshed)
+            } catch (e: Exception) {
+                onError(e.localizedMessage ?: "Error al eliminar cuenta")
+            }
+        }
+    }
+
+    /** Cancela una eliminación pendiente y reactiva la cuenta. */
+    fun cancelAccountDeletion(onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                firebaseService.cancelAccountDeletion()
+                val uid = firebaseService.currentUid ?: return@launch
+                val refreshed = firebaseService.getUserProfile(uid) ?: return@launch
+                routePostLogin(refreshed)
+            } catch (e: Exception) {
+                onError(e.localizedMessage ?: "Error al recuperar cuenta")
             }
         }
     }
