@@ -25,6 +25,7 @@
 		86E17182305D2F143467FAC5 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86E17183305D2F143467FAC6 /* FavoritesView.swift */; };
 		A0B3548FFBA815F7905DBB94 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B3548FFBA815F7905DBB95 /* ProfileView.swift */; };
 		A0B3548FFBA815F7905DBB97 /* DietaryPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B3548FFBA815F7905DBB98 /* DietaryPreferencesView.swift */; };
+		CP0011042500000000000001 /* CurrencyPreferenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CP0011042500000000000002 /* CurrencyPreferenceView.swift */; };
 		A0B3548FFBA815F7905DBBA1 /* MerchantDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B3548FFBA815F7905DBBA2 /* MerchantDashboardView.swift */; };
 		AA1122334455667788990011 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1122334455667788990012 /* StatsView.swift */; };
 		AA1122334455667788990013 /* SubscriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1122334455667788990014 /* SubscriptionView.swift */; };
@@ -102,6 +103,7 @@
 		A06A48C293CD4F281B8F0D21 /* LogoEatOut 2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LogoEatOut 2.png"; sourceTree = "<group>"; };
 		A0B3548FFBA815F7905DBB95 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		A0B3548FFBA815F7905DBB98 /* DietaryPreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietaryPreferencesView.swift; sourceTree = "<group>"; };
+		CP0011042500000000000002 /* CurrencyPreferenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyPreferenceView.swift; sourceTree = "<group>"; };
 		A0B3548FFBA815F7905DBBA2 /* MerchantDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantDashboardView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* MenuService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuService.swift; sourceTree = "<group>"; };
 		AA1122334455667788990012 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
@@ -292,6 +294,7 @@
 				C80D81442F73ED5500D87AB0 /* NotificationPreferencesView.swift */,
 				A0B3548FFBA815F7905DBB95 /* ProfileView.swift */,
 				A0B3548FFBA815F7905DBB98 /* DietaryPreferencesView.swift */,
+				CP0011042500000000000002 /* CurrencyPreferenceView.swift */,
 				CC001122334455667788AABC /* CropImageView.swift */,
 			);
 			path = Profile;
@@ -512,6 +515,7 @@
 				C8E0A28E2F7FCC0000C7735E /* HistoryView.swift in Sources */,
 				A0B3548FFBA815F7905DBB94 /* ProfileView.swift in Sources */,
 				A0B3548FFBA815F7905DBB97 /* DietaryPreferencesView.swift in Sources */,
+				CP0011042500000000000001 /* CurrencyPreferenceView.swift in Sources */,
 				C80D81452F73ED5500D87AB0 /* NotificationPreferencesView.swift in Sources */,
 				CC001122334455667788AABB /* CropImageView.swift in Sources */,
 				A0B3548FFBA815F7905DBBA1 /* MerchantDashboardView.swift in Sources */,
