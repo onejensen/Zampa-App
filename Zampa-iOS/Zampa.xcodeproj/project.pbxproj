@@ -41,6 +41,7 @@
 		C82BED5A2F866E2500FCA04B /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82BED592F866E2500FCA04B /* DeepLinkRouter.swift */; };
 		C85B57A52F68733300E5B414 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C85B57A42F68733300E5B414 /* Launch Screen.storyboard */; };
 		C8A1B2C3D4E5F6A7B8C9D0E2 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A1B2C3D4E5F6A7B8C9D0E1 /* DesignSystem.swift */; };
+		CS0011042500000000000001 /* CurrencyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CS0011042500000000000002 /* CurrencyService.swift */; };
 		C8A1B2C3D4E5F6A7B8C9D0E6 /* MenuDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A1B2C3D4E5F6A7B8C9D0E5 /* MenuDetailView.swift */; };
 		C8A1B2C3D4E5F6A7B8C9D0E8 /* LocationConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A1B2C3D4E5F6A7B8C9D0E7 /* LocationConfigView.swift */; };
 		C8A1B2C3D4E5F6A7B8C9D0F0 /* FilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A1B2C3D4E5F6A7B8C9D0E9 /* FilterView.swift */; };
@@ -117,6 +118,7 @@
 		C82BED592F866E2500FCA04B /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		C85B57A42F68733300E5B414 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		C8A1B2C3D4E5F6A7B8C9D0E1 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		CS0011042500000000000002 /* CurrencyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyService.swift; sourceTree = "<group>"; };
 		C8A1B2C3D4E5F6A7B8C9D0E5 /* MenuDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuDetailView.swift; sourceTree = "<group>"; };
 		C8A1B2C3D4E5F6A7B8C9D0E7 /* LocationConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationConfigView.swift; sourceTree = "<group>"; };
 		C8A1B2C3D4E5F6A7B8C9D0E9 /* FilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterView.swift; sourceTree = "<group>"; };
@@ -243,6 +245,7 @@
 				C82BED592F866E2500FCA04B /* DeepLinkRouter.swift */,
 				C9452722A88897E68404995E /* AppState.swift */,
 				C8A1B2C3D4E5F6A7B8C9D0E1 /* DesignSystem.swift */,
+				CS0011042500000000000002 /* CurrencyService.swift */,
 				49419EE8704BA5DBC58401D3 /* Config.swift */,
 				001BFCF9DC40AA4ACA640E8B /* KeychainManager.swift */,
 				86E1717E305D2F143467FAC1 /* LocationManager.swift */,
@@ -529,6 +532,7 @@
 				F2B3C4D5E6F7A8B9C0D1E2F3 /* MenuService.swift in Sources */,
 				B1DFCB9395CD52CE80E57625 /* User.swift in Sources */,
 				C8A1B2C3D4E5F6A7B8C9D0E2 /* DesignSystem.swift in Sources */,
+				CS0011042500000000000001 /* CurrencyService.swift in Sources */,
 				C8A1B2C3D4E5F6A7B8C9D0E6 /* MenuDetailView.swift in Sources */,
 				C8A1B2C3D4E5F6A7B8C9D0E8 /* LocationConfigView.swift in Sources */,
 				C8A1B2C3D4E5F6A7B8C9D0F0 /* FilterView.swift in Sources */,
