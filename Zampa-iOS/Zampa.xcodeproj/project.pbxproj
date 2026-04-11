@@ -56,6 +56,7 @@
 		D1A2B3C4D5E6F7A8B9C0D1E5 /* MerchantProfileSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4D5E6F7A8B9C0D1E4 /* MerchantProfileSetupView.swift */; };
 		DD1122334455667788990011 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1122334455667788990012 /* CachedAsyncImage.swift */; };
 		E5FF94083B516974A44F1409 /* icon.json in Resources */ = {isa = PBXBuildFile; fileRef = FEB596DBDBD3A16CC83CA9D6 /* icon.json */; };
+		AD5010425000000000000001 /* AccountDeletionRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5010425000000000000002 /* AccountDeletionRecoveryView.swift */; };
 		E6F943CAA695D3345278B376 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F612DC95FA115FF9781B2B /* AuthView.swift */; };
 		E88EFED8C803ABD7826CD752 /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD83BCDEFBF76FB8AA4CFF8 /* FirebaseService.swift */; };
 		F1A559F3337AC9A3EEA6AF4E /* FeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E780E787E234D6606C650EA6 /* FeedView.swift */; };
@@ -105,6 +106,7 @@
 		AA1122334455667788990012 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		AA1122334455667788990014 /* SubscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubscriptionView.swift; path = ../Subscription/SubscriptionView.swift; sourceTree = "<group>"; };
 		B26913EC8DC18A79A8B61CAC /* ZampaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZampaApp.swift; sourceTree = "<group>"; };
+		AD5010425000000000000002 /* AccountDeletionRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionRecoveryView.swift; sourceTree = "<group>"; };
 		B7F612DC95FA115FF9781B2B /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		BAEEE50E3527EEE2B1C78835 /* google-services.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "google-services.json"; sourceTree = "<group>"; };
 		BB2233445566778899001102 /* Subscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Subscription.swift; sourceTree = "<group>"; };
@@ -210,6 +212,7 @@
 		4162F3A02419AC8CB1AEE863 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				AD5010425000000000000002 /* AccountDeletionRecoveryView.swift */,
 				B7F612DC95FA115FF9781B2B /* AuthView.swift */,
 				FF1122334455667788990012 /* SocialAuthService.swift */,
 			);
@@ -509,6 +512,7 @@
 				C80D81452F73ED5500D87AB0 /* NotificationPreferencesView.swift in Sources */,
 				CC001122334455667788AABB /* CropImageView.swift in Sources */,
 				A0B3548FFBA815F7905DBBA1 /* MerchantDashboardView.swift in Sources */,
+				AD5010425000000000000001 /* AccountDeletionRecoveryView.swift in Sources */,
 				E6F943CAA695D3345278B376 /* AuthView.swift in Sources */,
 				FF1122334455667788990011 /* SocialAuthService.swift in Sources */,
 				262A4ACA53649E84FB5A18A3 /* Config.swift in Sources */,
