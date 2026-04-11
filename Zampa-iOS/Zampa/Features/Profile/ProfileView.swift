@@ -110,6 +110,20 @@ struct ProfileView: View {
             NavigationLink(destination: NotificationPreferencesView()) {
                 ProfileMenuRowContent(icon: "bell.fill", title: "Notificaciones", color: .orange)
             }
+            NavigationLink(destination: CurrencyPreferenceView()) {
+                HStack(spacing: 16) {
+                    Image(systemName: "dollarsign.circle.fill")
+                        .foregroundColor(.appPrimary)
+                        .frame(width: 24)
+                    Text("Moneda")
+                        .font(.appBody)
+                        .foregroundColor(.appTextPrimary)
+                    Spacer()
+                    Text(currentCurrencyLabel)
+                        .font(.appCaption)
+                        .foregroundColor(.appTextSecondary)
+                }
+            }
             HStack(spacing: 16) {
                 Image(systemName: "circle.lefthalf.filled")
                     .foregroundColor(.purple)
@@ -127,6 +141,24 @@ struct ProfileView: View {
                 .frame(maxWidth: 180)
             }
         }
+    }
+
+    /// Etiqueta corta mostrada en la trailing de la fila Moneda: "EUR (€)".
+    private var currentCurrencyLabel: String {
+        let code = appState.currentUser?.currencyPreference ?? "EUR"
+        let symbol: String
+        switch code {
+        case "EUR": symbol = "€"
+        case "USD": symbol = "$"
+        case "GBP": symbol = "£"
+        case "JPY": symbol = "¥"
+        case "CHF": symbol = "CHF"
+        case "SEK", "NOK", "DKK": symbol = "kr"
+        case "CAD": symbol = "C$"
+        case "AUD": symbol = "A$"
+        default:    symbol = code
+        }
+        return "\(code) (\(symbol))"
     }
 
     // MARK: - Merchant section
