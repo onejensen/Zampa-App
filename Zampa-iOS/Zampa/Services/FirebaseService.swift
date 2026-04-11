@@ -23,20 +23,22 @@ class FirebaseService {
     /// Lee el perfil completo del usuario desde Firestore
     func getCurrentUser() async throws -> AppUser? {
         guard let fbUser = currentFirebaseUser else { return nil }
-        
+
         let doc = try await db.collection("users").document(fbUser.uid).getDocument()
         guard let data = doc.data() else { return nil }
-        
+
         let roleString = data["role"] as? String ?? "CLIENTE"
         let role = AppUser.UserRole(rawValue: roleString) ?? .cliente
-        
+
         return AppUser(
             id: fbUser.uid,
             email: data["email"] as? String ?? fbUser.email ?? "",
             name: data["name"] as? String ?? fbUser.displayName ?? "Usuario",
             role: role,
             phone: data["phone"] as? String,
-            photoUrl: data["photoUrl"] as? String
+            photoUrl: data["photoUrl"] as? String,
+            deletedAt: (data["deletedAt"] as? Timestamp)?.dateValue(),
+            scheduledPurgeAt: (data["scheduledPurgeAt"] as? Timestamp)?.dateValue()
         )
     }
 
