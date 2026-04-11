@@ -8,6 +8,10 @@ data class User(
     val role: UserRole = UserRole.CLIENTE,
     val phone: String? = null,
     val photoUrl: String? = null,
+    /** Fecha en la que el usuario solicitó la eliminación. Nulo = activa. */
+    val deletedAt: com.google.firebase.Timestamp? = null,
+    /** Fecha programada para la purga definitiva (deletedAt + 30 días). */
+    val scheduledPurgeAt: com.google.firebase.Timestamp? = null,
 ) {
     enum class UserRole {
         CLIENTE, COMERCIO;

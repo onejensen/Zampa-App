@@ -133,7 +133,9 @@ class FirebaseService @Inject constructor() {
             name = data["name"] as? String ?: "",
             role = User.UserRole.fromString(data["role"] as? String ?: "CLIENTE"),
             phone = data["phone"] as? String,
-            photoUrl = data["photoUrl"] as? String
+            photoUrl = data["photoUrl"] as? String,
+            deletedAt = data["deletedAt"] as? com.google.firebase.Timestamp,
+            scheduledPurgeAt = data["scheduledPurgeAt"] as? com.google.firebase.Timestamp,
         )
     }
 
