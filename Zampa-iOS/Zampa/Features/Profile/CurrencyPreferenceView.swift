@@ -98,7 +98,23 @@ struct CurrencyPreferenceView: View {
                         dismiss()
                     }
                 } else {
+                    // El write a Firestore ha tenido éxito pero el refetch falló
+                    // (offline, etc). Parcheamos el valor local para que la UI
+                    // refleje la nueva selección sin tener que reiniciar la app.
                     await MainActor.run {
+                        if let current = appState.currentUser {
+                            appState.currentUser = User(
+                                id: current.id,
+                                email: current.email,
+                                name: current.name,
+                                role: current.role,
+                                phone: current.phone,
+                                photoUrl: current.photoUrl,
+                                deletedAt: current.deletedAt,
+                                scheduledPurgeAt: current.scheduledPurgeAt,
+                                currencyPreference: code
+                            )
+                        }
                         pendingCode = nil
                         dismiss()
                     }

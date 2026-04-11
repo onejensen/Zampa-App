@@ -426,12 +426,18 @@ exports.refreshExchangeRates = onSchedule(
 
         let payload;
         try {
-            const resp = await fetch(url);
-            if (!resp.ok) {
-                logger.error(`refreshExchangeRates: HTTP ${resp.status} ${resp.statusText}`);
-                return;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+                const resp = await fetch(url, { signal: controller.signal });
+                if (!resp.ok) {
+                    logger.error(`refreshExchangeRates: HTTP ${resp.status} ${resp.statusText}`);
+                    return;
+                }
+                payload = await resp.json();
+            } finally {
+                clearTimeout(timeoutId);
             }
-            payload = await resp.json();
         } catch (e) {
             logger.error("refreshExchangeRates: fetch falló, se mantiene el doc previo.", e);
             return;

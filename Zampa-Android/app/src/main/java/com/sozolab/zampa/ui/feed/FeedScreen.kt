@@ -307,7 +307,8 @@ fun FeedScreen(
                 viewModel.applyFilters(cuisine, price, distanceKm, favOnly)
                 showFilterSheet = false
             },
-            currencyPreference = currentUser?.currencyPreference
+            currencyPreference = currentUser?.currencyPreference,
+            formatConverted = { amount, code -> authViewModel.formatConverted(amount, code) }
         )
     }
 }
@@ -621,6 +622,7 @@ fun FilterSheet(
     onDismiss: () -> Unit,
     onApply: (String?, Double?, Double?, Boolean, Boolean) -> Unit,
     currencyPreference: String? = null,
+    formatConverted: (Double, String) -> String? = { _, _ -> null },
 ) {
     var selectedCuisine by remember { mutableStateOf(initialFilters.cuisine) }
     var maxPrice by remember { mutableStateOf(initialFilters.maxPrice?.toFloat() ?: 30f) }
@@ -716,10 +718,7 @@ fun FilterSheet(
                         val prefCode = currencyPreference ?: "EUR"
                         if (prefCode != "EUR") {
                             val converted = remember(maxPrice.toInt(), prefCode) {
-                                val service = com.sozolab.zampa.data.CurrencyService(
-                                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                                )
-                                service.formatConverted(maxPrice.toInt().toDouble(), prefCode)
+                                formatConverted(maxPrice.toInt().toDouble(), prefCode)
                             }
                             converted?.let {
                                 Text(

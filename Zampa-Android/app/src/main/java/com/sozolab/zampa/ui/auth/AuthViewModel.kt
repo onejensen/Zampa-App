@@ -267,4 +267,13 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Devuelve el string formateado del importe convertido a la moneda destino,
+     * usando el Hilt singleton que ya tiene las tasas cargadas (o fallback).
+     * Null si la conversión no es posible.
+     */
+    fun formatConverted(eurAmount: Double, to: String): String? {
+        return currencyService.formatConverted(eurAmount, to)
+    }
 }

@@ -523,10 +523,7 @@ fun MenuDetailScreen(
                             val prefCode = currentUser?.currencyPreference ?: "EUR"
                             if (prefCode != "EUR") {
                                 val converted = remember(currentMenu.priceTotal, prefCode) {
-                                    val service = com.sozolab.zampa.data.CurrencyService(
-                                        com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                                    )
-                                    service.formatConverted(currentMenu.priceTotal, prefCode)
+                                    authViewModel.formatConverted(currentMenu.priceTotal, prefCode)
                                 }
                                 converted?.let {
                                     Text(
