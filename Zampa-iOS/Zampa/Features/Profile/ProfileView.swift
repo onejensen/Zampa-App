@@ -6,6 +6,7 @@ import PhotosUI
 private enum ProfileSheet: Identifiable {
     case camera, gallery, editProfile
     case merchantStats, merchantSubscription, editBusiness
+    case deleteAccount
 
     var id: Int { hashValue }
 }
@@ -177,6 +178,22 @@ struct ProfileView: View {
                         }
                     }
                 }
+
+                // Sólo clientes pueden eliminar su cuenta desde la app en v1.
+                // Comercios deben contactar soporte (no hay botón oculto).
+                if appState.currentUser?.role == .cliente {
+                    Section {
+                        Button(action: { activeSheet = .deleteAccount }) {
+                            HStack {
+                                Spacer()
+                                Text("Eliminar cuenta")
+                                    .font(.appButton)
+                                    .foregroundColor(.red.opacity(0.7))
+                                Spacer()
+                            }
+                        }
+                    }
+                }
             }
             .listStyle(InsetGroupedListStyle())
             .navigationTitle("Mi Perfil")
@@ -197,6 +214,9 @@ struct ProfileView: View {
                     SubscriptionView()
                 case .editBusiness:
                     MerchantProfileSetupView(existingProfile: appState.merchantProfile)
+                case .deleteAccount:
+                    DeleteAccountConfirmationSheet()
+                        .environmentObject(appState)
                 }
             }
 
@@ -408,6 +428,110 @@ struct GalleryImagePicker: UIViewControllerRepresentable {
             provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
                 if let img = object as? UIImage {
                     DispatchQueue.main.async { self?.parent.image = img }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Delete account confirmation sheet
+
+private struct DeleteAccountConfirmationSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var appState: AppState
+    @State private var typedConfirmation = ""
+    @State private var isDeleting = false
+    @State private var errorMessage: String?
+
+    private var isValid: Bool { typedConfirmation == "ELIMINAR" }
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("¿Eliminar tu cuenta?")
+                        .font(.appHeadline)
+                        .foregroundColor(.appTextPrimary)
+
+                    Text("Esta acción programará la eliminación definitiva de tu cuenta en 30 días. Durante ese tiempo podrás recuperarla iniciando sesión. Pasado el plazo, se borrarán para siempre:")
+                        .font(.appBody)
+                        .foregroundColor(.appTextSecondary)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("• Tu perfil y foto")
+                        Text("• Tus favoritos")
+                        Text("• Tu historial")
+                    }
+                    .font(.appBody)
+                    .foregroundColor(.appTextPrimary)
+
+                    Divider()
+
+                    Text("Para confirmar, escribe ELIMINAR:")
+                        .font(.appBody)
+                        .foregroundColor(.appTextSecondary)
+
+                    TextField("ELIMINAR", text: $typedConfirmation)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .disabled(isDeleting)
+
+                    Spacer(minLength: 32)
+
+                    Button(action: performDelete) {
+                        HStack {
+                            Spacer()
+                            if isDeleting {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("Eliminar")
+                            }
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(AppDesign.ButtonStyle(isPrimary: true, isDisabled: !isValid || isDeleting))
+                    .disabled(!isValid || isDeleting)
+                }
+                .padding(24)
+            }
+            .navigationTitle("Eliminar cuenta")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { dismiss() }
+                        .disabled(isDeleting)
+                }
+            }
+            .alert("Error", isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button("OK") { errorMessage = nil }
+            } message: {
+                Text(errorMessage ?? "")
+            }
+        }
+    }
+
+    private func performDelete() {
+        isDeleting = true
+        Task {
+            do {
+                try await FirebaseService.shared.requestAccountDeletion()
+                // Recargar el usuario para que ContentView detecte deletedAt
+                // y enrute a AccountDeletionRecoveryView. También cerramos el sheet.
+                if let updated = try? await FirebaseService.shared.getCurrentUser() {
+                    await MainActor.run {
+                        appState.currentUser = updated
+                        isDeleting = false
+                        dismiss()
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isDeleting = false
+                    errorMessage = error.localizedDescription
                 }
             }
         }
