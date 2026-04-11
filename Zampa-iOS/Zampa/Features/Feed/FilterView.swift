@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FilterView: View {
+    @EnvironmentObject var appState: AppState
     @Environment(\.presentationMode) var presentationMode
 
     @State var selectedCuisine: String?
@@ -91,15 +92,24 @@ struct FilterView: View {
 
                     // Price Range
                     VStack(alignment: .leading, spacing: 16) {
-                        HStack {
+                        HStack(alignment: .top) {
                             Text("Precio máximo")
                                 .font(.appSubheadline)
                                 .fontWeight(.bold)
                             Spacer()
-                            Text("Hasta \(Int(maxPrice)) €")
-                                .font(.appBody)
-                                .foregroundColor(.appPrimary)
-                                .fontWeight(.bold)
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("Hasta \(Int(maxPrice)) €")
+                                    .font(.appBody)
+                                    .foregroundColor(.appPrimary)
+                                    .fontWeight(.bold)
+                                if let prefCode = appState.currentUser?.currencyPreference,
+                                   prefCode != "EUR",
+                                   let converted = CurrencyService.formatConverted(eurAmount: Double(Int(maxPrice)), to: prefCode) {
+                                    Text("~\(converted)")
+                                        .font(.appCaption)
+                                        .foregroundColor(.appTextSecondary)
+                                }
+                            }
                         }
 
                         Slider(value: $maxPrice, in: 5...100, step: 5)
