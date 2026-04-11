@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.sozolab.zampa.ui.auth.AccountDeletionRecoveryScreen
 import com.sozolab.zampa.ui.auth.AuthScreen
 import com.sozolab.zampa.ui.auth.AuthViewModel
 import com.sozolab.zampa.ui.legal.LegalScreen
@@ -19,6 +20,7 @@ import com.sozolab.zampa.ui.onboarding.LocationOnboardingScreen
 sealed class Route(val route: String) {
     data object Auth : Route("auth")
     data object Main : Route("main")
+    data object AccountDeletionRecovery : Route("account_deletion_recovery")
     data object MerchantSetup : Route("merchant_setup")
     data object LocationOnboarding : Route("location_onboarding")
     data object Stats : Route("stats")
@@ -40,8 +42,32 @@ fun ZampaNavHost(
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = hiltViewModel()
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+    val pendingDeletionUser by authViewModel.pendingDeletionUser.collectAsState()
 
-    val startDestination = if (isAuthenticated) Route.Main.route else Route.Auth.route
+    val startDestination = when {
+        pendingDeletionUser != null -> Route.AccountDeletionRecovery.route
+        isAuthenticated -> Route.Main.route
+        else -> Route.Auth.route
+    }
+
+    // Reaccionar a cambios runtime:
+    //  - Aparece pendingDeletionUser → ir a pantalla de recuperación
+    //  - Se recupera la cuenta (pendingDeletion pasa a null, isAuthenticated true) → Main
+    LaunchedEffect(pendingDeletionUser, isAuthenticated) {
+        val current = navController.currentDestination?.route
+        when {
+            pendingDeletionUser != null && current != Route.AccountDeletionRecovery.route -> {
+                navController.navigate(Route.AccountDeletionRecovery.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+            pendingDeletionUser == null && isAuthenticated && current == Route.AccountDeletionRecovery.route -> {
+                navController.navigate(Route.Main.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        }
+    }
 
     // Deep link → abre la oferta. Las dailyOffers son lectura pública por rules,
     // así que también funciona si el usuario aún no ha iniciado sesión.
@@ -64,6 +90,23 @@ fun ZampaNavHost(
                 onNavigateToPrivacyPolicy = { navController.navigate(Route.PrivacyPolicy.route) },
                 onNavigateToTerms = { navController.navigate(Route.Terms.route) }
             )
+        }
+        composable(Route.AccountDeletionRecovery.route) {
+            val pending = pendingDeletionUser
+            if (pending != null) {
+                AccountDeletionRecoveryScreen(
+                    user = pending,
+                    onRecover = { onError ->
+                        authViewModel.cancelAccountDeletion(onError)
+                    },
+                    onLogout = {
+                        authViewModel.logout()
+                        navController.navigate(Route.Auth.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
         composable(Route.PrivacyPolicy.route) {
             LegalScreen(type = LegalType.PRIVACY_POLICY, onBack = { navController.popBackStack() })
