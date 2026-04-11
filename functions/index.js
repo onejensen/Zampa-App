@@ -273,3 +273,134 @@ async function removeInvalidTokens(db, invalidTokens) {
         logger.error("Error limpiando tokens inválidos:", error);
     }
 }
+
+/**
+ * Purga cuentas de usuario que han pasado el periodo de gracia de 30 días.
+ * Scheduled: diario a las 03:00 Europe/Madrid. Timeout máximo (9 min) para
+ * tolerar backlogs pequeños. Lote máx 50 usuarios por ejecución.
+ *
+ * Para cada usuario con scheduledPurgeAt <= now():
+ *   1. Borra favorites (customerId == uid)
+ *   2. Borra userHistory (userId == uid)
+ *   3. Borra notifications (userId == uid)
+ *   4. Borra deviceTokens (userId == uid)
+ *   5. Borra customers/{uid}
+ *   6. Borra Storage users/{uid}/
+ *   7. Borra users/{uid}
+ *   8. Borra el Auth user
+ *   9. Escribe purgedAccounts/{uid} con el resultado (auditoría)
+ *
+ * Pasos best-effort: un fallo en un paso NO aborta el resto, se registra en
+ * `errors` y el usuario queda marcado como parcialmente procesado. Si el paso
+ * 7 falla, la query del siguiente día lo volverá a seleccionar y reintentará.
+ */
+exports.purgeDeletedAccounts = onSchedule(
+    {
+        schedule: "every day 03:00",
+        timeZone: "Europe/Madrid",
+        timeoutSeconds: 540,
+    },
+    async (event) => {
+        const db = admin.firestore();
+        const now = admin.firestore.Timestamp.now();
+
+        const pendingSnap = await db.collection("users")
+            .where("scheduledPurgeAt", "<=", now)
+            .limit(50)
+            .get();
+
+        if (pendingSnap.empty) {
+            logger.info("purgeDeletedAccounts: no hay cuentas pendientes de purga.");
+            return;
+        }
+
+        logger.info(`purgeDeletedAccounts: procesando ${pendingSnap.size} cuentas.`);
+
+        for (const userDoc of pendingSnap.docs) {
+            const uid = userDoc.id;
+            const originalDeletedAt = userDoc.data().deletedAt || null;
+            const stepsCompleted = [];
+            const errors = [];
+
+            async function runStep(name, fn) {
+                try {
+                    await fn();
+                    stepsCompleted.push(name);
+                } catch (e) {
+                    errors.push({ step: name, message: e.message || String(e) });
+                    logger.error(`purgeDeletedAccounts[${uid}] paso '${name}' falló:`, e);
+                }
+            }
+
+            await runStep("favorites", () => deleteQueryInBatches(
+                db.collection("favorites").where("customerId", "==", uid)
+            ));
+            await runStep("userHistory", () => deleteQueryInBatches(
+                db.collection("userHistory").where("userId", "==", uid)
+            ));
+            await runStep("notifications", () => deleteQueryInBatches(
+                db.collection("notifications").where("userId", "==", uid)
+            ));
+            await runStep("deviceTokens", () => deleteQueryInBatches(
+                db.collection("deviceTokens").where("userId", "==", uid)
+            ));
+            await runStep("customers", () =>
+                db.collection("customers").doc(uid).delete()
+            );
+            await runStep("storage", async () => {
+                const bucket = admin.storage().bucket();
+                const [files] = await bucket.getFiles({ prefix: `users/${uid}/` });
+                for (const file of files) {
+                    await file.delete();
+                }
+            });
+            await runStep("users", () =>
+                db.collection("users").doc(uid).delete()
+            );
+
+            // Auth deletion has a special-cased "already missing" state
+            try {
+                await admin.auth().deleteUser(uid);
+                stepsCompleted.push("auth");
+            } catch (e) {
+                if (e.code === "auth/user-not-found") {
+                    stepsCompleted.push("auth_already_missing");
+                } else {
+                    errors.push({ step: "auth", message: e.message || String(e) });
+                    logger.error(`purgeDeletedAccounts[${uid}] paso 'auth' falló:`, e);
+                }
+            }
+
+            // Audit log (fuera del try/catch principal para que se registre siempre)
+            try {
+                await db.collection("purgedAccounts").doc(uid).set({
+                    purgedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    deletedAt: originalDeletedAt,
+                    stepsCompleted,
+                    errors,
+                });
+            } catch (e) {
+                logger.error(`purgeDeletedAccounts[${uid}] no se pudo escribir auditoría:`, e);
+            }
+
+            if (errors.length > 0) {
+                logger.warn(`purgeDeletedAccounts[${uid}] completado con errores.`);
+            } else {
+                logger.info(`purgeDeletedAccounts[${uid}] purgado completamente.`);
+            }
+        }
+    }
+);
+
+/** Borra todos los documentos que coincidan con una query en lotes de 400. */
+async function deleteQueryInBatches(query) {
+    const db = admin.firestore();
+    while (true) {
+        const snap = await query.limit(400).get();
+        if (snap.empty) return;
+        const batch = db.batch();
+        snap.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        if (snap.size < 400) return;
+    }
+}
