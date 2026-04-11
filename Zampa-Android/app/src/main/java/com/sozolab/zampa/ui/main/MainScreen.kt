@@ -42,17 +42,20 @@ fun MainScreen(
     val needsSetup by mainViewModel.needsSetup.collectAsState()
     val needsLocationPrompt by mainViewModel.needsLocationPrompt.collectAsState()
     val isMerchant = currentUser?.role == User.UserRole.COMERCIO
-    var showOnboarding by remember { mutableStateOf(false) }
-    var onboardingChecked by remember { mutableStateOf(false) }
+    // Flag local: una vez que el usuario termina el onboarding en esta sesión
+    // hacemos swap a las tabs sin esperar a que SharedPreferences se relea.
+    var onboardingFinishedThisSession by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(Tab.FEED) }
 
-    LaunchedEffect(currentUser) {
-        val uid = currentUser?.id ?: return@LaunchedEffect
-        if (!onboardingChecked) {
-            onboardingChecked = true
-            showOnboarding = !prefs.getBoolean("hasSeenOnboarding_$uid", false)
-        }
-    }
+    // Decisión síncrona: sólo mostramos onboarding si (1) ya conocemos el uid,
+    // (2) no se acaba de terminar en esta sesión y (3) SharedPreferences no
+    // tiene persistida la marca. Evaluar esto aquí (en lugar de via
+    // LaunchedEffect) evita que el feed parpadee antes de que el efecto se
+    // dispare.
+    val uidForOnboarding = currentUser?.id
+    val showOnboarding = uidForOnboarding != null
+        && !onboardingFinishedThisSession
+        && !prefs.getBoolean("hasSeenOnboarding_$uidForOnboarding", false)
 
     LaunchedEffect(Unit) {
         mainViewModel.checkLocationPermission(context)
@@ -76,9 +79,10 @@ fun MainScreen(
         AppOnboardingScreen(
             isMerchant = isMerchant,
             onFinish = {
-                val uid = currentUser?.id
-                if (uid != null) prefs.edit().putBoolean("hasSeenOnboarding_$uid", true).apply()
-                showOnboarding = false
+                uidForOnboarding?.let {
+                    prefs.edit().putBoolean("hasSeenOnboarding_$it", true).apply()
+                }
+                onboardingFinishedThisSession = true
             }
         )
         return

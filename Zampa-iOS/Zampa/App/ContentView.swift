@@ -2,8 +2,11 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
-    @State private var showOnboarding = false
     @State private var deepLinkedOfferId: String?
+    /// Marca local que se activa al terminar el onboarding en esta sesión.
+    /// Se usa para que el siguiente render eval haga swap a `MainTabView` sin
+    /// tener que esperar a que `UserDefaults` se propague.
+    @State private var onboardingFinishedThisSession = false
 
     var body: some View {
         Group {
@@ -31,6 +34,18 @@ struct ContentView: View {
                 } else if appState.needsMerchantSetup {
                     // Merchant que no ha completado su perfil
                     MerchantProfileSetupView()
+                } else if let uid = appState.currentUser?.id,
+                          shouldShowOnboarding(uid: uid) {
+                    // Primera vez tras autenticarse → onboarding. Se enruta
+                    // inline (no fullScreenCover) para que el swap con
+                    // MainTabView sea atómico y no parpadee.
+                    OnboardingView(
+                        isMerchant: appState.currentUser?.role == .comercio,
+                        uid: uid,
+                        onFinish: {
+                            onboardingFinishedThisSession = true
+                        }
+                    )
                 } else {
                     // Usuario autenticado: pantalla principal
                     MainTabView()
@@ -39,16 +54,6 @@ struct ContentView: View {
                 // No autenticado: login/registro
                 AuthView()
             }
-        }
-        // fullScreenCover on the Group (stable anchor — never recreated)
-        .fullScreenCover(isPresented: $showOnboarding) {
-            OnboardingView(
-                isMerchant: appState.currentUser?.role == .comercio,
-                uid: appState.currentUser?.id ?? "",
-                onFinish: {
-                    showOnboarding = false
-                }
-            )
         }
         // Deep link → muestra MenuDetailView en sheet sobre cualquier estado.
         // Se presenta también cuando el usuario aún no ha hecho login: la oferta
@@ -60,14 +65,6 @@ struct ContentView: View {
             NavigationView {
                 MenuDetailView(menuId: offer.id, presentedAsSheet: true)
             }
-        }
-        .onChange(of: appState.needsMerchantSetup) { _, needsSetup in
-            // Once merchant setup is complete, check if onboarding is due
-            if !needsSetup { checkOnboarding(uid: appState.currentUser?.id) }
-        }
-        .onChange(of: appState.currentUser?.id) { _, uid in
-            // Fired when a user signs in; only show if setup is already done
-            if !appState.needsMerchantSetup { checkOnboarding(uid: uid) }
         }
         .onChange(of: appState.pendingDeepLinkOfferId) { _, newValue in
             guard let newValue else { return }
@@ -82,12 +79,9 @@ struct ContentView: View {
         let id: String
     }
 
-    private func checkOnboarding(uid: String?) {
-        guard appState.isAuthenticated, let uid, !uid.isEmpty else { return }
-        // Only set to true — never back to false from here (finish() handles that)
-        if !UserDefaults.standard.bool(forKey: "hasSeenOnboarding_\(uid)") {
-            showOnboarding = true
-        }
+    private func shouldShowOnboarding(uid: String) -> Bool {
+        if onboardingFinishedThisSession { return false }
+        return !UserDefaults.standard.bool(forKey: "hasSeenOnboarding_\(uid)")
     }
 }
 
