@@ -136,6 +136,7 @@ class FirebaseService @Inject constructor() {
             photoUrl = data["photoUrl"] as? String,
             deletedAt = data["deletedAt"] as? com.google.firebase.Timestamp,
             scheduledPurgeAt = data["scheduledPurgeAt"] as? com.google.firebase.Timestamp,
+            currencyPreference = data["currencyPreference"] as? String ?: "EUR",
         )
     }
 
@@ -461,6 +462,22 @@ class FirebaseService @Inject constructor() {
                 "scheduledPurgeAt" to com.google.firebase.firestore.FieldValue.delete(),
             )
         ).await()
+    }
+
+    // ── Currency preference ──
+
+    private val supportedCurrencyCodes = setOf(
+        "EUR", "USD", "GBP", "JPY", "CHF", "SEK", "NOK", "DKK", "CAD", "AUD"
+    )
+
+    /**
+     * Actualiza la moneda preferida del usuario en Firestore. El caller
+     * debe refrescar el User observado tras el éxito.
+     */
+    suspend fun updateCurrencyPreference(code: String) {
+        val uid = currentUid ?: throw Exception("No autenticado")
+        require(code in supportedCurrencyCodes) { "Código de moneda no soportado: $code" }
+        db.collection("users").document(uid).update("currencyPreference", code).await()
     }
 
     suspend fun updateMerchantProfile(merchant: Merchant) {

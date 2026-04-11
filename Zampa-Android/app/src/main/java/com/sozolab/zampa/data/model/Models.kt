@@ -12,6 +12,8 @@ data class User(
     val deletedAt: com.google.firebase.Timestamp? = null,
     /** Fecha programada para la purga definitiva (deletedAt + 30 días). */
     val scheduledPurgeAt: com.google.firebase.Timestamp? = null,
+    /** Código ISO 4217 de la moneda preferida. Default EUR cuando ausente. */
+    val currencyPreference: String = "EUR",
 ) {
     enum class UserRole {
         CLIENTE, COMERCIO;
