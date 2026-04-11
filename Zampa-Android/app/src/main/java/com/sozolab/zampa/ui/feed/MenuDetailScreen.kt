@@ -37,6 +37,8 @@ fun MenuDetailScreen(
     onBack: () -> Unit,
     viewModel: MenuDetailViewModel = hiltViewModel()
 ) {
+    val authViewModel: com.sozolab.zampa.ui.auth.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    val currentUser by authViewModel.currentUser.collectAsState()
     val context = LocalContext.current
     val menu by viewModel.menu.collectAsState()
     val merchant by viewModel.merchant.collectAsState()
@@ -512,11 +514,29 @@ fun MenuDetailScreen(
                             Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
                         }
                         Spacer(Modifier.height(4.dp))
-                        Text(
-                            "$${"%.2f".format(currentMenu.priceTotal)}",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                com.sozolab.zampa.data.CurrencyService.format(currentMenu.priceTotal, "EUR"),
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            val prefCode = currentUser?.currencyPreference ?: "EUR"
+                            if (prefCode != "EUR") {
+                                val converted = remember(currentMenu.priceTotal, prefCode) {
+                                    val service = com.sozolab.zampa.data.CurrencyService(
+                                        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                    )
+                                    service.formatConverted(currentMenu.priceTotal, prefCode)
+                                }
+                                converted?.let {
+                                    Text(
+                                        "~$it",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                     }
 
                 }
