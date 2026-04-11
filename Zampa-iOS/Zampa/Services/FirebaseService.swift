@@ -38,7 +38,8 @@ class FirebaseService {
             phone: data["phone"] as? String,
             photoUrl: data["photoUrl"] as? String,
             deletedAt: (data["deletedAt"] as? Timestamp)?.dateValue(),
-            scheduledPurgeAt: (data["scheduledPurgeAt"] as? Timestamp)?.dateValue()
+            scheduledPurgeAt: (data["scheduledPurgeAt"] as? Timestamp)?.dateValue(),
+            currencyPreference: data["currencyPreference"] as? String ?? "EUR"
         )
     }
 
@@ -289,6 +290,28 @@ class FirebaseService {
         try await db.collection("users").document(uid).updateData([
             "deletedAt": FieldValue.delete(),
             "scheduledPurgeAt": FieldValue.delete(),
+        ])
+    }
+
+    // MARK: - Currency preference
+
+    /// Actualiza la moneda preferida del usuario en Firestore.
+    /// El caller debe refrescar `appState.currentUser` tras el éxito para
+    /// que la UI observe el cambio.
+    func updateCurrencyPreference(_ code: String) async throws {
+        guard let uid = currentFirebaseUser?.uid else {
+            throw FirebaseServiceError.notAuthenticated
+        }
+        let supported = ["EUR", "USD", "GBP", "JPY", "CHF", "SEK", "NOK", "DKK", "CAD", "AUD"]
+        guard supported.contains(code) else {
+            throw NSError(
+                domain: "FirebaseService",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Código de moneda no soportado: \(code)"]
+            )
+        }
+        try await db.collection("users").document(uid).updateData([
+            "currencyPreference": code
         ])
     }
 

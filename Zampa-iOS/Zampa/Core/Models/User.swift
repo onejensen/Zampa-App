@@ -16,6 +16,9 @@ struct User: Codable, Identifiable {
     let deletedAt: Date?
     /// Fecha programada para el purgado definitivo (deletedAt + 30 días).
     let scheduledPurgeAt: Date?
+    /// Código ISO 4217 de la moneda preferida para mostrar precios.
+    /// Default `"EUR"` cuando el campo no está presente en Firestore.
+    let currencyPreference: String
 
     init(
         id: String,
@@ -25,7 +28,8 @@ struct User: Codable, Identifiable {
         phone: String? = nil,
         photoUrl: String? = nil,
         deletedAt: Date? = nil,
-        scheduledPurgeAt: Date? = nil
+        scheduledPurgeAt: Date? = nil,
+        currencyPreference: String = "EUR"
     ) {
         self.id = id
         self.email = email
@@ -35,6 +39,7 @@ struct User: Codable, Identifiable {
         self.photoUrl = photoUrl
         self.deletedAt = deletedAt
         self.scheduledPurgeAt = scheduledPurgeAt
+        self.currencyPreference = currencyPreference
     }
 
     enum UserRole: String, Codable {
