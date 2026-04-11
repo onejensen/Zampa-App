@@ -46,6 +46,8 @@ fun FeedScreen(
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = hiltViewModel()
 ) {
+    val authViewModel: com.sozolab.zampa.ui.auth.AuthViewModel = hiltViewModel()
+    val currentUser by authViewModel.currentUser.collectAsState()
     val menus by viewModel.menus.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -304,7 +306,8 @@ fun FeedScreen(
                 selectedCuisine = cuisine
                 viewModel.applyFilters(cuisine, price, distanceKm, favOnly)
                 showFilterSheet = false
-            }
+            },
+            currencyPreference = currentUser?.currencyPreference
         )
     }
 }
@@ -616,7 +619,8 @@ data class ActiveFilters(
 fun FilterSheet(
     initialFilters: ActiveFilters,
     onDismiss: () -> Unit,
-    onApply: (String?, Double?, Double?, Boolean, Boolean) -> Unit
+    onApply: (String?, Double?, Double?, Boolean, Boolean) -> Unit,
+    currencyPreference: String? = null,
 ) {
     var selectedCuisine by remember { mutableStateOf(initialFilters.cuisine) }
     var maxPrice by remember { mutableStateOf(initialFilters.maxPrice?.toFloat() ?: 30f) }
@@ -705,9 +709,27 @@ fun FilterSheet(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.Top) {
                     Text("Precio máximo", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                    Text("Hasta ${maxPrice.toInt()} €", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Hasta ${maxPrice.toInt()} €", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        val prefCode = currencyPreference ?: "EUR"
+                        if (prefCode != "EUR") {
+                            val converted = remember(maxPrice.toInt(), prefCode) {
+                                val service = com.sozolab.zampa.data.CurrencyService(
+                                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                )
+                                service.formatConverted(maxPrice.toInt().toDouble(), prefCode)
+                            }
+                            converted?.let {
+                                Text(
+                                    "~$it",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
                 Slider(
                     value = maxPrice,
