@@ -1,6 +1,6 @@
-# ERD.md – Modelo de datos EatOut (Firebase)
+# ERD.md – Modelo de datos Zampa (Firebase)
 
-Este documento describe el modelo de datos de EatOut para **Firebase**, pensando principalmente en **Cloud Firestore**.  
+Este documento describe el modelo de datos de Zampa para **Firebase**, pensando principalmente en **Cloud Firestore**.  
 La estructura está orientada a colecciones y documentos, con referencias claras entre entidades.
 
 ---

@@ -1,4 +1,4 @@
-## EatOut – Backlog MVP
+## Zampa – Backlog MVP
 
 Cada historia incluye objetivo, criterios de aceptación y dependencias destacadas.
 

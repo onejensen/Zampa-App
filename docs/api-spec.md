@@ -1,4 +1,4 @@
-## EatOut – Referencia de datos Firebase
+## Zampa – Referencia de datos Firebase
 
 > El backend es **100% Firebase**. No existe servidor REST propio.
 > Este documento describe colecciones Firestore, operaciones de Storage y Cloud Functions disponibles.

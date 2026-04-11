@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["N8P74R8894.com.Sozolab.eatout"],
+        "components": [
+          {
+            "/": "/o/*",
+            "comment": "Match offer deep links like /o/{offerId}"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["N8P74R8894.com.Sozolab.eatout"]
+  }
+}

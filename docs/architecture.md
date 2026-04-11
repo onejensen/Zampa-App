@@ -1,4 +1,4 @@
-## EatOut – Arquitectura Aplicaciones Nativas
+## Zampa – Arquitectura Aplicaciones Nativas
 
 ### Objetivos
 

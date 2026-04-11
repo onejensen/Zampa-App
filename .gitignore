@@ -18,6 +18,7 @@ local.properties
 .idea/
 *.iml
 captures/
+google-services.json
 
 # iOS
 .bundle/
@@ -38,6 +39,20 @@ xcuserdata/
 .firebase/
 .runtimeconfig.json
 firebase-debug.log*
+
+# Secrets / env files (NEVER commit)
+.env
+.env.local
+.env.*.local
+functions/.env
+functions/.runtimeconfig.json
+*.pem
+*.p8
+*.p12
+service-account*.json
+serviceAccountKey*.json
+GoogleService-Info-*.plist
+google-services-*.json
 
 # Other
 .claude/

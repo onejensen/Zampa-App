@@ -18,5 +18,34 @@
     ],
     "storage": {
         "rules": "firebase/storage.rules"
+    },
+    "hosting": {
+        "public": "public",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "rewrites": [
+            {
+                "source": "/o/**",
+                "destination": "/o/index.html"
+            }
+        ],
+        "headers": [
+            {
+                "source": "/.well-known/apple-app-site-association",
+                "headers": [
+                    { "key": "Content-Type", "value": "application/json" }
+                ]
+            },
+            {
+                "source": "/.well-known/assetlinks.json",
+                "headers": [
+                    { "key": "Content-Type", "value": "application/json" }
+                ]
+            }
+        ],
+        "appAssociation": "NONE"
     }
 }

@@ -1,4 +1,4 @@
-# EatOut – Shared Component Specs
+# Zampa – Shared Component Specs
 
 ## Tokens
 All values defined in `tokens.json`. Each platform maps tokens to native types:

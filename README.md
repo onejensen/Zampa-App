@@ -1,6 +1,6 @@
-# 🍽️ EatOut — La App del Plato del Día
+# 🍽️ Zampa — La App del Plato del Día
 
-EatOut es una plataforma móvil nativa diseñada para conectar a restaurantes que ofrecen **menú o plato del día** con clientes locales que buscan opciones rápidas, deliciosas y cercanas.
+Zampa es una plataforma móvil nativa diseñada para conectar a restaurantes que ofrecen **menú o plato del día** con clientes locales que buscan opciones rápidas, deliciosas y cercanas.
 
 La plataforma se centra en la **fricción cero**:
 - **Comercios:** Toman una foto de su pizarra y la publican en segundos.
@@ -10,12 +10,12 @@ La plataforma se centra en la **fricción cero**:
 
 ## 📱 Ecosistema de Aplicaciones
 
-EatOut es una solución multiplataforma que incluye:
+Zampa es una solución multiplataforma que incluye:
 
-- **EatOut iOS:** App nativa desarrollada en **Swift / SwiftUI** siguiendo las *Apple Human Interface Guidelines*.
-- **EatOut Android:** App nativa desarrollada en **Kotlin / Jetpack Compose** siguiendo *Material Design 3*.
-- **EatOut Landing Page:** Página web promocional para captación de usuarios y comercios.
-- **EatOut Backend:** Infraestructura **Serverless** basada íntegramente en **Firebase**.
+- **Zampa iOS:** App nativa desarrollada en **Swift / SwiftUI** siguiendo las *Apple Human Interface Guidelines*.
+- **Zampa Android:** App nativa desarrollada en **Kotlin / Jetpack Compose** siguiendo *Material Design 3*.
+- **Zampa Landing Page:** Página web promocional para captación de usuarios y comercios.
+- **Zampa Backend:** Infraestructura **Serverless** basada íntegramente en **Firebase**.
 
 ---
 
@@ -50,10 +50,10 @@ EatOut es una solución multiplataforma que incluye:
 ## 📂 Estructura del Repositorio
 
 ```bash
-EatOut/
-├── EatOut-iOS/          # Proyecto Xcode (iOS)
-├── EatOut-Android/      # Proyecto Android Studio (Android)
-├── EatOut-LandingPage/  # Landing Page del proyecto
+Zampa/
+├── Zampa-iOS/          # Proyecto Xcode (iOS)
+├── Zampa-Android/      # Proyecto Android Studio (Android)
+├── Zampa-LandingPage/  # Landing Page del proyecto
 ├── firebase/            # Reglas de seguridad e índices de Firestore
 ├── functions/           # Cloud Functions (Backend logic)
 ├── design-system/       # Tokens de diseño compartidos
@@ -74,13 +74,13 @@ EatOut/
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone https://github.com/onejensen/EatOut.git
-   cd EatOut
+   git clone https://github.com/onejensen/Zampa.git
+   cd Zampa
    ```
 
 2. **Configuración de Firebase:**
-   - Descarga `GoogleService-Info.plist` y colócalo en `EatOut-iOS/EatOut/`.
-   - Descarga `google-services.json` y colócalo en `EatOut-Android/app/`.
+   - Descarga `GoogleService-Info.plist` y colócalo en `Zampa-iOS/Zampa/`.
+   - Descarga `google-services.json` y colócalo en `Zampa-Android/app/`.
 
 3. **Backend:**
    ```bash
@@ -90,8 +90,8 @@ EatOut/
    ```
 
 4. **Ejecución:**
-   - En iOS: Abre `EatOut-iOS/EatOut.xcodeproj` y pulsa `Cmd + R`.
-   - En Android: Abre `EatOut-Android` en Android Studio y pulsa `Run`.
+   - En iOS: Abre `Zampa-iOS/Zampa.xcodeproj` y pulsa `Cmd + R`.
+   - En Android: Abre `Zampa-Android` en Android Studio y pulsa `Run`.
 
 ---
 
@@ -106,4 +106,4 @@ Para detalles más profundos, consulta los siguientes archivos:
 
 ## ⚖️ Licencia
 
-Copyright © 2024 EatOut. Todos los derechos reservados.
+Copyright © 2024 Zampa. Todos los derechos reservados.

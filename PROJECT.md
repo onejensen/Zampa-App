@@ -1,8 +1,8 @@
-# PROJECT.md – EatOut
+# PROJECT.md – Zampa
 
 ## Visión del proyecto
 
-EatOut es una app móvil nativa para **iOS** y **Android** que conecta a bares y restaurantes de **menú/plato del día** con clientes que quieren decidir rápidamente dónde comer o cenar cerca.  
+Zampa es una app móvil nativa para **iOS** y **Android** que conecta a bares y restaurantes de **menú/plato del día** con clientes que quieren decidir rápidamente dónde comer o cenar cerca.  
 El énfasis está en la **simplicidad para el comercio** (subir una foto de la pizarra/carta en segundos) y en la **rapidez para el cliente** (ver de un vistazo las opciones cercanas y filtrarlas).
 
 La plataforma se apoya en **Firebase** para autenticación, base de datos, almacenamiento y notificaciones.

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Defense-in-depth: deny cleartext (HTTP) traffic for the entire app.
+  All EatOut traffic is HTTPS (Firebase). If a future code path tries to
+  hit an HTTP URL it will fail loudly instead of leaking data.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

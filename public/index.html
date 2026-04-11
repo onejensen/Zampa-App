@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zampa — Descubre los mejores menús del día</title>
+  <meta name="description" content="Zampa conecta a comensales con los mejores restaurantes y sus menús del día. Descúbrelo en App Store y Google Play.">
+  <meta property="og:title" content="Zampa">
+  <meta property="og:description" content="Descubre los mejores menús del día cerca de ti.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍽️%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      --primary: #FF6B35;
+      --bg: #FFF8F3;
+      --text: #1A1A1A;
+      --muted: #6B6B6B;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    main {
+      max-width: 480px;
+      text-align: center;
+    }
+    .logo {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--primary);
+    }
+    p {
+      font-size: 17px;
+      color: var(--muted);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+    .stores {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .store {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 20px;
+      background: var(--text);
+      color: white;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      transition: transform 0.15s;
+    }
+    .store:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo">🍽️</div>
+    <h1>Zampa</h1>
+    <p>Descubre los mejores menús del día cerca de ti.</p>
+    <div class="stores">
+      <a class="store" href="https://apps.apple.com/app/idTODO" id="ios-link">App Store</a>
+      <a class="store" href="https://play.google.com/store/apps/details?id=com.sozolab.eatout" id="android-link">Google Play</a>
+    </div>
+  </main>
+</body>
+</html>

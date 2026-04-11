@@ -13,61 +13,129 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
     function isMerchant() {
-      return isAuth() && getUserRole() == 'merchant';
+      return isAuth() && getUserRole() == 'COMERCIO';
+    }
+    function merchantPlanTier(uid) {
+      return get(/databases/$(database)/documents/businesses/$(uid)).data.planTier;
+    }
+    function isMerchantProUser(uid) {
+      return merchantPlanTier(uid) == 'pro';
+    }
+    function unchanged(field) {
+      return !(field in request.resource.data.diff(resource.data).affectedKeys());
     }
 
     // ── Users ──
+    // Privacy: solo el dueño puede leer su propio doc (email/teléfono no son públicos).
+    // Para mostrar el nombre/avatar del comercio en el feed se usa /businesses (público).
     match /users/{userId} {
-      allow read: if isAuth();
+      allow read: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow update: if isOwner(userId)
+        // Impedir auto-elevación de rol
+        && unchanged('role');
       allow delete: if false;
     }
 
     // ── Merchant Profiles ──
-    match /merchants/{merchantId} {
-      allow read: if true; // Public profiles
-      allow create: if isOwner(merchantId) && isMerchant();
-      allow update: if isOwner(merchantId);
+    match /businesses/{merchantId} {
+      allow read: if true; // Perfiles públicos
+      allow create: if isOwner(merchantId) && isMerchant()
+        // El cliente nunca puede crearse como pro/destacado
+        && (!('planTier' in request.resource.data) || request.resource.data.planTier == 'free')
+        && (!('isHighlighted' in request.resource.data) || request.resource.data.isHighlighted == false);
+      allow update: if isOwner(merchantId)
+        // planTier e isHighlighted solo los modifica backend (Cloud Function tras webhook de pago)
+        && unchanged('planTier')
+        && unchanged('isHighlighted');
       allow delete: if false;
     }
 
-    // ── Menus ──
-    match /menus/{menuId} {
-      allow read: if true; // Public feed
-      allow create: if isMerchant();
-      allow update: if isAuth() && resource.data.merchantId == request.auth.uid;
-      allow delete: if isAuth() && resource.data.merchantId == request.auth.uid;
+    // ── Customer Profiles ──
+    match /customers/{customerId} {
+      allow read: if isOwner(customerId);
+      allow create: if isOwner(customerId);
+      allow update: if isOwner(customerId);
+      allow delete: if false;
+    }
+
+    // ── Daily Offers ──
+    match /dailyOffers/{menuId} {
+      allow read: if true; // Feed público
+      // Validamos isMerchantPro server-side leyendo el doc del comercio:
+      // un comercio free no puede publicar ofertas marcadas como pro.
+      allow create: if isMerchant()
+        && request.resource.data.businessId == request.auth.uid
+        && request.resource.data.isMerchantPro == isMerchantProUser(request.auth.uid);
+      allow update: if isAuth()
+        && resource.data.businessId == request.auth.uid
+        && request.resource.data.businessId == request.auth.uid
+        && request.resource.data.isMerchantPro == isMerchantProUser(request.auth.uid);
+      allow delete: if isAuth() && resource.data.businessId == request.auth.uid;
     }
 
     // ── Favorites ──
     match /favorites/{favId} {
-      allow read: if isAuth() && resource.data.userId == request.auth.uid;
-      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuth() && resource.data.userId == request.auth.uid;
-      allow delete: if isAuth() && resource.data.userId == request.auth.uid;
+      allow read: if isAuth() && resource.data.customerId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.customerId == request.auth.uid;
+      allow update: if isAuth() && resource.data.customerId == request.auth.uid;
+      allow delete: if isAuth() && resource.data.customerId == request.auth.uid;
     }
 
-    // ── Stats (merchant-owned) ──
-    match /stats/{merchantId} {
+    // ── Metrics (merchant-owned) ──
+    // SOLO backend (Cloud Functions) puede escribir métricas. Los clientes invocan
+    // las callable functions `trackAction` / `trackImpression` (ver functions/index.js).
+    // Esto impide que un atacante autenticado infle/sabotee métricas de otro comercio.
+    match /metrics/{merchantId} {
       allow read: if isOwner(merchantId);
       match /daily/{dateStr} {
         allow read: if isOwner(merchantId);
-        allow write: if isAuth(); // Any auth user can track actions
+        allow write: if false;
       }
     }
 
     // ── Device Tokens ──
     match /deviceTokens/{tokenId} {
-      allow read: if false; // Backend-only
-      allow create: if isAuth();
+      allow read: if false; // Solo backend
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuth() && resource.data.userId == request.auth.uid;
       allow delete: if isAuth() && resource.data.userId == request.auth.uid;
     }
 
+    // ── Notifications (in-app) ──
+    match /notifications/{notifId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if false; // Solo Cloud Functions
+      allow update: if isAuth() && resource.data.userId == request.auth.uid; // Marcar como leída
+      allow delete: if isAuth() && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Subscriptions ──
+    // Solo backend (webhook RevenueCat -> Cloud Function) puede crear/actualizar.
+    match /subscriptions/{subId} {
+      allow read: if isAuth() && resource.data.businessId == request.auth.uid;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── User History ──
+    match /userHistory/{historyId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── Cuisine Types (catálogo) ──
+    match /cuisineTypes/{typeId} {
+      allow read: if true; // Catálogo público
+      allow write: if false; // Solo admin
+    }
+
     // ── Reports ──
     match /reports/{reportId} {
-      allow read: if false; // Admin only (Cloud Functions)
+      allow read: if false; // Solo admin (Cloud Functions)
       allow create: if isAuth();
       allow update, delete: if false;
     }
