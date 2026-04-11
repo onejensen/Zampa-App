@@ -228,6 +228,22 @@ struct MenuDetailView: View {
                             .padding(.top, 20)
                             .padding(.bottom, 14)
 
+                            // ── PRICE ────────────────────────────────────
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(CurrencyService.format(amount: menu.priceTotal, code: "EUR"))
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(.appPrimary)
+                                if let prefCode = appState.currentUser?.currencyPreference,
+                                   prefCode != "EUR",
+                                   let converted = CurrencyService.formatConverted(eurAmount: menu.priceTotal, to: prefCode) {
+                                    Text("~\(converted)")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.appTextSecondary)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 14)
+
                             // Includes row
                             let includes: [(String, String)] = [
                                 menu.includesDrink   ? ("Bebida",  "wineglass.fill") : nil,
