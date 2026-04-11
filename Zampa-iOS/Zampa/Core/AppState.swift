@@ -111,7 +111,10 @@ class AppState: ObservableObject {
                             self.loadDietaryPreferences(for: user.id)
                             PushManager.shared.refreshTokenIfNeeded()
                         }
-                        
+                        // Carga tasas de cambio en background (fallback embebido
+                        // cubre hasta que esta llamada termine).
+                        Task { await CurrencyService.shared.loadIfNeeded() }
+
                         // Si es merchant, cargar perfil
                         if user.role == .comercio {
                             await loadMerchantProfile(merchantId: user.id)
@@ -160,6 +163,7 @@ class AppState: ObservableObject {
         self.isLoading = false
         loadDietaryPreferences(for: user.id)
         PushManager.shared.refreshTokenIfNeeded()
+        Task { await CurrencyService.shared.loadIfNeeded() }
 
         if user.role == .comercio {
             Task {
