@@ -116,6 +116,11 @@ fun MainScreen(
             val uid = currentUser!!.id
             if (!prefs.getBoolean("hasSeenTour_$uid", false)) {
                 tourStartedThisSession = true
+                // Para merchants, cambiamos al tab Dashboard antes del delay para que
+                // DashboardScreen se renderice y registre sus bounds antes de start().
+                if (isMerchant) {
+                    selectedTab = Tab.DASHBOARD
+                }
                 kotlinx.coroutines.delay(1500)
                 tourViewModel.start(isMerchant = isMerchant)
             }

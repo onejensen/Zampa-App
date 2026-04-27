@@ -38,6 +38,12 @@ struct MainTabView: View {
             GeometryReader { geo in
                 Color.clear.onAppear {
                     registerTabBounds(geo: geo)
+                    // Para merchants, cambiamos al tab Dashboard antes de iniciar el tour
+                    // para que DashboardView se renderice y registre sus bounds antes de
+                    // que TourManager.start() se llame.
+                    if appState.currentUser?.role == .comercio {
+                        selectedTab = 2
+                    }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         if let uid = appState.currentUser?.id {
                             tourManager.start(
