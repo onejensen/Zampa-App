@@ -152,9 +152,10 @@ private struct FavoriteRow: View {
     let item: FavoriteItem
     let onRemove: () -> Void
     let onTap: () -> Void
+    @ObservedObject private var localization = LocalizationManager.shared
 
     var body: some View {
-        Button(action: { if item.activeMenu != nil { onTap() } }) {
+        Button(action: onTap) {
             HStack(spacing: 16) {
                 let photoUrl = item.merchant.profilePhotoUrl ?? item.merchant.coverPhotoUrl
                 Group {
@@ -196,7 +197,7 @@ private struct FavoriteRow: View {
                                 .foregroundColor(.appPrimary)
                         }
                     } else {
-                        Text("Sin menu hoy")
+                        Text(localization.t("feed_no_menu_today"))
                             .font(.appCaption)
                             .foregroundColor(.appTextSecondary.opacity(0.5))
                     }

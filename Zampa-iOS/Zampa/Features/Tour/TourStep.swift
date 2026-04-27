@@ -6,8 +6,6 @@ enum TourTarget: String, Hashable {
     case mapToggle
     case favoriteHint       // primera card — explica el ❤️ sin navegar
     case favoritesContent   // contenido de FavoritesView (tras navegar al tab)
-    case favoritesTab
-    case merchantDashboardTab
     case merchantCreateButton
     case merchantStatsGrid
 }

@@ -6,8 +6,8 @@ final class TourManager: ObservableObject {
     @Published private(set) var isActive: Bool = false
     @Published private(set) var currentStepIndex: Int = 0
     @Published private(set) var targetBounds: [TourTarget: CGRect] = [:]
-    /// Señal para que MainTabView cambie de pestaña antes de que el tour arranque.
-    @Published var pendingTabSwitch: Int? = nil
+    /// Señal consumida exclusivamente por MainTabView para cambiar de pestaña.
+    @Published private(set) var pendingTabSwitch: Int? = nil
 
     private var steps: [TourStep] = []
     private var uid: String = ""

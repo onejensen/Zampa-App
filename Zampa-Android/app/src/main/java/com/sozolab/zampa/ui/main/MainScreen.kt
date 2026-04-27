@@ -169,6 +169,7 @@ fun MainScreen(
                             currentUser?.id?.let { uid ->
                                 prefs.edit().remove("hasSeenTour_$uid").apply()
                                 if (isMerchant) selectedTab = Tab.DASHBOARD
+                                tourStartedThisSession = true
                                 tourViewModel.start(isMerchant = isMerchant)
                             }
                         },

@@ -2,7 +2,6 @@ import SwiftUI
 
 struct TourOverlayView: View {
     @EnvironmentObject var tourManager: TourManager
-    @ObservedObject var localization = LocalizationManager.shared
 
     var body: some View {
         GeometryReader { geo in
