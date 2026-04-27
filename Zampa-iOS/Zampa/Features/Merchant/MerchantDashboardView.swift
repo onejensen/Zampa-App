@@ -1,9 +1,7 @@
 import SwiftUI
 
 struct MerchantDashboardView: View {
-    @ObservedObject var localization = LocalizationManager.shared
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var tourManager: TourManager
     @State private var menus: [Menu] = []
     @State private var isLoading: Bool = false
     @State private var showingCreateMenu = false
@@ -18,40 +16,28 @@ struct MerchantDashboardView: View {
     @State private var todayImpressions: Int = 0
     @State private var todayFavorites: Int = 0
     @State private var todayClicks: Int = 0
-    @State private var promoFreeUntil: Date? = nil
-    @State private var showingSubscription = false
-
-    private var merchant: Merchant? { appState.merchantProfile }
-    private var promoActive: Bool { (promoFreeUntil ?? .distantPast) > Date() }
-    private var trialDays: Int? { merchant?.trialDaysRemaining() }
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 0) {
 
-                    // ── BANNER DE SUSCRIPCIÓN ───────────────────────────
-                    subscriptionBanner
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
-
                     // ── STATS GRID ──────────────────────────────────────
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        StatCard(icon: "eye.fill", title: localization.t("merchant_views_today"), value: "\(todayImpressions)", color: .blue)
-                        StatCard(icon: "hand.tap.fill", title: localization.t("merchant_clicks_today"), value: "\(todayClicks)", color: .appPrimary)
-                        StatCard(icon: "heart.fill", title: localization.t("merchant_favorites"), value: "\(todayFavorites)", color: .red)
-                        StatCard(icon: "fork.knife", title: localization.t("merchant_active_menus"), value: "\(menus.filter { $0.isToday }.count)", color: .green)
+                        StatCard(icon: "eye.fill", title: "Vistas hoy", value: "\(todayImpressions)", color: .blue)
+                        StatCard(icon: "hand.tap.fill", title: "Clics hoy", value: "\(todayClicks)", color: .appPrimary)
+                        StatCard(icon: "heart.fill", title: "Favoritos", value: "\(todayFavorites)", color: .red)
+                        StatCard(icon: "fork.knife", title: "Menús activos", value: "\(menus.filter { $0.isToday }.count)", color: .green)
                     }
-                    .tourTarget(.merchantStatsGrid)
                     .padding(16)
 
                     // ── BIG PUBLISH BUTTON ──────────────────────────────
                     Button(action: { showingCreateMenu = true }) {
                         HStack(spacing: 12) {
                             Image(systemName: "plus.circle.fill")
-                                .font(.custom("Sora-Regular", size: 24))
-                            Text(localization.t("merchant_publish"))
-                                .font(.custom("Sora-Bold", size: 18))
+                                .font(.system(size: 24))
+                            Text("PUBLICAR OFERTA")
+                                .font(.system(size: 18, weight: .bold))
                         }
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -62,18 +48,17 @@ struct MerchantDashboardView: View {
                                 .shadow(color: Color.appPrimary.opacity(0.4), radius: 12, x: 0, y: 6)
                         )
                     }
-                    .tourTarget(.merchantCreateButton)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 24)
 
                     // ── SECTION HEADER ──────────────────────────────────
                     HStack {
-                        Text(localization.t("merchant_my_offers"))
-                            .font(.custom("Sora-Bold", size: 17))
+                        Text("Mis ofertas")
+                            .font(.system(size: 17, weight: .bold))
                             .foregroundColor(.appTextPrimary)
                         Spacer()
                         if !menus.isEmpty {
-                            Button(isSelecting ? localization.t("merchant_done") : localization.t("merchant_edit")) {
+                            Button(isSelecting ? "Listo" : "Editar") {
                                 isSelecting.toggle()
                                 if !isSelecting { selectedIds.removeAll() }
                             }
@@ -90,15 +75,15 @@ struct MerchantDashboardView: View {
                     } else if menus.isEmpty {
                         VStack(spacing: 20) {
                             Image(systemName: "plus.square.dashed")
-                                .font(.custom("Sora-Regular", size: 60))
+                                .font(.system(size: 60))
                                 .foregroundColor(.appTextSecondary.opacity(0.3))
 
-                            Text(localization.t("merchant_no_menus"))
+                            Text("Aún no has publicado ningún menú")
                                 .font(.appSubheadline)
                                 .foregroundColor(.appTextSecondary)
 
                             Button(action: { showingCreateMenu = true }) {
-                                Text(localization.t("merchant_first_menu"))
+                                Text("Publicar mi primer menú")
                             }
                             .buttonStyle(AppDesign.ButtonStyle(isPrimary: true))
                             .padding(.horizontal, 40)
@@ -145,7 +130,7 @@ struct MerchantDashboardView: View {
                             Button(action: { showingBulkDeleteConfirm = true }) {
                                 HStack {
                                     Image(systemName: "trash")
-                                    Text("\(localization.t("merchant_delete_selected")) (\(selectedIds.count))")
+                                    Text("Eliminar seleccionados (\(selectedIds.count))")
                                 }
                                 .frame(maxWidth: .infinity)
                             }
@@ -158,10 +143,17 @@ struct MerchantDashboardView: View {
                     Spacer(minLength: 32)
                 }
             }
-            .background(Color.appBackground)
-            .navigationTitle(localization.t("merchant_dashboard"))
+            .navigationTitle("Panel Restaurante")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {}
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if !isSelecting {
+                        Button(action: { showingCreateMenu = true }) {
+                            Image(systemName: "plus")
+                        }
+                    }
+                }
+            }
             .sheet(isPresented: $showingCreateMenu, onDismiss: {
                 loadMerchantMenus()
             }) {
@@ -172,88 +164,32 @@ struct MerchantDashboardView: View {
             }) { menu in
                 EditMenuView(menu: menu)
             }
-            .alert(localization.t("merchant_delete_menu"), isPresented: Binding(
+            .alert("Eliminar menú", isPresented: Binding(
                 get: { deletingMenu != nil },
                 set: { if !$0 { deletingMenu = nil } }
             )) {
-                Button(localization.t("common_cancel"), role: .cancel) { deletingMenu = nil }
-                Button(localization.t("common_delete"), role: .destructive) {
+                Button("Cancelar", role: .cancel) { deletingMenu = nil }
+                Button("Eliminar", role: .destructive) {
                     if let menu = deletingMenu {
                         performDelete(ids: [menu.id])
                     }
                 }
             } message: {
-                Text(localization.t("merchant_delete_confirm"))
+                Text("¿Estás seguro de que quieres eliminar esta oferta? Los clientes ya no podrán verla.")
             }
-            .alert("\(localization.t("common_delete")) \(selectedIds.count) menú(s)", isPresented: $showingBulkDeleteConfirm) {
-                Button(localization.t("common_cancel"), role: .cancel) { }
-                Button(localization.t("common_delete"), role: .destructive) {
+            .alert("Eliminar \(selectedIds.count) menú(s)", isPresented: $showingBulkDeleteConfirm) {
+                Button("Cancelar", role: .cancel) { }
+                Button("Eliminar", role: .destructive) {
                     performDelete(ids: Array(selectedIds))
                 }
             } message: {
-                Text(localization.t("merchant_delete_selected_body"))
+                Text("Esta acción eliminará los menús seleccionados. No se puede deshacer.")
             }
             .onAppear {
                 loadMerchantMenus()
                 loadTodayStats()
             }
-            .task {
-                do {
-                    if let ms = try await FirebaseService.shared.getPromoFreeUntilMs() {
-                        promoFreeUntil = Date(timeIntervalSince1970: Double(ms) / 1000)
-                    }
-                } catch {}
-            }
-            .sheet(isPresented: $showingSubscription) {
-                SubscriptionView().environmentObject(appState)
-            }
         }
-    }
-
-    /// Banner clickable con el estado actual de la suscripción.
-    @ViewBuilder
-    private var subscriptionBanner: some View {
-        let fmt: DateFormatter = {
-            let f = DateFormatter()
-            f.dateStyle = .long
-            f.locale = Locale.current
-            return f
-        }()
-        let (title, subtitle, icon): (String, String?, String) = {
-            if promoActive, let until = promoFreeUntil {
-                return (
-                    localization.t("subscription_promo_title"),
-                    String(format: localization.t("subscription_promo_body"), fmt.string(from: until)),
-                    "gift.fill"
-                )
-            }
-            guard let days = trialDays else { return (localization.t("subscription_title"), nil, "star.fill") }
-            if days <= 0 {
-                return (localization.t("subscription_trial_ends_today"), nil, "exclamationmark.circle.fill")
-            }
-            return (String(format: localization.t("subscription_trial_days_remaining"), days), nil, "hourglass")
-        }()
-        Button(action: { showingSubscription = true }) {
-            HStack(spacing: 12) {
-                Image(systemName: icon).foregroundColor(.appPrimary)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.custom("Sora-Bold", size: 14))
-                        .foregroundColor(.appTextPrimary)
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.appCaption)
-                            .foregroundColor(.appTextSecondary)
-                            .lineLimit(2)
-                    }
-                }
-                Spacer()
-                Image(systemName: "chevron.right").foregroundColor(.appTextSecondary)
-            }
-            .padding(14)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Color.appPrimary.opacity(0.12)))
-        }
-        .buttonStyle(.plain)
     }
 
     private func toggleSelection(_ id: String) {
@@ -328,14 +264,14 @@ struct StatCard: View {
             HStack {
                 Image(systemName: icon)
                     .foregroundColor(color)
-                    .font(.custom("Sora-Regular", size: 18))
+                    .font(.system(size: 18))
                 Spacer()
             }
             Text(value)
-                .font(.custom("Sora-Bold", size: 28))
+                .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.appTextPrimary)
             Text(title)
-                .font(.custom("Sora-Regular", size: 12))
+                .font(.system(size: 12))
                 .foregroundColor(.appTextSecondary)
         }
         .padding(16)
@@ -348,7 +284,6 @@ struct StatCard: View {
 // MARK: - Merchant Menu Row
 
 struct MerchantMenuRow: View {
-    @ObservedObject var localization = LocalizationManager.shared
     let menu: Menu
 
     var body: some View {
@@ -374,15 +309,15 @@ struct MerchantMenuRow: View {
                     .foregroundColor(.appPrimary)
                     .fontWeight(.bold)
 
-                Text(Self.formatDate(menu.createdAt))
-                    .font(.appCaption)
+                Text(menu.createdAt)
+                    .font(.caption)
                     .foregroundColor(.appTextSecondary)
             }
 
             Spacer()
 
             if !menu.isToday {
-                Text(localization.t("merchant_expired"))
+                Text("Pasada")
                     .font(.caption2)
                     .foregroundColor(.appTextSecondary)
                     .padding(.horizontal, 8)
@@ -393,35 +328,9 @@ struct MerchantMenuRow: View {
         }
         .padding(.vertical, 8)
     }
-
-    private static let isoFormatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-
-    private static let isoFormatterNoFrac: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
-
-    private static let displayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "dd/MM/yy  HH:mm"
-        return f
-    }()
-
-    private static func formatDate(_ iso: String) -> String {
-        guard let date = isoFormatter.date(from: iso) ?? isoFormatterNoFrac.date(from: iso) else {
-            return iso
-        }
-        return displayFormatter.string(from: date)
-    }
 }
 
 #Preview {
     MerchantDashboardView()
         .environmentObject(AppState())
-        .environmentObject(TourManager())
 }

@@ -7,7 +7,6 @@ private enum ProfileSheet: Identifiable {
     case camera, gallery, editProfile
     case merchantStats, merchantSubscription, editBusiness
     case deleteAccount
-    case legal
 
     var id: Int { hashValue }
 }
@@ -16,8 +15,6 @@ private enum ProfileSheet: Identifiable {
 
 struct ProfileView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var tourManager: TourManager
-    @ObservedObject var localization = LocalizationManager.shared
     @State private var profileImage: UIImage?       // preview local durante la subida
     @State private var activeSheet: ProfileSheet?
     @State private var pendingPickerAction: PickerAction?
@@ -37,6 +34,7 @@ struct ProfileView: View {
         ZStack(alignment: .bottomTrailing) {
             Group {
                 if let image = croppedPreviewImage {
+                    // Preview local inmediato tras confirmar el crop
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -52,19 +50,16 @@ struct ProfileView: View {
                         .fill(Color.appInputBackground)
                         .overlay(
                             Image(systemName: "person.fill")
-                                .font(.custom("Sora-Regular", size: 32))
+                                .font(.system(size: 40))
                                 .foregroundColor(.appTextSecondary)
                         )
                 }
             }
-            .frame(width: 72, height: 72)
+            .frame(width: 100, height: 100)
             .clipShape(Circle())
-            .overlay(Circle().stroke(Color.white, lineWidth: 3))
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
 
             Image(systemName: "camera.fill")
-                .font(.custom("Sora-Regular", size: 10))
-                .padding(6)
+                .padding(8)
                 .background(Color.appPrimary)
                 .foregroundColor(.white)
                 .clipShape(Circle())
@@ -77,31 +72,30 @@ struct ProfileView: View {
     @ViewBuilder
     private var headerSection: some View {
         Section {
-            HStack(spacing: 14) {
+            VStack(spacing: 16) {
                 avatarView
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(spacing: 4) {
                     Text(appState.currentUser?.name ?? "Usuario")
                         .font(.appSubheadline)
                         .fontWeight(.bold)
                         .foregroundColor(.appTextPrimary)
 
-                    Text(appState.currentUser?.email ?? "")
-                        .font(.appCaption)
+                    Text(appState.currentUser?.email ?? "usuario@ejemplo.com")
+                        .font(.appBody)
                         .foregroundColor(.appTextSecondary)
 
-                    Button(localization.t("profile_edit_name")) {
+                    Button("Editar nombre") {
                         editNameText = appState.currentUser?.name ?? ""
                         activeSheet = .editProfile
                     }
-                    .font(.custom("Sora-Regular", size: 13))
+                    .font(.system(size: 13))
                     .foregroundColor(.appPrimary)
-                    .padding(.top, 2)
+                    .padding(.top, 4)
                 }
-
-                Spacer()
             }
-            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
             .listRowBackground(Color.clear)
         }
     }
@@ -109,21 +103,19 @@ struct ProfileView: View {
     // MARK: - Preferences section
     @ViewBuilder
     private var preferencesSection: some View {
-        Section(header: Text(localization.t("profile_section_preferences")).font(.appCaption).foregroundColor(.appTextSecondary)) {
+        Section(header: Text("Preferencias").font(.caption).foregroundColor(.appTextSecondary)) {
             NavigationLink(destination: DietaryPreferencesView()) {
-                ProfileMenuRowContent(icon: "leaf.fill", title: localization.t("profile_dietary"), color: .green)
+                ProfileMenuRowContent(icon: "leaf.fill", title: "Preferencias Alimentarias", color: .green)
             }
-            .listRowBackground(Color.appSurface)
             NavigationLink(destination: NotificationPreferencesView()) {
-                ProfileMenuRowContent(icon: "bell.fill", title: localization.t("profile_notifications"), color: .orange)
+                ProfileMenuRowContent(icon: "bell.fill", title: "Notificaciones", color: .orange)
             }
-            .listRowBackground(Color.appSurface)
             NavigationLink(destination: CurrencyPreferenceView()) {
                 HStack(spacing: 16) {
                     Image(systemName: "dollarsign.circle.fill")
                         .foregroundColor(.appPrimary)
                         .frame(width: 24)
-                    Text(localization.t("profile_currency"))
+                    Text("Moneda")
                         .font(.appBody)
                         .foregroundColor(.appTextPrimary)
                     Spacer()
@@ -132,27 +124,11 @@ struct ProfileView: View {
                         .foregroundColor(.appTextSecondary)
                 }
             }
-            .listRowBackground(Color.appSurface)
-            NavigationLink(destination: LanguagePickerView()) {
-                HStack(spacing: 16) {
-                    Image(systemName: "globe")
-                        .foregroundColor(.blue)
-                        .frame(width: 24)
-                    Text(localization.t("profile_language"))
-                        .font(.appBody)
-                        .foregroundColor(.appTextPrimary)
-                    Spacer()
-                    Text(localization.resolvedLanguageNativeName)
-                        .font(.appCaption)
-                        .foregroundColor(.appTextSecondary)
-                }
-            }
-            .listRowBackground(Color.appSurface)
             HStack(spacing: 16) {
                 Image(systemName: "circle.lefthalf.filled")
                     .foregroundColor(.purple)
                     .frame(width: 24)
-                Text(localization.t("profile_theme"))
+                Text("Tema")
                     .font(.appBody)
                     .foregroundColor(.appTextPrimary)
                 Spacer()
@@ -164,15 +140,6 @@ struct ProfileView: View {
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 180)
             }
-            .listRowBackground(Color.appSurface)
-            Button {
-                if let uid = appState.currentUser?.id {
-                    tourManager.restart(for: uid, isMerchant: appState.currentUser?.role == .comercio)
-                }
-            } label: {
-                ProfileMenuRowContent(icon: "questionmark.circle.fill", title: localization.t("profile_restart_tour"), color: .indigo)
-            }
-            .listRowBackground(Color.appSurface)
         }
     }
 
@@ -198,19 +165,16 @@ struct ProfileView: View {
     @ViewBuilder
     private var merchantSection: some View {
         if appState.currentUser?.role == .comercio {
-            Section(header: Text(localization.t("profile_section_restaurant")).font(.appCaption).foregroundColor(.appTextSecondary)) {
-                ProfileMenuRow(icon: "chart.bar.fill", title: localization.t("profile_stats"), color: .blue) {
+            Section(header: Text("Mi Restaurante").font(.caption).foregroundColor(.appTextSecondary)) {
+                ProfileMenuRow(icon: "chart.bar.fill", title: "Estadísticas", color: .blue) {
                     activeSheet = .merchantStats
                 }
-                .listRowBackground(Color.appSurface)
-                ProfileMenuRow(icon: "pencil.circle.fill", title: localization.t("profile_edit_restaurant"), color: .appPrimary) {
+                ProfileMenuRow(icon: "pencil.circle.fill", title: "Editar perfil del restaurante", color: .appPrimary) {
                     activeSheet = .editBusiness
                 }
-                .listRowBackground(Color.appSurface)
-                ProfileMenuRow(icon: "star.fill", title: localization.t("profile_zampa_pro"), color: .yellow) {
+                ProfileMenuRow(icon: "star.fill", title: "Zampa Pro", color: .yellow) {
                     activeSheet = .merchantSubscription
                 }
-                .listRowBackground(Color.appSurface)
             }
         }
     }
@@ -220,33 +184,31 @@ struct ProfileView: View {
             List {
                 headerSection
 
+                Section(header: Text("Mi Actividad").font(.caption).foregroundColor(.appTextSecondary)) {
+                    ProfileMenuRow(icon: "heart.fill", title: "Favoritos", color: .red) {}
+                    NavigationLink(destination: HistoryView()) {
+                        ProfileMenuRowContent(icon: "clock.arrow.circlepath", title: "Historial", color: .blue)
+                    }
+                }
+
                 preferencesSection
                 merchantSection
 
-                Section(header: Text(localization.t("profile_section_more")).font(.appCaption).foregroundColor(.appTextSecondary)) {
-                    ProfileMenuRow(icon: "questionmark.circle.fill", title: localization.t("profile_help"), color: .gray) {
-                        if let url = URL(string: "https://www.getzampa.com/#faq") {
-                            UIApplication.shared.open(url)
-                        }
-                    }
-                    .listRowBackground(Color.appSurface)
-                    ProfileMenuRow(icon: "doc.text.fill", title: localization.t("profile_terms"), color: .gray) {
-                        activeSheet = .legal
-                    }
-                    .listRowBackground(Color.appSurface)
+                Section(header: Text("Más").font(.caption).foregroundColor(.appTextSecondary)) {
+                    ProfileMenuRow(icon: "questionmark.circle.fill", title: "Ayuda y Soporte", color: .gray) {}
+                    ProfileMenuRow(icon: "doc.text.fill", title: "Términos y Privacidad", color: .gray) {}
                 }
 
                 Section {
                     Button(action: { appState.logout() }) {
                         HStack {
                             Spacer()
-                            Text(localization.t("profile_logout"))
+                            Text("Cerrar Sesión")
                                 .font(.appButton)
                                 .foregroundColor(.red)
                             Spacer()
                         }
                     }
-                    .listRowBackground(Color.appSurface)
                 }
 
                 // Sólo clientes pueden eliminar su cuenta desde la app en v1.
@@ -256,19 +218,17 @@ struct ProfileView: View {
                         Button(action: { activeSheet = .deleteAccount }) {
                             HStack {
                                 Spacer()
-                                Text(localization.t("profile_delete_account"))
+                                Text("Eliminar cuenta")
                                     .font(.appButton)
                                     .foregroundColor(.red.opacity(0.7))
                                 Spacer()
                             }
                         }
-                        .listRowBackground(Color.appSurface)
                     }
                 }
             }
             .listStyle(InsetGroupedListStyle())
-            .scrollContentBackground(.hidden)
-            .background(Color.appBackground)
+            .navigationTitle("Mi Perfil")
             .navigationBarTitleDisplayMode(.inline)
 
             // MARK: Un único sheet para todo
@@ -289,16 +249,14 @@ struct ProfileView: View {
                 case .deleteAccount:
                     DeleteAccountConfirmationSheet()
                         .environmentObject(appState)
-                case .legal:
-                    LegalView()
                 }
             }
 
             // MARK: Confirmation dialog
-            .confirmationDialog(localization.t("profile_change_photo"), isPresented: $showingSourceDialog, titleVisibility: .visible) {
-                Button(localization.t("profile_camera")) { pendingPickerAction = .camera }
-                Button(localization.t("profile_gallery")) { pendingPickerAction = .gallery }
-                Button(localization.t("common_cancel"), role: .cancel) { pendingPickerAction = nil }
+            .confirmationDialog("Cambiar foto de perfil", isPresented: $showingSourceDialog, titleVisibility: .visible) {
+                Button("Cámara") { pendingPickerAction = .camera }
+                Button("Galería") { pendingPickerAction = .gallery }
+                Button("Cancelar", role: .cancel) { pendingPickerAction = nil }
             }
             // Interceptar imagen del picker: guardar para recortar, no subir aún
             .onChange(of: profileImage) { _, newImage in
@@ -317,11 +275,11 @@ struct ProfileView: View {
                     activeSheet = action == .camera ? .camera : .gallery
                 }
             }
-            .alert(localization.t("profile_photo_error"), isPresented: Binding(
+            .alert("Error al subir foto", isPresented: Binding(
                 get: { uploadErrorMessage != nil },
                 set: { if !$0 { uploadErrorMessage = nil } }
             )) {
-                Button(localization.t("common_ok")) { uploadErrorMessage = nil }
+                Button("OK") { uploadErrorMessage = nil }
             } message: {
                 Text(uploadErrorMessage ?? "")
             }
@@ -369,20 +327,20 @@ struct ProfileView: View {
     private var editProfileSheet: some View {
         NavigationView {
             Form {
-                Section(header: Text(localization.t("profile_display_name"))) {
-                    TextField(localization.t("profile_your_name"), text: $editNameText)
+                Section(header: Text("Nombre a mostrar")) {
+                    TextField("Tu nombre", text: $editNameText)
                         .textContentType(.name)
                         .autocorrectionDisabled()
                 }
             }
-            .navigationTitle(localization.t("profile_edit_profile"))
+            .navigationTitle("Editar perfil")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(localization.t("common_cancel")) { activeSheet = nil }
+                    Button("Cancelar") { activeSheet = nil }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(localization.t("profile_save")) {
+                    Button("Guardar") {
                         let trimmed = editNameText.trimmingCharacters(in: .whitespaces)
                         guard !trimmed.isEmpty else { return }
                         isSavingName = true
@@ -513,40 +471,39 @@ struct GalleryImagePicker: UIViewControllerRepresentable {
 private struct DeleteAccountConfirmationSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var appState: AppState
-    @ObservedObject var localization = LocalizationManager.shared
     @State private var typedConfirmation = ""
     @State private var isDeleting = false
     @State private var errorMessage: String?
 
-    private var isValid: Bool { typedConfirmation == localization.t("profile_delete_confirm_word") }
+    private var isValid: Bool { typedConfirmation == "ELIMINAR" }
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text(localization.t("profile_delete_title"))
+                    Text("¿Eliminar tu cuenta?")
                         .font(.appHeadline)
                         .foregroundColor(.appTextPrimary)
 
-                    Text(localization.t("profile_delete_body"))
+                    Text("Esta acción programará la eliminación definitiva de tu cuenta en 30 días. Durante ese tiempo podrás recuperarla iniciando sesión. Pasado el plazo, se borrarán para siempre:")
                         .font(.appBody)
                         .foregroundColor(.appTextSecondary)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(localization.t("profile_delete_item_profile"))
-                        Text(localization.t("profile_delete_item_favorites"))
-                        Text(localization.t("profile_delete_item_history"))
+                        Text("• Tu perfil y foto")
+                        Text("• Tus favoritos")
+                        Text("• Tu historial")
                     }
                     .font(.appBody)
                     .foregroundColor(.appTextPrimary)
 
                     Divider()
 
-                    Text(localization.t("profile_delete_confirm_prompt"))
+                    Text("Para confirmar, escribe ELIMINAR:")
                         .font(.appBody)
                         .foregroundColor(.appTextSecondary)
 
-                    TextField(localization.t("profile_delete_confirm_word"), text: $typedConfirmation)
+                    TextField("ELIMINAR", text: $typedConfirmation)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
@@ -560,7 +517,7 @@ private struct DeleteAccountConfirmationSheet: View {
                             if isDeleting {
                                 ProgressView().tint(.white)
                             } else {
-                                Text(localization.t("profile_delete_button"))
+                                Text("Eliminar")
                             }
                             Spacer()
                         }
@@ -570,19 +527,19 @@ private struct DeleteAccountConfirmationSheet: View {
                 }
                 .padding(24)
             }
-            .navigationTitle(localization.t("profile_delete_account"))
+            .navigationTitle("Eliminar cuenta")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(localization.t("common_cancel")) { dismiss() }
+                    Button("Cancelar") { dismiss() }
                         .disabled(isDeleting)
                 }
             }
-            .alert(localization.t("common_error"), isPresented: Binding(
+            .alert("Error", isPresented: Binding(
                 get: { errorMessage != nil },
                 set: { if !$0 { errorMessage = nil } }
             )) {
-                Button(localization.t("common_ok")) { errorMessage = nil }
+                Button("OK") { errorMessage = nil }
             } message: {
                 Text(errorMessage ?? "")
             }

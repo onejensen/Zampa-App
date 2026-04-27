@@ -411,22 +411,5 @@
     <string name="subscription_expired_body">Subscriu-te per continuar publicant ofertes. El teu perfil segueix visible per als clients.</string>
     <string name="subscription_subscribe_cta">Subscriure\'m per 14,99 €/mes</string>
     <string name="subscription_required_error">Necessites una subscripció activa per publicar. Inicia una subscripció o renova l\'actual.</string>
-    <string name="tour_skip">Ometre tour</string>
-    <string name="tour_next">Següent</string>
-    <string name="tour_finish">Llest!</string>
-    <string name="tour_feed_title">Menús del dia prop teu</string>
-    <string name="tour_feed_desc">Aquí apareixen les ofertes dels restaurants propers actualitzades cada dia.</string>
-    <string name="tour_filters_title">Filtres</string>
-    <string name="tour_filters_desc">Filtra per preu, tipus de dieta i distància.</string>
-    <string name="tour_map_title">Mapa</string>
-    <string name="tour_map_desc">Alterna entre llista de restaurants i vista de mapa.</string>
-    <string name="tour_favorites_title">Preferits</string>
-    <string name="tour_favorites_desc">Guarda els teus preferits i rep notificacions quan publiquin. Toca el ❤️ en el detall d\'una oferta.</string>
-    <string name="tour_merchant_dashboard_title">El teu tauler</string>
-    <string name="tour_merchant_dashboard_desc">Des d\'aquí gestiones i publiques les teves ofertes del dia.</string>
-    <string name="tour_merchant_create_title">Publicar menú</string>
-    <string name="tour_merchant_create_desc">Toca + per crear una nova oferta del dia.</string>
-    <string name="tour_merchant_stats_title">Estadístiques</string>
-    <string name="tour_merchant_stats_desc">Consulta vistes i impressions de les teves ofertes directament des d\'aquí.</string>
     <string name="profile_restart_tour">Repetir el tour de l\'app</string>
 </resources>

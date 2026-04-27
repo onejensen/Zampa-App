@@ -410,22 +410,5 @@
   "subscription_expired_body": "Subscribe to keep publishing offers. Your profile stays visible to customers.",
   "subscription_subscribe_cta": "Subscribe for €14.99/month",
   "subscription_required_error": "You need an active subscription to publish. Start or renew your subscription.",
-  "tour_skip": "Skip tour",
-  "tour_next": "Next",
-  "tour_finish": "Done!",
-  "tour_feed_title": "Daily menus near you",
-  "tour_feed_desc": "Here you'll find offers from nearby restaurants updated every day.",
-  "tour_filters_title": "Filters",
-  "tour_filters_desc": "Filter by price, dietary type, and distance.",
-  "tour_map_title": "Map",
-  "tour_map_desc": "Toggle between restaurant list and map view.",
-  "tour_favorites_title": "Favorites",
-  "tour_merchant_create_title": "Publish menu",
-  "tour_merchant_create_desc": "Tap + to create a new daily offer.",
-  "tour_merchant_stats_title": "Statistics",
-  "tour_merchant_stats_desc": "Check views and impressions for your offers right here.",
-  "profile_restart_tour": "Replay app tour",
-  "tour_favorite_hint_title": "Save favorites",
-  "tour_favorite_hint_desc": "Open any offer and tap the ❤️ to save the restaurant to your favorites list.",
-  "tour_favorites_tab_desc": "Here you find all your saved restaurants and their latest offers."
+  "profile_restart_tour": "Replay app tour"
 }

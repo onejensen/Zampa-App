@@ -22,27 +22,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
-import com.sozolab.zampa.ui.tour.TourBounds
-import com.sozolab.zampa.ui.tour.TourTarget
-import com.sozolab.zampa.ui.tour.TourViewModel
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.sozolab.zampa.R
 import com.sozolab.zampa.data.model.DietaryInfo
 import com.sozolab.zampa.data.model.Menu
 
@@ -50,17 +40,13 @@ import com.sozolab.zampa.data.model.Menu
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
-    viewModel: DashboardViewModel = hiltViewModel(),
-    tourViewModel: TourViewModel? = null
+    viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val menus by viewModel.menus.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val todayStats by viewModel.todayStats.collectAsState()
-    val merchant by viewModel.merchant.collectAsState()
-    val promoFreeUntilMs by viewModel.promoFreeUntilMs.collectAsState()
     var showCreateSheet by remember { mutableStateOf(false) }
     var editingMenu by remember { mutableStateOf<Menu?>(null) }
-    var showSubscriptionSheet by remember { mutableStateOf(false) }
 
     var isSelecting by remember { mutableStateOf(false) }
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -68,10 +54,24 @@ fun DashboardScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text(stringResource(R.string.merchant_dashboard), fontWeight = FontWeight.Bold) },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background
-            )
+            title = { Text("Panel Restaurante", fontWeight = FontWeight.Bold) },
+            navigationIcon = {
+                if (menus.isNotEmpty()) {
+                    TextButton(onClick = {
+                        isSelecting = !isSelecting
+                        if (!isSelecting) selectedIds.clear()
+                    }) {
+                        Text(if (isSelecting) "Listo" else "Editar")
+                    }
+                }
+            },
+            actions = {
+                if (!isSelecting) {
+                    IconButton(onClick = { showCreateSheet = true }) {
+                        Icon(Icons.Default.Add, "Crear menú")
+                    }
+                }
+            }
         )
 
         LazyColumn(
@@ -79,38 +79,20 @@ fun DashboardScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ── BANNER DE SUSCRIPCIÓN ──────────────────────────────────
-            item {
-                SubscriptionBanner(
-                    merchant = merchant,
-                    promoFreeUntilMs = promoFreeUntilMs,
-                    onClick = { showSubscriptionSheet = true }
-                )
-            }
-
             // ── STATS GRID ──────────────────────────────────────────────
             item {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.onGloballyPositioned { coords ->
-                        val pos = coords.positionInWindow()
-                        tourViewModel?.registerBounds(
-                            TourTarget.MERCHANT_STATS_GRID,
-                            TourBounds(Offset(pos.x, pos.y), Size(coords.size.width.toFloat(), coords.size.height.toFloat()))
-                        )
-                    }
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         StatCard(
                             icon = Icons.Default.Visibility,
-                            title = stringResource(R.string.merchant_views_today),
+                            title = "Vistas hoy",
                             value = "${todayStats.impressions}",
                             iconColor = Color(0xFF3B82F6),
                             modifier = Modifier.weight(1f)
                         )
                         StatCard(
                             icon = Icons.Default.TouchApp,
-                            title = stringResource(R.string.merchant_clicks_today),
+                            title = "Clics hoy",
                             value = "${todayStats.clicks}",
                             iconColor = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
@@ -119,14 +101,14 @@ fun DashboardScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         StatCard(
                             icon = Icons.Default.Favorite,
-                            title = stringResource(R.string.merchant_favorites),
+                            title = "Favoritos",
                             value = "${todayStats.favorites}",
                             iconColor = Color(0xFFEF4444),
                             modifier = Modifier.weight(1f)
                         )
                         StatCard(
                             icon = Icons.Default.RestaurantMenu,
-                            title = stringResource(R.string.merchant_active_menus),
+                            title = "Menús activos",
                             value = "${menus.count { it.isToday }}",
                             iconColor = Color(0xFF22C55E),
                             modifier = Modifier.weight(1f)
@@ -137,37 +119,19 @@ fun DashboardScreen(
 
             // ── BIG PUBLISH BUTTON ──────────────────────────────────────
             item {
-                val primary = MaterialTheme.colorScheme.primary
                 Button(
                     onClick = { showCreateSheet = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp)
-                        .shadow(
-                            elevation = 16.dp,
-                            shape = RoundedCornerShape(16.dp),
-                            ambientColor = primary,
-                            spotColor = primary
-                        )
-                        .onGloballyPositioned { coords ->
-                            val pos = coords.positionInWindow()
-                            tourViewModel?.registerBounds(
-                                TourTarget.MERCHANT_CREATE_BUTTON,
-                                TourBounds(Offset(pos.x, pos.y), Size(coords.size.width.toFloat(), coords.size.height.toFloat()))
-                            )
-                        },
+                        .height(60.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = primary,
-                        contentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White)
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        stringResource(R.string.merchant_publish),
-                        color = Color.White,
+                        "PUBLICAR OFERTA",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 }
@@ -180,7 +144,7 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        stringResource(R.string.merchant_my_offers),
+                        "Mis ofertas",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.weight(1f)
                     )
@@ -189,7 +153,7 @@ fun DashboardScreen(
                             isSelecting = !isSelecting
                             if (!isSelecting) selectedIds.clear()
                         }) {
-                            Text(if (isSelecting) stringResource(R.string.merchant_done) else stringResource(R.string.merchant_edit))
+                            Text(if (isSelecting) "Listo" else "Editar")
                         }
                     }
                 }
@@ -220,12 +184,12 @@ fun DashboardScreen(
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                stringResource(R.string.merchant_no_menus),
+                                "Aún no has publicado ningún menú",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(Modifier.height(16.dp))
                             Button(onClick = { showCreateSheet = true }) {
-                                Text(stringResource(R.string.merchant_first_menu))
+                                Text("Publicar mi primer menú")
                             }
                         }
                     }
@@ -257,7 +221,7 @@ fun DashboardScreen(
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.merchant_delete_selected) + " (${selectedIds.size})")
+                            Text("Eliminar seleccionados (${selectedIds.size})")
                         }
                     }
                 }
@@ -274,7 +238,7 @@ fun DashboardScreen(
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.merchant_delete_selected) + " (${selectedIds.size})")
+                    Text("Eliminar seleccionados (${selectedIds.size})")
                 }
             }
         }
@@ -291,8 +255,8 @@ fun DashboardScreen(
     if (showBulkDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showBulkDeleteConfirm = false },
-            title = { Text(stringResource(R.string.merchant_delete_count, selectedIds.size)) },
-            text = { Text(stringResource(R.string.merchant_delete_selected_body)) },
+            title = { Text("Eliminar ${selectedIds.size} menú(s)") },
+            text = { Text("Esta acción eliminará los menús seleccionados. No se puede deshacer.") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteMenus(selectedIds.toList())
@@ -300,83 +264,13 @@ fun DashboardScreen(
                     isSelecting = false
                     showBulkDeleteConfirm = false
                 }) {
-                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBulkDeleteConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
+                TextButton(onClick = { showBulkDeleteConfirm = false }) { Text("Cancelar") }
             }
         )
-    }
-
-    if (showSubscriptionSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showSubscriptionSheet = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-        ) {
-            com.sozolab.zampa.ui.subscription.SubscriptionScreen(
-                onDismiss = { showSubscriptionSheet = false }
-            )
-        }
-    }
-}
-
-/**
- * Banner clickable que muestra el estado de suscripción del merchant:
- * promo global → gratis hasta X, trial → días restantes, expirada → CTA.
- */
-@Composable
-private fun SubscriptionBanner(
-    merchant: com.sozolab.zampa.data.model.Merchant?,
-    promoFreeUntilMs: Long?,
-    onClick: () -> Unit,
-) {
-    val nowMs = System.currentTimeMillis()
-    val promoActive = (promoFreeUntilMs ?: 0L) > nowMs
-    val trialDays = merchant?.trialDaysRemaining()
-
-    val (icon, title, subtitle) = when {
-        promoActive -> {
-            val fmt = java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG, java.util.Locale.getDefault())
-            Triple(
-                Icons.Default.CardGiftcard,
-                stringResource(R.string.subscription_promo_title),
-                stringResource(R.string.subscription_promo_body, fmt.format(java.util.Date(promoFreeUntilMs!!)))
-            )
-        }
-        trialDays == null -> Triple(Icons.Default.Star, stringResource(R.string.subscription_title), null)
-        trialDays <= 0 -> Triple(
-            Icons.Default.Warning,
-            stringResource(R.string.subscription_trial_ends_today),
-            stringResource(R.string.subscription_expired_body)
-        )
-        else -> Triple(
-            Icons.Default.HourglassBottom,
-            stringResource(R.string.subscription_trial_days_remaining, trialDays),
-            null
-        )
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-        onClick = onClick,
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                subtitle?.let {
-                    Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
-                }
-            }
-            Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
     }
 }
 
@@ -391,50 +285,56 @@ fun OfferDetailsSection(
     includesDessert: Boolean, onDessertChange: (Boolean) -> Unit,
     includesCoffee: Boolean, onCoffeeChange: (Boolean) -> Unit,
     serviceTime: String = "both", onServiceTimeChange: (String) -> Unit = {},
+    isPro: Boolean = false,
 ) {
-    // (value, label): `value` es el valor canónico ES que se guarda en Firestore;
-    // `label` es la traducción que se muestra al usuario. Nunca persistir `label`.
-    val offerTypeOptions = listOf(
-        com.sozolab.zampa.ui.feed.OfferTypes.MENU_DEL_DIA to stringResource(R.string.create_menu_menu_del_dia),
-        com.sozolab.zampa.ui.feed.OfferTypes.PLATO_DEL_DIA to stringResource(R.string.create_menu_plato_del_dia),
-        com.sozolab.zampa.ui.feed.OfferTypes.OFERTA_DEL_DIA to stringResource(R.string.create_menu_oferta_del_dia),
-        com.sozolab.zampa.ui.feed.OfferTypes.OFERTA_PERMANENTE to stringResource(R.string.create_menu_permanent),
-    )
+    val offerTypes = listOf("Menú del día", "Plato del día", "Oferta permanente")
     Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.create_menu_offer_type), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+            Text("Tipo de oferta", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
 
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                offerTypeOptions.forEach { (value, label) ->
-                    val isSelected = offerType == value
+                offerTypes.forEach { type ->
+                    val isPermanent = type == "Oferta permanente"
+                    val locked = isPermanent && !isPro
+                    val isSelected = offerType == type
                     FilterChip(
                         selected = isSelected,
-                        onClick = { onOfferTypeChange(if (isSelected) null else value) },
-                        label = { Text(label) },
-                        colors = com.sozolab.zampa.ui.theme.brandFilterChipColors()
+                        onClick = { if (!locked) onOfferTypeChange(if (isSelected) null else type) },
+                        enabled = !locked,
+                        label = {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                if (locked) Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(12.dp))
+                                Text(type)
+                            }
+                        }
                     )
                 }
+            }
+            if (!isPro) {
+                Text(
+                    "«Oferta permanente» requiere Plan Pro — no caduca a las 24h",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             // Horario de la oferta
-            Text(stringResource(R.string.create_menu_schedule), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+            Text("Horario de la oferta", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("lunch" to stringResource(R.string.create_menu_midday), "dinner" to stringResource(R.string.create_menu_night), "both" to stringResource(R.string.create_menu_both)).forEach { (value, label) ->
+                listOf("lunch" to "Mediodía", "dinner" to "Noche", "both" to "Ambos").forEach { (value, label) ->
                     FilterChip(
                         selected = serviceTime == value,
                         onClick = { onServiceTimeChange(value) },
-                        label = { Text(label) },
-                        colors = com.sozolab.zampa.ui.theme.brandFilterChipColors()
+                        label = { Text(label) }
                     )
                 }
             }
 
-            Text(stringResource(R.string.create_menu_includes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Incluye", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                val brandColors = com.sozolab.zampa.ui.theme.brandFilterChipColors()
-                FilterChip(selected = includesDrink,   onClick = { onDrinkChange(!includesDrink) },     label = { Text(stringResource(R.string.create_menu_drink)) }, colors = brandColors)
-                FilterChip(selected = includesDessert, onClick = { onDessertChange(!includesDessert) }, label = { Text(stringResource(R.string.create_menu_dessert)) }, colors = brandColors)
-                FilterChip(selected = includesCoffee,  onClick = { onCoffeeChange(!includesCoffee) },   label = { Text(stringResource(R.string.create_menu_coffee)) }, colors = brandColors)
+                FilterChip(selected = includesDrink,   onClick = { onDrinkChange(!includesDrink) },     label = { Text("Bebida") })
+                FilterChip(selected = includesDessert, onClick = { onDessertChange(!includesDessert) }, label = { Text("Postre") })
+                FilterChip(selected = includesCoffee,  onClick = { onCoffeeChange(!includesCoffee) },   label = { Text("Café") })
             }
         }
     }
@@ -456,37 +356,34 @@ fun DietaryInfoEditor(
 ) {
     Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.create_menu_dietary_info), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+            Text("Información dietética", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
 
             // Diet
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(R.string.create_menu_diet), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Dieta", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val bc = com.sozolab.zampa.ui.theme.brandFilterChipColors()
-                    FilterChip(selected = isVegetarian, onClick = { onVegetarianChange(!isVegetarian) }, label = { Text(stringResource(R.string.create_menu_vegetarian)) }, colors = bc)
-                    FilterChip(selected = isVegan, onClick = { onVeganChange(!isVegan) }, label = { Text(stringResource(R.string.create_menu_vegan)) }, colors = bc)
+                    FilterChip(selected = isVegetarian, onClick = { onVegetarianChange(!isVegetarian) }, label = { Text("Vegetariano") })
+                    FilterChip(selected = isVegan, onClick = { onVeganChange(!isVegan) }, label = { Text("Vegano") })
                 }
             }
 
             // Protein
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(R.string.create_menu_protein), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Proteína principal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val bc = com.sozolab.zampa.ui.theme.brandFilterChipColors()
-                    FilterChip(selected = hasMeat, onClick = { onMeatChange(!hasMeat) }, label = { Text(stringResource(R.string.create_menu_meat)) }, colors = bc)
-                    FilterChip(selected = hasFish, onClick = { onFishChange(!hasFish) }, label = { Text(stringResource(R.string.create_menu_fish)) }, colors = bc)
+                    FilterChip(selected = hasMeat, onClick = { onMeatChange(!hasMeat) }, label = { Text("Carne") })
+                    FilterChip(selected = hasFish, onClick = { onFishChange(!hasFish) }, label = { Text("Pescado/Marisco") })
                 }
             }
 
             // Allergens
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(R.string.create_menu_allergens_present), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Alérgenos presentes", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val bc = com.sozolab.zampa.ui.theme.brandFilterChipColors()
-                    FilterChip(selected = hasGluten,  onClick = { onGlutenChange(!hasGluten) },   label = { Text(stringResource(R.string.create_menu_gluten)) }, colors = bc)
-                    FilterChip(selected = hasLactose, onClick = { onLactoseChange(!hasLactose) }, label = { Text(stringResource(R.string.create_menu_dairy)) }, colors = bc)
-                    FilterChip(selected = hasNuts,    onClick = { onNutsChange(!hasNuts) },       label = { Text(stringResource(R.string.create_menu_nuts)) }, colors = bc)
-                    FilterChip(selected = hasEgg,     onClick = { onEggChange(!hasEgg) },         label = { Text(stringResource(R.string.create_menu_egg)) }, colors = bc)
+                    FilterChip(selected = hasGluten,  onClick = { onGlutenChange(!hasGluten) },   label = { Text("Gluten") })
+                    FilterChip(selected = hasLactose, onClick = { onLactoseChange(!hasLactose) }, label = { Text("Lácteos") })
+                    FilterChip(selected = hasNuts,    onClick = { onNutsChange(!hasNuts) },       label = { Text("Frutos secos") })
+                    FilterChip(selected = hasEgg,     onClick = { onEggChange(!hasEgg) },         label = { Text("Huevo") })
                 }
             }
         }
@@ -622,13 +519,8 @@ fun MerchantMenuRow(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        formatMenuDate(menu.createdAt),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                     if (!menu.isToday) {
-                        Text(stringResource(R.string.merchant_expired), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Pasada", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 if (!isSelecting) {
@@ -643,15 +535,15 @@ fun MerchantMenuRow(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(stringResource(R.string.merchant_delete_menu_question)) },
-            text = { Text(stringResource(R.string.merchant_delete_menu_confirm)) },
+            title = { Text("¿Eliminar menú?") },
+            text = { Text("¿Estás seguro de que quieres eliminar esta oferta? Los clientes ya no podrán verla.") },
             confirmButton = {
                 TextButton(onClick = { showDeleteConfirm = false; onDelete() }) {
-                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancelar") }
             }
         )
     }
@@ -714,39 +606,29 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onDismiss, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
-                }
-                Text(
-                    stringResource(R.string.create_menu_edit_menu),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-            }
+            Text("Editar menú", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = title, onValueChange = { title = it }, label = { Text(stringResource(R.string.create_menu_title_label)) },
+                value = title, onValueChange = { title = it }, label = { Text("Título") },
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
             )
             Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = description, onValueChange = { description = it }, label = { Text(stringResource(R.string.create_menu_description_label)) },
+                value = description, onValueChange = { description = it }, label = { Text("Descripción") },
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), minLines = 2, maxLines = 4
             )
             Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = priceText, onValueChange = { priceText = it }, label = { Text(stringResource(R.string.create_menu_price_label)) },
+                value = priceText, onValueChange = { priceText = it }, label = { Text("Precio (€)") },
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true
             )
             Spacer(Modifier.height(12.dp))
 
-            Text(stringResource(R.string.create_menu_cuisine_type), style = MaterialTheme.typography.labelLarge)
+            Text("Tipo de cocina", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 availableTags.forEach { tag ->
@@ -767,6 +649,7 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
                 includesDessert = inclDessert, onDessertChange = { inclDessert = it },
                 includesCoffee = inclCoffee, onCoffeeChange = { inclCoffee = it },
                 serviceTime = serviceTime, onServiceTimeChange = { serviceTime = it },
+                isPro = isPremium,
             )
             Spacer(Modifier.height(12.dp))
 
@@ -802,7 +685,7 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
             ) {
                 Icon(Icons.Default.Photo, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.create_menu_change_photo))
+                Text("Cambiar foto")
             }
             Spacer(Modifier.height(20.dp))
 
@@ -823,7 +706,7 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(stringResource(R.string.create_menu_save_changes))
+                    Text("Guardar cambios")
                 }
             }
 
@@ -834,7 +717,7 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
-                Text(stringResource(R.string.merchant_delete_menu))
+                Text("Eliminar menú")
             }
             Spacer(Modifier.height(32.dp))
         }
@@ -843,17 +726,17 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(stringResource(R.string.merchant_delete_menu_question)) },
-            text = { Text(stringResource(R.string.merchant_delete_menu_confirm)) },
+            title = { Text("¿Eliminar menú?") },
+            text = { Text("¿Estás seguro de que quieres eliminar esta oferta? Los clientes ya no podrán verla.") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteMenu(menu.id)
                     showDeleteConfirm = false
                     onDismiss()
-                }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
+                }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancelar") }
             }
         )
     }
@@ -921,7 +804,7 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
     if (showPhotoSourceDialog) {
         AlertDialog(
             onDismissRequest = { showPhotoSourceDialog = false },
-            title = { Text(stringResource(R.string.create_menu_photo)) },
+            title = { Text("Foto del menú") },
             text = {
                 Column {
                     TextButton(
@@ -930,19 +813,19 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
                             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text(stringResource(R.string.profile_camera)) }
+                    ) { Text("Cámara") }
                     TextButton(
                         onClick = {
                             showPhotoSourceDialog = false
                             galleryLauncher.launch("image/*")
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text(stringResource(R.string.profile_gallery)) }
+                    ) { Text("Galería") }
                 }
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showPhotoSourceDialog = false }) { Text(stringResource(R.string.common_cancel)) }
+                TextButton(onClick = { showPhotoSourceDialog = false }) { Text("Cancelar") }
             }
         )
     }
@@ -967,17 +850,7 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onDismiss, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
-                }
-                Text(
-                    stringResource(R.string.create_menu_new_menu),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-            }
+            Text("Nuevo menú", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
 
             // Photo picker with preview
@@ -1006,14 +879,13 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
                     else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.CameraAlt, null, modifier = Modifier.size(36.dp))
                         Spacer(Modifier.height(4.dp))
-                        Text(stringResource(R.string.create_menu_add_photo), style = MaterialTheme.typography.bodyMedium)
+                        Text("Añadir foto del menú", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
             Spacer(Modifier.height(12.dp))
 
             // Meal type selector
-            val mealTypeLabels = mapOf("Comida" to stringResource(R.string.create_menu_lunch), "Cena" to stringResource(R.string.create_menu_dinner))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1027,7 +899,7 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            mealTypeLabels[type] ?: type,
+                            type,
                             modifier = Modifier
                                 .padding(12.dp)
                                 .fillMaxWidth(),
@@ -1041,25 +913,25 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
             Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = title, onValueChange = { title = it }, label = { Text(stringResource(R.string.create_menu_title_label)) },
+                value = title, onValueChange = { title = it }, label = { Text("Título") },
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
             )
             Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = description, onValueChange = { description = it }, label = { Text(stringResource(R.string.create_menu_description_label)) },
+                value = description, onValueChange = { description = it }, label = { Text("Descripción") },
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), minLines = 2, maxLines = 4
             )
             Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = priceText, onValueChange = { priceText = it }, label = { Text(stringResource(R.string.create_menu_price_label)) },
+                value = priceText, onValueChange = { priceText = it }, label = { Text("Precio (€)") },
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true
             )
             Spacer(Modifier.height(12.dp))
 
-            Text(stringResource(R.string.create_menu_cuisine_type), style = MaterialTheme.typography.labelLarge)
+            Text("Tipo de cocina", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 availableTags.forEach { tag ->
@@ -1080,6 +952,7 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
                 includesDessert = inclDessert, onDessertChange = { inclDessert = it },
                 includesCoffee = inclCoffee, onCoffeeChange = { inclCoffee = it },
                 serviceTime = serviceTime, onServiceTimeChange = { serviceTime = it },
+                isPro = isPremium,
             )
             Spacer(Modifier.height(12.dp))
 
@@ -1099,7 +972,7 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
             val tags = if (selectedTags.isEmpty()) listOf(mealType) else selectedTags.toList()
             val dietary = DietaryInfo(dietIsVegetarian, dietIsVegan, dietHasMeat, dietHasFish, dietHasGluten, dietHasLactose, dietHasNuts, dietHasEgg)
             Button(
-                onClick = { imageData?.let { viewModel.createMenu(title, description, price, it, tags, dietary, offerType, inclDrink, inclDessert, inclCoffee, serviceTime, offerType == com.sozolab.zampa.ui.feed.OfferTypes.OFERTA_PERMANENTE) } },
+                onClick = { imageData?.let { viewModel.createMenu(title, description, price, it, tags, dietary, offerType, inclDrink, inclDessert, inclCoffee, serviceTime, offerType == "Oferta permanente") } },
                 enabled = !isLoading && title.isNotBlank() && price > 0 && imageData != null,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp)
@@ -1111,21 +984,10 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(stringResource(R.string.create_menu_publish))
+                    Text("Publicar oferta")
                 }
             }
             Spacer(Modifier.height(24.dp))
         }
     }
-}
-
-private fun formatMenuDate(iso: String): String {
-    return try {
-        val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
-        parser.timeZone = java.util.TimeZone.getTimeZone("UTC")
-        val date = parser.parse(iso.take(19)) ?: return iso
-        val display = java.text.SimpleDateFormat("dd/MM/yy  HH:mm", java.util.Locale.getDefault())
-        display.timeZone = java.util.TimeZone.getDefault()
-        display.format(date)
-    } catch (_: Exception) { iso }
 }

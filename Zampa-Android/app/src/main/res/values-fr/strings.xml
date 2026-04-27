@@ -411,22 +411,5 @@
     <string name="subscription_expired_body">Abonnez-vous pour continuer à publier des offres. Votre profil reste visible pour les clients.</string>
     <string name="subscription_subscribe_cta">S\'abonner pour 14,99 €/mois</string>
     <string name="subscription_required_error">Un abonnement actif est requis pour publier. Démarrez ou renouvelez votre abonnement.</string>
-    <string name="tour_skip">Passer le tour</string>
-    <string name="tour_next">Suivant</string>
-    <string name="tour_finish">Terminé !</string>
-    <string name="tour_feed_title">Menus du jour près de vous</string>
-    <string name="tour_feed_desc">Ici apparaissent les offres des restaurants à proximité mises à jour chaque jour.</string>
-    <string name="tour_filters_title">Filtres</string>
-    <string name="tour_filters_desc">Filtrez par prix, type de régime et distance.</string>
-    <string name="tour_map_title">Carte</string>
-    <string name="tour_map_desc">Alternez entre la liste des restaurants et la vue carte.</string>
-    <string name="tour_favorites_title">Favoris</string>
-    <string name="tour_favorites_desc">Enregistrez vos favoris et recevez des notifications. Touchez ❤️ dans le détail d\'une offre.</string>
-    <string name="tour_merchant_dashboard_title">Votre tableau de bord</string>
-    <string name="tour_merchant_dashboard_desc">Gérez et publiez vos offres du jour depuis ici.</string>
-    <string name="tour_merchant_create_title">Publier un menu</string>
-    <string name="tour_merchant_create_desc">Appuyez sur + pour créer une nouvelle offre du jour.</string>
-    <string name="tour_merchant_stats_title">Statistiques</string>
-    <string name="tour_merchant_stats_desc">Consultez les vues et impressions de vos offres directement ici.</string>
     <string name="profile_restart_tour">Revoir le tour de l\'app</string>
 </resources>

@@ -410,22 +410,5 @@
   "subscription_expired_body": "Abbonati per continuare a pubblicare offerte. Il tuo profilo resta visibile ai clienti.",
   "subscription_subscribe_cta": "Abbonati per 14,99 €/mese",
   "subscription_required_error": "Serve un abbonamento attivo per pubblicare. Avvia o rinnova il tuo abbonamento.",
-  "tour_skip": "Salta il tour",
-  "tour_next": "Avanti",
-  "tour_finish": "Fatto!",
-  "tour_feed_title": "Menu del giorno vicino a te",
-  "tour_feed_desc": "Qui trovi le offerte dei ristoranti vicini aggiornate ogni giorno.",
-  "tour_filters_title": "Filtri",
-  "tour_filters_desc": "Filtra per prezzo, tipo di dieta e distanza.",
-  "tour_map_title": "Mappa",
-  "tour_map_desc": "Alterna tra lista di ristoranti e vista mappa.",
-  "tour_favorites_title": "Preferiti",
-  "tour_merchant_create_title": "Pubblica menù",
-  "tour_merchant_create_desc": "Tocca + per creare una nuova offerta del giorno.",
-  "tour_merchant_stats_title": "Statistiche",
-  "tour_merchant_stats_desc": "Consulta visualizzazioni e impressioni delle tue offerte direttamente da qui.",
-  "profile_restart_tour": "Ripeti il tour dell'app",
-  "tour_favorite_hint_title": "Salvare i preferiti",
-  "tour_favorite_hint_desc": "Apri qualsiasi offerta e tocca il ❤️ per salvare il ristorante nei tuoi preferiti.",
-  "tour_favorites_tab_desc": "Qui trovi tutti i ristoranti salvati e le loro ultime offerte."
+  "profile_restart_tour": "Ripeti il tour dell'app"
 }

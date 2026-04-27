@@ -410,22 +410,5 @@
   "subscription_expired_body": "Harpidetu zaitez eskaintzak argitaratzen jarraitzeko. Zure profila bezeroentzat ikusgai egongo da.",
   "subscription_subscribe_cta": "Harpidetu 14,99 €/hile truke",
   "subscription_required_error": "Argitaratzeko harpidetza aktiboa behar duzu. Hasi harpidetza bat edo berritu daukazuna.",
-  "tour_skip": "Saltatu",
-  "tour_next": "Hurrengoa",
-  "tour_finish": "Prest!",
-  "tour_feed_title": "Eguneko menuak zure inguruan",
-  "tour_feed_desc": "Hemen agertzen dira inguruko jatetxeetako eskaintzak egunero eguneratuta.",
-  "tour_filters_title": "Iragazkiak",
-  "tour_filters_desc": "Iragazi prezioaren, dieta motaren eta distantziaren arabera.",
-  "tour_map_title": "Mapa",
-  "tour_map_desc": "Txandakatu jatetxeen zerrenda eta mapa ikuspegiaren artean.",
-  "tour_favorites_title": "Gogokoenak",
-  "tour_merchant_create_title": "Menua argitaratu",
-  "tour_merchant_create_desc": "Sakatu + eguneko eskaintza berri bat sortzeko.",
-  "tour_merchant_stats_title": "Estatistikak",
-  "tour_merchant_stats_desc": "Kontsultatu zure eskaintzen ikuspenak eta inpresioak zuzenean hemendik.",
-  "profile_restart_tour": "Aplikazioaren tourra errepikatu",
-  "tour_favorite_hint_title": "Gogokoak gordetzea",
-  "tour_favorite_hint_desc": "Edozein eskaintza ireki eta ❤️ sakatu jatetxea gogokoen zerrendan gordetzeko.",
-  "tour_favorites_tab_desc": "Hemen ikusten dituzu gordetako jatetxe guztiak eta haien azken eskaintzak."
+  "profile_restart_tour": "Aplikazioaren tourra errepikatu"
 }

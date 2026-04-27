@@ -70,9 +70,6 @@
 		F1A559F3337AC9A3EEA6AF4E /* FeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E780E787E234D6606C650EA6 /* FeedView.swift */; };
 		FEED0001CAFEBABE00010001 /* FeedMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEED0002CAFEBABE00020002 /* FeedMapView.swift */; };
 		FEED0003CAFEBABE00030003 /* MerchantProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEED0004CAFEBABE00040004 /* MerchantProfileView.swift */; };
-		TOUR0001CAFEBABE00010001 /* TourStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOUR0002CAFEBABE00020002 /* TourStep.swift */; };
-		TOUR0003CAFEBABE00030003 /* TourManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOUR0004CAFEBABE00040004 /* TourManager.swift */; };
-		TOUR0005CAFEBABE00050006 /* TourOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOUR0006CAFEBABE00060006 /* TourOverlayView.swift */; };
 		1E6A10001E6A00001E6A0001 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6A20001E6A00001E6A0002 /* LegalView.swift */; };
 		F2B3C4D5E6F7A8B9C0D1E2F3 /* MenuService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* MenuService.swift */; };
 		FF1122334455667788990011 /* SocialAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1122334455667788990012 /* SocialAuthService.swift */; };
@@ -86,6 +83,7 @@
 		5C5C94682F5CF617153B749F /* it.json in Resources */ = {isa = PBXBuildFile; fileRef = 6F9B0AEF396233EFA4241CF8 /* it.json */; };
 		DB005A102CCA2F7925FF105D /* LocalizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32975B61EF5C9FF335AD345 /* LocalizationManager.swift */; };
 		06CB26097CA64E74B6164A7C /* LanguagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BB8F0C75C33096BA4851176 /* LanguagePickerView.swift */; };
+		CC1122334455667788990011 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1122334455667788990012 /* OnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -168,9 +166,6 @@
 		E780E787E234D6606C650EA6 /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedView.swift; sourceTree = "<group>"; };
 		FEED0002CAFEBABE00020002 /* FeedMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedMapView.swift; sourceTree = "<group>"; };
 		FEED0004CAFEBABE00040004 /* MerchantProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantProfileView.swift; sourceTree = "<group>"; };
-		TOUR0002CAFEBABE00020002 /* TourStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TourStep.swift; sourceTree = "<group>"; };
-		TOUR0004CAFEBABE00040004 /* TourManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TourManager.swift; sourceTree = "<group>"; };
-		TOUR0006CAFEBABE00060006 /* TourOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TourOverlayView.swift; sourceTree = "<group>"; };
 		1E6A20001E6A00001E6A0002 /* LegalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		FEB596DBDBD3A16CC83CA9D6 /* icon.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = icon.json; sourceTree = "<group>"; };
 		FF1122334455667788990012 /* SocialAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialAuthService.swift; sourceTree = "<group>"; };
@@ -184,6 +179,7 @@
 		6F9B0AEF396233EFA4241CF8 /* it.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "it.json"; sourceTree = "<group>"; };
 		B32975B61EF5C9FF335AD345 /* LocalizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalizationManager.swift"; sourceTree = "<group>"; };
 		9BB8F0C75C33096BA4851176 /* LanguagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LanguagePickerView.swift"; sourceTree = "<group>"; };
+		CC1122334455667788990012 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -331,7 +327,7 @@
 				DA0BB1A5E25CAA2FF24CDBAC /* Feed */,
 				12B1C0A995A0A244D0DCB8AC /* Merchant */,
 				A0B3548FFBA815F7905DBB96 /* Profile */,
-				TOUR0005CAFEBABE00050005 /* Tour */,
+				CC1122334455667788990013 /* Onboarding */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -392,16 +388,6 @@
 			path = Feed;
 			sourceTree = "<group>";
 		};
-		TOUR0005CAFEBABE00050005 /* Tour */ = {
-			isa = PBXGroup;
-			children = (
-				TOUR0002CAFEBABE00020002 /* TourStep.swift */,
-				TOUR0004CAFEBABE00040004 /* TourManager.swift */,
-				TOUR0006CAFEBABE00060006 /* TourOverlayView.swift */,
-			);
-			path = Tour;
-			sourceTree = "<group>";
-		};
 		E114BA4AB8CD4BD62890563C /* Services */ = {
 			isa = PBXGroup;
 			children = (
@@ -455,6 +441,14 @@
 				6F9B0AEF396233EFA4241CF8 /* it.json */,
 			);
 			path = Localization;
+			sourceTree = "<group>";
+		};
+		CC1122334455667788990013 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				CC1122334455667788990012 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -636,9 +630,7 @@
 				F1A559F3337AC9A3EEA6AF4E /* FeedView.swift in Sources */,
 				FEED0001CAFEBABE00010001 /* FeedMapView.swift in Sources */,
 				FEED0003CAFEBABE00030003 /* MerchantProfileView.swift in Sources */,
-				TOUR0001CAFEBABE00010001 /* TourStep.swift in Sources */,
-				TOUR0003CAFEBABE00030003 /* TourManager.swift in Sources */,
-				TOUR0005CAFEBABE00050006 /* TourOverlayView.swift in Sources */,
+				CC1122334455667788990011 /* OnboardingView.swift in Sources */,
 				1E6A10001E6A00001E6A0001 /* LegalView.swift in Sources */,
 				E88EFED8C803ABD7826CD752 /* FirebaseService.swift in Sources */,
 				3FBBB79AAFC40DB97590F318 /* KeychainManager.swift in Sources */,

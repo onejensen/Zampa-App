@@ -411,22 +411,5 @@
     <string name="subscription_expired_body">Abonniere, um weiterhin Angebote zu veröffentlichen. Dein Profil bleibt für Kunden sichtbar.</string>
     <string name="subscription_subscribe_cta">Für 14,99 €/Monat abonnieren</string>
     <string name="subscription_required_error">Du brauchst ein aktives Abo, um zu veröffentlichen. Starte oder verlängere dein Abonnement.</string>
-    <string name="tour_skip">Tour überspringen</string>
-    <string name="tour_next">Weiter</string>
-    <string name="tour_finish">Fertig!</string>
-    <string name="tour_feed_title">Tagesmenüs in deiner Nähe</string>
-    <string name="tour_feed_desc">Hier findest du täglich aktualisierte Angebote von Restaurants in deiner Nähe.</string>
-    <string name="tour_filters_title">Filter</string>
-    <string name="tour_filters_desc">Filtere nach Preis, Ernährungstyp und Entfernung.</string>
-    <string name="tour_map_title">Karte</string>
-    <string name="tour_map_desc">Wechsle zwischen Restaurantliste und Kartenansicht.</string>
-    <string name="tour_favorites_title">Favoriten</string>
-    <string name="tour_favorites_desc">Speichere Favoriten und erhalte Benachrichtigungen. Tippe auf ❤️ im Angebotsdetail.</string>
-    <string name="tour_merchant_dashboard_title">Dein Dashboard</string>
-    <string name="tour_merchant_dashboard_desc">Verwalte und veröffentliche deine Tagesangebote von hier aus.</string>
-    <string name="tour_merchant_create_title">Menü veröffentlichen</string>
-    <string name="tour_merchant_create_desc">Tippe auf +, um ein neues Tagesangebot zu erstellen.</string>
-    <string name="tour_merchant_stats_title">Statistiken</string>
-    <string name="tour_merchant_stats_desc">Sieh dir Aufrufe und Impressionen deiner Angebote direkt hier an.</string>
     <string name="profile_restart_tour">App-Tour wiederholen</string>
 </resources>

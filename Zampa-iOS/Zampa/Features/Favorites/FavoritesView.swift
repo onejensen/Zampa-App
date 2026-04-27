@@ -13,7 +13,6 @@ private struct IdentifiableId: Identifiable { let id: String }
 // MARK: - FavoritesView
 
 struct FavoritesView: View {
-    @EnvironmentObject var tourManager: TourManager
     @ObservedObject var localization = LocalizationManager.shared
     @State private var items: [FavoriteItem] = []
     @State private var isLoading = true
@@ -24,8 +23,6 @@ struct FavoritesView: View {
         NavigationView {
             ZStack {
                 Color.appBackground.ignoresSafeArea()
-                // Anchor invisible para registrar el contenido de esta pantalla en el tour
-                Color.clear.tourTarget(.favoritesContent)
 
                 if isLoading {
                     ProgressView(localization.t("favorites_loading"))

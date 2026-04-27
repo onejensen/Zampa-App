@@ -411,22 +411,5 @@
     <string name="subscription_expired_body">Subscribe to keep publishing offers. Your profile stays visible to customers.</string>
     <string name="subscription_subscribe_cta">Subscribe for €14.99/month</string>
     <string name="subscription_required_error">You need an active subscription to publish. Start or renew your subscription.</string>
-    <string name="tour_skip">Skip tour</string>
-    <string name="tour_next">Next</string>
-    <string name="tour_finish">Done!</string>
-    <string name="tour_feed_title">Daily menus near you</string>
-    <string name="tour_feed_desc">Here you\'ll find offers from nearby restaurants updated every day.</string>
-    <string name="tour_filters_title">Filters</string>
-    <string name="tour_filters_desc">Filter by price, dietary type, and distance.</string>
-    <string name="tour_map_title">Map</string>
-    <string name="tour_map_desc">Toggle between restaurant list and map view.</string>
-    <string name="tour_favorites_title">Favorites</string>
-    <string name="tour_favorites_desc">Save your favorites and get notifications. Tap ❤️ in any offer detail to add it.</string>
-    <string name="tour_merchant_dashboard_title">Your dashboard</string>
-    <string name="tour_merchant_dashboard_desc">Manage and publish your daily offers from here.</string>
-    <string name="tour_merchant_create_title">Publish menu</string>
-    <string name="tour_merchant_create_desc">Tap + to create a new daily offer.</string>
-    <string name="tour_merchant_stats_title">Statistics</string>
-    <string name="tour_merchant_stats_desc">Check views and impressions for your offers right here.</string>
     <string name="profile_restart_tour">Replay app tour</string>
 </resources>

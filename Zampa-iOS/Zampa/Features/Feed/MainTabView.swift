@@ -2,8 +2,6 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var tourManager: TourManager
-    @ObservedObject var localization = LocalizationManager.shared
     @State private var selectedTab: Int = 0
     @State private var deepLinkMenuId: String? = nil
 
@@ -14,60 +12,26 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             FeedView(onNavigateToProfile: { selectedTab = profileTabIndex })
-                .tabItem { Label(localization.t("tab_feed"), systemImage: "fork.knife") }
+                .tabItem { Label("Feed", systemImage: "house.fill") }
                 .tag(0)
 
             FavoritesView()
-                .tabItem { Label(localization.t("tab_favorites"), systemImage: "heart.fill") }
+                .tabItem { Label("Favoritos", systemImage: "heart.fill") }
                 .tag(1)
 
             if appState.currentUser?.role == .comercio {
                 MerchantDashboardView()
-                    .tabItem { Label(localization.t("tab_my_menus"), systemImage: "plus.square.fill") }
+                    .tabItem { Label("Mis Menús", systemImage: "plus.square.fill") }
                     .tag(2)
             }
 
             ProfileView()
                 .tabItem {
-                    Label(localization.t("tab_profile"), systemImage: "person.fill")
+                    Label("Perfil", systemImage: "person.fill")
                 }
                 .tag(profileTabIndex)
         }
         .tint(.appPrimary)
-        .background(
-            GeometryReader { geo in
-                Color.clear.onAppear {
-                    registerTabBounds(geo: geo)
-                    // Para merchants, cambiamos al tab Dashboard antes de iniciar el tour
-                    // para que DashboardView se renderice y registre sus bounds antes de
-                    // que TourManager.start() se llame.
-                    if appState.currentUser?.role == .comercio {
-                        selectedTab = 2
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        if let uid = appState.currentUser?.id {
-                            tourManager.start(
-                                for: uid,
-                                isMerchant: appState.currentUser?.role == .comercio
-                            )
-                        }
-                    }
-                }
-            }
-        )
-        .onChange(of: tourManager.pendingTabSwitch) { _, newTab in
-            if let tab = newTab {
-                selectedTab = tab
-                tourManager.clearPendingTabSwitch()
-            }
-        }
-        .onChange(of: tourManager.currentStep?.target) { _, target in
-            // Cuando el tour llega al paso de Favoritos, navegamos al tab 1
-            // para que FavoritesView se renderice y registre sus bounds.
-            if target == .favoritesContent {
-                selectedTab = 1
-            }
-        }
         .sheet(item: Binding(
             get: { deepLinkMenuId.map { IdentifiableMenu(id: $0) } },
             set: { deepLinkMenuId = $0?.id }
@@ -82,11 +46,6 @@ struct MainTabView: View {
             }
         }
     }
-
-    // Los pasos de tab bar se eliminaron del tour iOS (UITabBar es UIKit,
-    // se renderiza sobre SwiftUI y el spotlight no sería visible).
-    // Esta función se mantiene vacía por si se añaden targets futuros.
-    private func registerTabBounds(geo: GeometryProxy) {}
 }
 
 struct IdentifiableMenu: Identifiable {
@@ -96,7 +55,6 @@ struct IdentifiableMenu: Identifiable {
 #Preview {
     MainTabView()
         .environmentObject(AppState())
-        .environmentObject(TourManager())
 }
 
 

@@ -410,22 +410,5 @@
   "subscription_expired_body": "Subscriu-te per continuar publicant ofertes. El teu perfil segueix visible per als clients.",
   "subscription_subscribe_cta": "Subscriure'm per 14,99 €/mes",
   "subscription_required_error": "Necessites una subscripció activa per publicar. Inicia una subscripció o renova l'actual.",
-  "tour_skip": "Ometre tour",
-  "tour_next": "Següent",
-  "tour_finish": "Llest!",
-  "tour_feed_title": "Menús del dia prop teu",
-  "tour_feed_desc": "Aquí apareixen les ofertes dels restaurants propers actualitzades cada dia.",
-  "tour_filters_title": "Filtres",
-  "tour_filters_desc": "Filtra per preu, tipus de dieta i distància.",
-  "tour_map_title": "Mapa",
-  "tour_map_desc": "Alterna entre llista de restaurants i vista de mapa.",
-  "tour_favorites_title": "Preferits",
-  "tour_merchant_create_title": "Publicar menú",
-  "tour_merchant_create_desc": "Toca + per crear una nova oferta del dia.",
-  "tour_merchant_stats_title": "Estadístiques",
-  "tour_merchant_stats_desc": "Consulta visites i impressions de les teves ofertes directament des d'aquí.",
-  "profile_restart_tour": "Repetir el tour de l'app",
-  "tour_favorite_hint_title": "Guardar preferits",
-  "tour_favorite_hint_desc": "Obre qualsevol oferta i toca el ❤️ per guardar el restaurant als teus preferits.",
-  "tour_favorites_tab_desc": "Aquí accedixes a tots els teus restaurants guardats i les seves últimes ofertes."
+  "profile_restart_tour": "Repetir el tour de l'app"
 }

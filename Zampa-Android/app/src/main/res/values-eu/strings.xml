@@ -411,22 +411,5 @@
     <string name="subscription_expired_body">Harpidetu zaitez eskaintzak argitaratzen jarraitzeko. Zure profila bezeroentzat ikusgai egongo da.</string>
     <string name="subscription_subscribe_cta">Harpidetu 14,99 €/hile truke</string>
     <string name="subscription_required_error">Argitaratzeko harpidetza aktiboa behar duzu. Hasi harpidetza bat edo berritu daukazuna.</string>
-    <string name="tour_skip">Saltatu</string>
-    <string name="tour_next">Hurrengoa</string>
-    <string name="tour_finish">Prest!</string>
-    <string name="tour_feed_title">Eguneko menuak zure inguruan</string>
-    <string name="tour_feed_desc">Hemen agertzen dira inguruko jatetxeetako eskaintzak egunero eguneratuta.</string>
-    <string name="tour_filters_title">Iragazkiak</string>
-    <string name="tour_filters_desc">Iragazi prezioaren, dieta motaren eta distantziaren arabera.</string>
-    <string name="tour_map_title">Mapa</string>
-    <string name="tour_map_desc">Txandakatu jatetxeen zerrenda eta mapa ikuspegiaren artean.</string>
-    <string name="tour_favorites_title">Gogokoenak</string>
-    <string name="tour_favorites_desc">Gorde gogokoenak eta jaso jakinarazpenak. Sakatu ❤️ eskaintza baten xehetasunetan.</string>
-    <string name="tour_merchant_dashboard_title">Zure panela</string>
-    <string name="tour_merchant_dashboard_desc">Hemendik kudeatzen eta argitaratzen dituzu eguneko eskaintzak.</string>
-    <string name="tour_merchant_create_title">Menua argitaratu</string>
-    <string name="tour_merchant_create_desc">Sakatu + eguneko eskaintza berri bat sortzeko.</string>
-    <string name="tour_merchant_stats_title">Estatistikak</string>
-    <string name="tour_merchant_stats_desc">Kontsultatu zure eskaintzen ikuspenak eta inpresioak zuzenean hemendik.</string>
     <string name="profile_restart_tour">Aplikazioaren tourra errepikatu</string>
 </resources>
