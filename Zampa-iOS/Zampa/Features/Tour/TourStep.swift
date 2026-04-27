@@ -54,8 +54,10 @@ struct TourTargetModifier: ViewModifier {
                 }
             )
             .onPreferenceChange(TourBoundsKey.self) { bounds in
-                for (t, rect) in bounds {
-                    tourManager.register(target: t, bounds: rect)
+                Task { @MainActor in
+                    for (t, rect) in bounds {
+                        tourManager.register(target: t, bounds: rect)
+                    }
                 }
             }
     }

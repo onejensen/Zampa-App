@@ -5,7 +5,7 @@ import SwiftUI
 final class TourManager: ObservableObject {
     @Published private(set) var isActive: Bool = false
     @Published private(set) var currentStepIndex: Int = 0
-    @Published var targetBounds: [TourTarget: CGRect] = [:]
+    @Published private(set) var targetBounds: [TourTarget: CGRect] = [:]
 
     private var steps: [TourStep] = []
     private var uid: String = ""
@@ -21,6 +21,7 @@ final class TourManager: ObservableObject {
     }
 
     func next() {
+        guard isActive else { return }
         if currentStepIndex < steps.count - 1 {
             currentStepIndex += 1
         } else {
@@ -29,6 +30,7 @@ final class TourManager: ObservableObject {
     }
 
     func skip() {
+        guard isActive else { return }
         finish()
     }
 
