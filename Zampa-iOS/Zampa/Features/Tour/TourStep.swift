@@ -15,17 +15,18 @@ struct TourStep {
     let titleKey: String
     let descKey: String
 
+    // El tab bar de iOS es UIKit y se renderiza sobre la capa SwiftUI,
+    // haciendo el spotlight invisible. Se excluyen esos pasos en iOS;
+    // en Android (Compose custom tab bar) sí funcionan.
     static let clientSteps: [TourStep] = [
-        TourStep(target: .feedCard,       titleKey: "tour_feed_title",     descKey: "tour_feed_desc"),
-        TourStep(target: .filterButton,   titleKey: "tour_filters_title",  descKey: "tour_filters_desc"),
-        TourStep(target: .mapToggle,      titleKey: "tour_map_title",      descKey: "tour_map_desc"),
-        TourStep(target: .favoritesTab,   titleKey: "tour_favorites_title",descKey: "tour_favorites_desc"),
+        TourStep(target: .feedCard,     titleKey: "tour_feed_title",    descKey: "tour_feed_desc"),
+        TourStep(target: .filterButton, titleKey: "tour_filters_title", descKey: "tour_filters_desc"),
+        TourStep(target: .mapToggle,    titleKey: "tour_map_title",     descKey: "tour_map_desc"),
     ]
 
     static let merchantSteps: [TourStep] = [
-        TourStep(target: .merchantDashboardTab,  titleKey: "tour_merchant_dashboard_title", descKey: "tour_merchant_dashboard_desc"),
-        TourStep(target: .merchantCreateButton,  titleKey: "tour_merchant_create_title",    descKey: "tour_merchant_create_desc"),
-        TourStep(target: .merchantStatsGrid,     titleKey: "tour_merchant_stats_title",     descKey: "tour_merchant_stats_desc"),
+        TourStep(target: .merchantCreateButton, titleKey: "tour_merchant_create_title", descKey: "tour_merchant_create_desc"),
+        TourStep(target: .merchantStatsGrid,    titleKey: "tour_merchant_stats_title",  descKey: "tour_merchant_stats_desc"),
     ]
 }
 

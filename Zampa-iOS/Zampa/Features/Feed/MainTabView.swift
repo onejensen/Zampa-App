@@ -76,24 +76,10 @@ struct MainTabView: View {
         }
     }
 
-    private func registerTabBounds(geo: GeometryProxy) {
-        let globalFrame = geo.frame(in: .global)
-        let isMerchant = appState.currentUser?.role == .comercio
-        let tabCount: CGFloat = isMerchant ? 4 : 3
-        let tabWidth = globalFrame.width / tabCount
-        let tabBarTop = globalFrame.maxY - 49 - geo.safeAreaInsets.bottom
-
-        tourManager.register(
-            target: .favoritesTab,
-            bounds: CGRect(x: globalFrame.minX + tabWidth * 1, y: tabBarTop, width: tabWidth, height: 49)
-        )
-        if isMerchant {
-            tourManager.register(
-                target: .merchantDashboardTab,
-                bounds: CGRect(x: globalFrame.minX + tabWidth * 2, y: tabBarTop, width: tabWidth, height: 49)
-            )
-        }
-    }
+    // Los pasos de tab bar se eliminaron del tour iOS (UITabBar es UIKit,
+    // se renderiza sobre SwiftUI y el spotlight no sería visible).
+    // Esta función se mantiene vacía por si se añaden targets futuros.
+    private func registerTabBounds(geo: GeometryProxy) {}
 }
 
 struct IdentifiableMenu: Identifiable {
