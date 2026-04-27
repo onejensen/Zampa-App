@@ -447,4 +447,5 @@
     <string name="tour_merchant_create_desc">Tap + to create a new daily offer.</string>
     <string name="tour_merchant_stats_title">Statistics</string>
     <string name="tour_merchant_stats_desc">Check views and impressions for your offers right here.</string>
+    <string name="profile_restart_tour">Replay app tour</string>
 </resources>

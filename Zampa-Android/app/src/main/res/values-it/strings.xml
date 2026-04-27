@@ -447,4 +447,5 @@
     <string name="tour_merchant_create_desc">Tocca + per creare una nuova offerta del giorno.</string>
     <string name="tour_merchant_stats_title">Statistiche</string>
     <string name="tour_merchant_stats_desc">Consulta visualizzazioni e impressioni delle tue offerte direttamente da qui.</string>
+    <string name="profile_restart_tour">Ripeti il tour dell\'app</string>
 </resources>

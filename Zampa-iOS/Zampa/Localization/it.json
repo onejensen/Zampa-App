@@ -445,5 +445,6 @@
   "tour_merchant_create_title": "Pubblica menù",
   "tour_merchant_create_desc": "Tocca + per creare una nuova offerta del giorno.",
   "tour_merchant_stats_title": "Statistiche",
-  "tour_merchant_stats_desc": "Consulta visualizzazioni e impressioni delle tue offerte direttamente da qui."
+  "tour_merchant_stats_desc": "Consulta visualizzazioni e impressioni delle tue offerte direttamente da qui.",
+  "profile_restart_tour": "Ripeti il tour dell'app"
 }

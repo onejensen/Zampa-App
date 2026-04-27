@@ -445,5 +445,6 @@
   "tour_merchant_create_title": "Menü veröffentlichen",
   "tour_merchant_create_desc": "Tippe auf +, um ein neues Tagesangebot zu erstellen.",
   "tour_merchant_stats_title": "Statistiken",
-  "tour_merchant_stats_desc": "Sieh dir Aufrufe und Impressionen deiner Angebote direkt hier an."
+  "tour_merchant_stats_desc": "Sieh dir Aufrufe und Impressionen deiner Angebote direkt hier an.",
+  "profile_restart_tour": "App-Tour wiederholen"
 }

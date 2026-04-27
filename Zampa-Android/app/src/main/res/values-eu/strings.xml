@@ -447,4 +447,5 @@
     <string name="tour_merchant_create_desc">Sakatu + eguneko eskaintza berri bat sortzeko.</string>
     <string name="tour_merchant_stats_title">Estatistikak</string>
     <string name="tour_merchant_stats_desc">Kontsultatu zure eskaintzen ikuspenak eta inpresioak zuzenean hemendik.</string>
+    <string name="profile_restart_tour">Aplikazioaren tourra errepikatu</string>
 </resources>

@@ -445,5 +445,6 @@
   "tour_merchant_create_title": "Publicar menú",
   "tour_merchant_create_desc": "Toca + per crear una nova oferta del dia.",
   "tour_merchant_stats_title": "Estadístiques",
-  "tour_merchant_stats_desc": "Consulta visites i impressions de les teves ofertes directament des d'aquí."
+  "tour_merchant_stats_desc": "Consulta visites i impressions de les teves ofertes directament des d'aquí.",
+  "profile_restart_tour": "Repetir el tour de l'app"
 }

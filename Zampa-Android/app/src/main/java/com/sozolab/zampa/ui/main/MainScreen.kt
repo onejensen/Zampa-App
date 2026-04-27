@@ -195,6 +195,13 @@ fun MainScreen(
                         onNavigateToLanguage = onNavigateToLanguage,
                         onNavigateToLegal = onNavigateToLegal,
                         onRequestAccountDeletion = { onError -> authViewModel.requestAccountDeletion(onError) },
+                        onRestartTour = {
+                            currentUser?.id?.let { uid ->
+                                prefs.edit().remove("hasSeenTour_$uid").apply()
+                                if (isMerchant) selectedTab = Tab.DASHBOARD
+                                tourViewModel.start(isMerchant = isMerchant)
+                            }
+                        },
                         modifier = Modifier.padding(bottomInset)
                     )
                 }

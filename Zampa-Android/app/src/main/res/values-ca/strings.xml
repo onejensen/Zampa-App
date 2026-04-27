@@ -447,4 +447,5 @@
     <string name="tour_merchant_create_desc">Toca + per crear una nova oferta del dia.</string>
     <string name="tour_merchant_stats_title">Estadístiques</string>
     <string name="tour_merchant_stats_desc">Consulta vistes i impressions de les teves ofertes directament des d\'aquí.</string>
+    <string name="profile_restart_tour">Repetir el tour de l\'app</string>
 </resources>

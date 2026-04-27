@@ -6,6 +6,8 @@ final class TourManager: ObservableObject {
     @Published private(set) var isActive: Bool = false
     @Published private(set) var currentStepIndex: Int = 0
     @Published private(set) var targetBounds: [TourTarget: CGRect] = [:]
+    /// Señal para que MainTabView cambie de pestaña antes de que el tour arranque.
+    @Published var pendingTabSwitch: Int? = nil
 
     private var steps: [TourStep] = []
     private var uid: String = ""
@@ -18,6 +20,20 @@ final class TourManager: ObservableObject {
         self.steps = isMerchant ? TourStep.merchantSteps : TourStep.clientSteps
         self.currentStepIndex = 0
         self.isActive = true
+    }
+
+    /// Reinicia el tour aunque ya se haya visto. Úsalo desde el botón de Perfil.
+    func restart(for uid: String, isMerchant: Bool) {
+        UserDefaults.standard.removeObject(forKey: "hasSeenTour_\(uid)")
+        self.uid = uid
+        self.steps = isMerchant ? TourStep.merchantSteps : TourStep.clientSteps
+        self.currentStepIndex = 0
+        self.isActive = true
+        if isMerchant { pendingTabSwitch = 2 }
+    }
+
+    func clearPendingTabSwitch() {
+        pendingTabSwitch = nil
     }
 
     func next() {

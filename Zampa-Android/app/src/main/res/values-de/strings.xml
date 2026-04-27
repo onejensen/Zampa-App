@@ -447,4 +447,5 @@
     <string name="tour_merchant_create_desc">Tippe auf +, um ein neues Tagesangebot zu erstellen.</string>
     <string name="tour_merchant_stats_title">Statistiken</string>
     <string name="tour_merchant_stats_desc">Sieh dir Aufrufe und Impressionen deiner Angebote direkt hier an.</string>
+    <string name="profile_restart_tour">App-Tour wiederholen</string>
 </resources>

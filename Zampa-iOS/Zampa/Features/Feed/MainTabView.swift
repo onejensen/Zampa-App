@@ -55,6 +55,12 @@ struct MainTabView: View {
                 }
             }
         )
+        .onChange(of: tourManager.pendingTabSwitch) { _, newTab in
+            if let tab = newTab {
+                selectedTab = tab
+                tourManager.clearPendingTabSwitch()
+            }
+        }
         .sheet(item: Binding(
             get: { deepLinkMenuId.map { IdentifiableMenu(id: $0) } },
             set: { deepLinkMenuId = $0?.id }

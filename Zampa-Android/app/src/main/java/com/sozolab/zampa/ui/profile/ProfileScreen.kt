@@ -1,11 +1,15 @@
 package com.sozolab.zampa.ui.profile
 
 import android.Manifest
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -25,8 +29,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
+import com.sozolab.zampa.R
+import com.sozolab.zampa.data.ThemeManager
 import com.sozolab.zampa.data.model.User
+import com.sozolab.zampa.ui.theme.LocalThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,8 +51,10 @@ fun ProfileScreen(
     onNavigateToSubscription: () -> Unit = {},
     onNavigateToNotificationPreferences: () -> Unit = {},
     onNavigateToCurrencyPreference: () -> Unit = {},
-    onNavigateToHistory: () -> Unit = {},
+    onNavigateToLanguage: () -> Unit = {},
+    onNavigateToLegal: () -> Unit = {},
     onRequestAccountDeletion: ((onError: (String) -> Unit) -> Unit)? = null,
+    onRestartTour: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -113,7 +123,7 @@ fun ProfileScreen(
     if (showPhotoSourceDialog) {
         AlertDialog(
             onDismissRequest = { showPhotoSourceDialog = false },
-            title = { Text("Cambiar foto de perfil") },
+            title = { Text(stringResource(R.string.profile_change_photo)) },
             text = {
                 Column {
                     TextButton(
@@ -122,16 +132,16 @@ fun ProfileScreen(
                             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Cámara") }
+                    ) { Text(stringResource(R.string.profile_camera)) }
                     TextButton(
                         onClick = { galleryLauncher.launch("image/*"); showPhotoSourceDialog = false },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Galería") }
+                    ) { Text(stringResource(R.string.profile_gallery)) }
                 }
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showPhotoSourceDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showPhotoSourceDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -139,12 +149,12 @@ fun ProfileScreen(
     if (showEditNameDialog) {
         AlertDialog(
             onDismissRequest = { showEditNameDialog = false },
-            title = { Text("Editar nombre") },
+            title = { Text(stringResource(R.string.profile_edit_name)) },
             text = {
                 OutlinedTextField(
                     value = editNameText,
                     onValueChange = { editNameText = it },
-                    label = { Text("Nombre a mostrar") },
+                    label = { Text(stringResource(R.string.profile_display_name)) },
                     singleLine = true
                 )
             },
@@ -158,10 +168,10 @@ fun ProfileScreen(
                         }
                     },
                     enabled = editNameText.trim().isNotEmpty()
-                ) { Text("Guardar") }
+                ) { Text(stringResource(R.string.profile_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { showEditNameDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showEditNameDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -175,20 +185,20 @@ fun ProfileScreen(
                     deleteErrorMessage = null
                 }
             },
-            title = { Text("¿Eliminar tu cuenta?") },
+            title = { Text(stringResource(R.string.profile_delete_title)) },
             text = {
                 Column {
                     Text(
-                        "Esta acción programará la eliminación definitiva de tu cuenta en 30 días. Durante ese tiempo podrás recuperarla iniciando sesión. Pasado el plazo, se borrarán para siempre:",
+                        stringResource(R.string.profile_delete_body),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(Modifier.height(8.dp))
-                    Text("• Tu perfil y foto", style = MaterialTheme.typography.bodyMedium)
-                    Text("• Tus favoritos", style = MaterialTheme.typography.bodyMedium)
-                    Text("• Tu historial", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.profile_delete_item_profile), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.profile_delete_item_favorites), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.profile_delete_item_history), style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "Para confirmar, escribe ELIMINAR:",
+                        stringResource(R.string.profile_delete_confirm_prompt),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -196,7 +206,7 @@ fun ProfileScreen(
                     OutlinedTextField(
                         value = deleteTypedConfirmation,
                         onValueChange = { deleteTypedConfirmation = it },
-                        placeholder = { Text("ELIMINAR") },
+                        placeholder = { Text(stringResource(R.string.profile_delete_confirm_word)) },
                         singleLine = true,
                         enabled = !deleteIsSubmitting,
                         isError = deleteErrorMessage != null,
@@ -241,7 +251,7 @@ fun ProfileScreen(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Eliminar")
+                        Text(stringResource(R.string.profile_delete_button))
                     }
                 }
             },
@@ -254,23 +264,23 @@ fun ProfileScreen(
                     },
                     enabled = !deleteIsSubmitting
                 ) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
     }
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 16.dp)
+        modifier = modifier.fillMaxSize().statusBarsPadding(),
+        contentPadding = PaddingValues(top = 24.dp, bottom = 16.dp)
     ) {
         // Header: Avatar + User Info
         item {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Avatar with camera overlay
                 Box(
@@ -279,9 +289,10 @@ fun ProfileScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(100.dp)
+                            .size(72.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(3.dp, Color.White, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         when {
@@ -300,7 +311,7 @@ fun ProfileScreen(
                             else -> Icon(
                                 Icons.Default.Person,
                                 contentDescription = "Avatar",
-                                modifier = Modifier.size(48.dp),
+                                modifier = Modifier.size(32.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -308,83 +319,52 @@ fun ProfileScreen(
 
                     FilledIconButton(
                         onClick = { showPhotoSourceDialog = true },
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(24.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
                         Icon(
                             Icons.Default.CameraAlt,
-                            contentDescription = "Cambiar foto",
-                            modifier = Modifier.size(16.dp)
+                            contentDescription = stringResource(R.string.profile_change_photo),
+                            modifier = Modifier.size(12.dp)
                         )
                     }
                 }
-                
-                Spacer(Modifier.height(12.dp))
-                
-                Text(
-                    user?.name ?: "Usuario",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Text(
-                    user?.email ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                TextButton(onClick = {
-                    editNameText = user?.name ?: ""
-                    showEditNameDialog = true
-                }) {
-                    Text("Editar nombre", style = MaterialTheme.typography.labelMedium)
-                }
-                Spacer(Modifier.height(4.dp))
-                
-                AssistChip(
-                    onClick = {},
-                    label = {
-                        Text(if (isMerchant) "Restaurante" else "Cliente")
-                    },
-                    leadingIcon = {
-                        Icon(
-                            if (isMerchant) Icons.Default.Storefront else Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
+
+                Spacer(Modifier.width(14.dp))
+
+                Column {
+                    Text(
+                        user?.name ?: stringResource(R.string.profile_user),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        user?.email ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(
+                        onClick = {
+                            editNameText = user?.name ?: ""
+                            showEditNameDialog = true
+                        },
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(stringResource(R.string.profile_edit_name), style = MaterialTheme.typography.labelMedium)
                     }
-                )
+                }
             }
-        }
-        
-        // Section: Mi Actividad
-        item {
-            SectionHeader("Mi Actividad")
-        }
-        item {
-            ProfileMenuItem(
-                icon = Icons.Default.Favorite,
-                title = "Favoritos",
-                iconTint = MaterialTheme.colorScheme.error,
-                onClick = {}
-            )
-        }
-        item {
-            ProfileMenuItem(
-                icon = Icons.Default.History,
-                title = "Historial",
-                iconTint = MaterialTheme.colorScheme.primary,
-                onClick = onNavigateToHistory
-            )
         }
         
         // Section: Preferencias
         item {
-            SectionHeader("Preferencias")
+            SectionHeader(stringResource(R.string.profile_section_preferences))
         }
         item {
             ProfileMenuItem(
                 icon = Icons.Default.Eco,
-                title = "Preferencias Alimentarias",
+                title = stringResource(R.string.profile_dietary),
                 iconTint = MaterialTheme.colorScheme.secondary,
                 onClick = onNavigateToDietaryPreferences
             )
@@ -392,7 +372,7 @@ fun ProfileScreen(
         item {
             ProfileMenuItem(
                 icon = Icons.Default.Notifications,
-                title = "Notificaciones",
+                title = stringResource(R.string.profile_notifications),
                 iconTint = MaterialTheme.colorScheme.tertiary,
                 onClick = onNavigateToNotificationPreferences
             )
@@ -411,12 +391,12 @@ fun ProfileScreen(
                 else -> code
             }
             ListItem(
-                headlineContent = { Text("Moneda") },
+                headlineContent = { Text(stringResource(R.string.profile_currency)) },
                 supportingContent = { Text("$code ($symbol)") },
                 leadingContent = {
                     Icon(
                         Icons.Default.AttachMoney,
-                        contentDescription = "Moneda",
+                        contentDescription = stringResource(R.string.profile_currency),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 },
@@ -430,12 +410,85 @@ fun ProfileScreen(
                 modifier = Modifier.clickable(onClick = onNavigateToCurrencyPreference)
             )
         }
+        item {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.profile_language)) },
+                supportingContent = {
+                    val langName = com.sozolab.zampa.data.LocalizationManager.supportedLanguages
+                        .find { it.code == (user?.languagePreference ?: "auto") }?.nativeName ?: stringResource(R.string.language_auto)
+                    Text(langName)
+                },
+                leadingContent = {
+                    Icon(
+                        Icons.Default.Language,
+                        contentDescription = stringResource(R.string.profile_language),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                trailingContent = {
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                modifier = Modifier.clickable(onClick = onNavigateToLanguage)
+            )
+        }
+        item {
+            val themeManager = LocalThemeManager.current
+            if (themeManager != null) {
+                val theme by themeManager.theme.collectAsState()
+                val options = listOf(
+                    ThemeManager.SYSTEM to stringResource(R.string.theme_system),
+                    ThemeManager.LIGHT to stringResource(R.string.theme_light),
+                    ThemeManager.DARK to stringResource(R.string.theme_dark),
+                )
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.profile_theme)) },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.DarkMode,
+                            contentDescription = stringResource(R.string.profile_theme),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    supportingContent = {
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                            options.forEachIndexed { index, (value, label) ->
+                                SegmentedButton(
+                                    selected = theme == value,
+                                    onClick = { themeManager.setTheme(value) },
+                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = MaterialTheme.colorScheme.primary,
+                                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                        activeBorderColor = MaterialTheme.colorScheme.primary,
+                                    ),
+                                    label = {
+                                        Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                )
+            }
+        }
+        item {
+            ProfileMenuItem(
+                icon = Icons.Default.HelpOutline,
+                title = stringResource(R.string.profile_restart_tour),
+                iconTint = MaterialTheme.colorScheme.primary,
+                onClick = { onRestartTour?.invoke() }
+            )
+        }
         if (isMerchant) {
-            item { SectionHeader("Mi Restaurante") }
+            item { SectionHeader(stringResource(R.string.profile_section_restaurant)) }
             item {
                 ProfileMenuItem(
                     icon = Icons.Default.BarChart,
-                    title = "Estadísticas",
+                    title = stringResource(R.string.profile_stats),
                     iconTint = MaterialTheme.colorScheme.primary,
                     onClick = onNavigateToStats
                 )
@@ -443,7 +496,7 @@ fun ProfileScreen(
             item {
                 ProfileMenuItem(
                     icon = Icons.Default.Edit,
-                    title = "Editar perfil del restaurante",
+                    title = stringResource(R.string.profile_edit_restaurant),
                     iconTint = MaterialTheme.colorScheme.primary,
                     onClick = onNavigateToEditProfile
                 )
@@ -451,7 +504,7 @@ fun ProfileScreen(
             item {
                 ProfileMenuItem(
                     icon = Icons.Default.WorkspacePremium,
-                    title = "Zampa Pro",
+                    title = stringResource(R.string.profile_zampa_pro),
                     iconTint = MaterialTheme.colorScheme.primary,
                     onClick = onNavigateToSubscription
                 )
@@ -460,22 +513,28 @@ fun ProfileScreen(
         
         // Section: Más
         item {
-            SectionHeader("Más")
+            SectionHeader(stringResource(R.string.profile_section_more))
         }
         item {
             ProfileMenuItem(
                 icon = Icons.Outlined.HelpOutline,
-                title = "Ayuda y Soporte",
+                title = stringResource(R.string.profile_help),
                 iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                onClick = {}
+                onClick = {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://www.getzampa.com/#faq")
+                    )
+                    context.startActivity(intent)
+                }
             )
         }
         item {
             ProfileMenuItem(
                 icon = Icons.Outlined.Description,
-                title = "Términos y Privacidad",
+                title = stringResource(R.string.profile_terms),
                 iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                onClick = {}
+                onClick = onNavigateToLegal
             )
         }
         
@@ -493,7 +552,7 @@ fun ProfileScreen(
             ) {
                 Icon(Icons.Default.Logout, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Cerrar Sesión")
+                Text(stringResource(R.string.profile_logout))
             }
         }
 
@@ -510,7 +569,7 @@ fun ProfileScreen(
                         contentColor = MaterialTheme.colorScheme.error.copy(alpha = 0.75f)
                     )
                 ) {
-                    Text("Eliminar cuenta")
+                    Text(stringResource(R.string.profile_delete_account))
                 }
             }
         }
