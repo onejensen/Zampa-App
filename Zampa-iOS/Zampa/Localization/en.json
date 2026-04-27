@@ -446,5 +446,8 @@
   "tour_merchant_create_desc": "Tap + to create a new daily offer.",
   "tour_merchant_stats_title": "Statistics",
   "tour_merchant_stats_desc": "Check views and impressions for your offers right here.",
-  "profile_restart_tour": "Replay app tour"
+  "profile_restart_tour": "Replay app tour",
+  "tour_favorite_hint_title": "Save favorites",
+  "tour_favorite_hint_desc": "Open any offer and tap the ❤️ to save the restaurant to your favorites list.",
+  "tour_favorites_tab_desc": "Here you find all your saved restaurants and their latest offers."
 }

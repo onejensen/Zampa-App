@@ -463,7 +463,7 @@
     <string name="tour_map_title">Mapa</string>
     <string name="tour_map_desc">Alterna entre lista de restaurantes y vista de mapa.</string>
     <string name="tour_favorites_title">Favoritos</string>
-    <string name="tour_favorites_desc">Guarda tus favoritos y recibe notificaciones cuando publiquen.</string>
+    <string name="tour_favorites_desc">Guarda tus favoritos y recibe notificaciones cuando publiquen. Toca el ❤️ en el detalle de una oferta.</string>
     <string name="tour_merchant_dashboard_title">Tu dashboard</string>
     <string name="tour_merchant_dashboard_desc">Desde aquí gestionas y publicas tus ofertas del día.</string>
     <string name="tour_merchant_create_title">Publicar menú</string>

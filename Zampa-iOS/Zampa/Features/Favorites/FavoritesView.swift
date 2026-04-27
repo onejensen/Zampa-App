@@ -11,6 +11,8 @@ private struct FavoriteItem: Identifiable {
 // MARK: - FavoritesView
 
 struct FavoritesView: View {
+    @EnvironmentObject var tourManager: TourManager
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var items: [FavoriteItem] = []
     @State private var isLoading = true
     @State private var selectedMenu: Menu? = nil
@@ -19,15 +21,22 @@ struct FavoritesView: View {
         NavigationView {
             ZStack {
                 Color.appBackground.ignoresSafeArea()
+                // Anchor invisible para registrar el contenido de esta pantalla en el tour
+                Color.clear.tourTarget(.favoritesContent)
 
                 if isLoading {
-                    ProgressView("Cargando tus favoritos...")
+                    ProgressView(localization.t("favorites_loading"))
                         .progressViewStyle(CircularProgressViewStyle(tint: .appPrimary))
                 } else if items.isEmpty {
                     emptyState
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 16) {
+                            Text(localization.t("favorites_subtitle"))
+                                .font(.appCaption)
+                                .foregroundColor(.appTextSecondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
                             ForEach(items) { item in
                                 FavoriteRow(item: item) {
                                     removeFavorite(merchantId: item.merchant.id)
@@ -42,7 +51,7 @@ struct FavoritesView: View {
                     }
                 }
             }
-            .navigationTitle("Mis Favoritos")
+            .navigationTitle(localization.t("favorites_title"))
             .onAppear { loadFavorites() }
             .sheet(item: $selectedMenu) { menu in
                 NavigationView {
@@ -57,18 +66,18 @@ struct FavoritesView: View {
     private var emptyState: some View {
         VStack(spacing: 24) {
             Image(systemName: "heart.fill")
-                .font(.system(size: 80))
+                .font(.custom("Sora-Regular", size: 80))
                 .foregroundColor(.appPrimary.opacity(0.1))
                 .overlay(
                     Image(systemName: "heart")
-                        .font(.system(size: 80))
+                        .font(.custom("Sora-Regular", size: 80))
                         .foregroundColor(.appPrimary.opacity(0.2))
                 )
             VStack(spacing: 8) {
-                Text("No tienes favoritos aun")
+                Text(localization.t("favorites_empty"))
                     .font(.appHeadline)
                     .foregroundColor(.appTextPrimary)
-                Text("Guarda tus restaurantes favoritos para recibir notificaciones cuando publiquen sus menus diarios.")
+                Text(localization.t("favorites_empty_desc"))
                     .font(.appBody)
                     .foregroundColor(.appTextSecondary)
                     .multilineTextAlignment(.center)
@@ -157,25 +166,25 @@ private struct FavoriteRow: View {
 
                     if let cuisine = item.merchant.cuisineTypes?.first {
                         Text(cuisine)
-                            .font(.caption)
+                            .font(.appCaption)
                             .foregroundColor(.appSecondary)
                     }
 
                     if let menu = item.activeMenu {
                         HStack(spacing: 4) {
                             Text(menu.title)
-                                .font(.caption)
+                                .font(.appCaption)
                                 .foregroundColor(.appTextSecondary)
                                 .lineLimit(1)
                             Spacer()
                             Text(menu.formattedPrice)
-                                .font(.caption)
+                                .font(.appCaption)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.appPrimary)
                         }
                     } else {
                         Text("Sin menu hoy")
-                            .font(.caption)
+                            .font(.appCaption)
                             .foregroundColor(.appTextSecondary.opacity(0.5))
                     }
                 }
@@ -194,7 +203,7 @@ private struct FavoriteRow: View {
 
                     if item.activeMenu != nil {
                         Image(systemName: "chevron.right")
-                            .font(.caption)
+                            .font(.appCaption)
                             .foregroundColor(.appTextSecondary.opacity(0.5))
                     }
                 }

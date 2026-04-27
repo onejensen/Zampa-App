@@ -440,7 +440,7 @@
     <string name="tour_map_title">Carte</string>
     <string name="tour_map_desc">Alternez entre la liste des restaurants et la vue carte.</string>
     <string name="tour_favorites_title">Favoris</string>
-    <string name="tour_favorites_desc">Enregistrez vos favoris et recevez des notifications quand ils publient.</string>
+    <string name="tour_favorites_desc">Enregistrez vos favoris et recevez des notifications. Touchez ❤️ dans le détail d\'une offre.</string>
     <string name="tour_merchant_dashboard_title">Votre tableau de bord</string>
     <string name="tour_merchant_dashboard_desc">Gérez et publiez vos offres du jour depuis ici.</string>
     <string name="tour_merchant_create_title">Publier un menu</string>

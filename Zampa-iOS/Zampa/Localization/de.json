@@ -446,5 +446,8 @@
   "tour_merchant_create_desc": "Tippe auf +, um ein neues Tagesangebot zu erstellen.",
   "tour_merchant_stats_title": "Statistiken",
   "tour_merchant_stats_desc": "Sieh dir Aufrufe und Impressionen deiner Angebote direkt hier an.",
-  "profile_restart_tour": "App-Tour wiederholen"
+  "profile_restart_tour": "App-Tour wiederholen",
+  "tour_favorite_hint_title": "Favoriten speichern",
+  "tour_favorite_hint_desc": "Öffne ein Angebot und tippe auf das ❤️, um das Restaurant in deine Favoritenliste zu speichern.",
+  "tour_favorites_tab_desc": "Hier findest du alle gespeicherten Restaurants und ihre neuesten Angebote."
 }

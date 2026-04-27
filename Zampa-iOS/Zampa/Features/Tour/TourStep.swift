@@ -4,6 +4,8 @@ enum TourTarget: String, Hashable {
     case feedCard
     case filterButton
     case mapToggle
+    case favoriteHint       // primera card — explica el ❤️ sin navegar
+    case favoritesContent   // contenido de FavoritesView (tras navegar al tab)
     case favoritesTab
     case merchantDashboardTab
     case merchantCreateButton
@@ -19,9 +21,11 @@ struct TourStep {
     // haciendo el spotlight invisible. Se excluyen esos pasos en iOS;
     // en Android (Compose custom tab bar) sí funcionan.
     static let clientSteps: [TourStep] = [
-        TourStep(target: .feedCard,     titleKey: "tour_feed_title",    descKey: "tour_feed_desc"),
-        TourStep(target: .filterButton, titleKey: "tour_filters_title", descKey: "tour_filters_desc"),
-        TourStep(target: .mapToggle,    titleKey: "tour_map_title",     descKey: "tour_map_desc"),
+        TourStep(target: .feedCard,          titleKey: "tour_feed_title",           descKey: "tour_feed_desc"),
+        TourStep(target: .filterButton,      titleKey: "tour_filters_title",        descKey: "tour_filters_desc"),
+        TourStep(target: .mapToggle,         titleKey: "tour_map_title",            descKey: "tour_map_desc"),
+        TourStep(target: .favoriteHint,      titleKey: "tour_favorite_hint_title",  descKey: "tour_favorite_hint_desc"),
+        TourStep(target: .favoritesContent,  titleKey: "tour_favorites_title",      descKey: "tour_favorites_tab_desc"),
     ]
 
     static let merchantSteps: [TourStep] = [

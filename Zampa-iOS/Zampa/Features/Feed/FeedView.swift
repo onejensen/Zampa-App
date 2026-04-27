@@ -169,6 +169,7 @@ struct FeedView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                                 .tourTarget(.feedCard, when: menu.id == sortedMenus.first?.id)
+                                .tourTarget(.favoriteHint, when: menu.id == sortedMenus.first?.id)
                                 .onAppear {
                                     if menu == menus.last && canLoadMore {
                                         loadMoreMenus()

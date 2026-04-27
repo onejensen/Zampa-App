@@ -61,6 +61,13 @@ struct MainTabView: View {
                 tourManager.clearPendingTabSwitch()
             }
         }
+        .onChange(of: tourManager.currentStep?.target) { _, target in
+            // Cuando el tour llega al paso de Favoritos, navegamos al tab 1
+            // para que FavoritesView se renderice y registre sus bounds.
+            if target == .favoritesContent {
+                selectedTab = 1
+            }
+        }
         .sheet(item: Binding(
             get: { deepLinkMenuId.map { IdentifiableMenu(id: $0) } },
             set: { deepLinkMenuId = $0?.id }

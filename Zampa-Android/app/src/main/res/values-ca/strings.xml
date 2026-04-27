@@ -440,7 +440,7 @@
     <string name="tour_map_title">Mapa</string>
     <string name="tour_map_desc">Alterna entre llista de restaurants i vista de mapa.</string>
     <string name="tour_favorites_title">Preferits</string>
-    <string name="tour_favorites_desc">Guarda els teus preferits i rep notificacions quan publiquin.</string>
+    <string name="tour_favorites_desc">Guarda els teus preferits i rep notificacions quan publiquin. Toca el ❤️ en el detall d\'una oferta.</string>
     <string name="tour_merchant_dashboard_title">El teu tauler</string>
     <string name="tour_merchant_dashboard_desc">Des d\'aquí gestiones i publiques les teves ofertes del dia.</string>
     <string name="tour_merchant_create_title">Publicar menú</string>

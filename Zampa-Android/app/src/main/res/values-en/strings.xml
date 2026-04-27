@@ -440,7 +440,7 @@
     <string name="tour_map_title">Map</string>
     <string name="tour_map_desc">Toggle between restaurant list and map view.</string>
     <string name="tour_favorites_title">Favorites</string>
-    <string name="tour_favorites_desc">Save your favorites and get notifications when they publish.</string>
+    <string name="tour_favorites_desc">Save your favorites and get notifications. Tap ❤️ in any offer detail to add it.</string>
     <string name="tour_merchant_dashboard_title">Your dashboard</string>
     <string name="tour_merchant_dashboard_desc">Manage and publish your daily offers from here.</string>
     <string name="tour_merchant_create_title">Publish menu</string>

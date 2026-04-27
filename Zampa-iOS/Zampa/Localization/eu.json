@@ -446,5 +446,8 @@
   "tour_merchant_create_desc": "Sakatu + eguneko eskaintza berri bat sortzeko.",
   "tour_merchant_stats_title": "Estatistikak",
   "tour_merchant_stats_desc": "Kontsultatu zure eskaintzen ikuspenak eta inpresioak zuzenean hemendik.",
-  "profile_restart_tour": "Aplikazioaren tourra errepikatu"
+  "profile_restart_tour": "Aplikazioaren tourra errepikatu",
+  "tour_favorite_hint_title": "Gogokoak gordetzea",
+  "tour_favorite_hint_desc": "Edozein eskaintza ireki eta ❤️ sakatu jatetxea gogokoen zerrendan gordetzeko.",
+  "tour_favorites_tab_desc": "Hemen ikusten dituzu gordetako jatetxe guztiak eta haien azken eskaintzak."
 }

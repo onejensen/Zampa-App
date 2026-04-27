@@ -446,5 +446,8 @@
   "tour_merchant_create_desc": "Toca + per crear una nova oferta del dia.",
   "tour_merchant_stats_title": "Estadístiques",
   "tour_merchant_stats_desc": "Consulta visites i impressions de les teves ofertes directament des d'aquí.",
-  "profile_restart_tour": "Repetir el tour de l'app"
+  "profile_restart_tour": "Repetir el tour de l'app",
+  "tour_favorite_hint_title": "Guardar preferits",
+  "tour_favorite_hint_desc": "Obre qualsevol oferta i toca el ❤️ per guardar el restaurant als teus preferits.",
+  "tour_favorites_tab_desc": "Aquí accedixes a tots els teus restaurants guardats i les seves últimes ofertes."
 }
