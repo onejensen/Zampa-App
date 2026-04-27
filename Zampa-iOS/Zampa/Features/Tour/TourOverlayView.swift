@@ -25,7 +25,7 @@ struct TourOverlayView: View {
                         totalSteps: tourManager.totalSteps,
                         isLast: tourManager.isLastStep,
                         targetRect: targetRect,
-                        screenSize: UIScreen.main.bounds.size
+                        screenSize: geo.size
                     )
                 }
             }

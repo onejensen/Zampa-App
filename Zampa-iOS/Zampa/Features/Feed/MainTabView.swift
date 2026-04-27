@@ -38,7 +38,7 @@ struct MainTabView: View {
             GeometryReader { geo in
                 Color.clear.onAppear {
                     registerTabBounds(geo: geo)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         if let uid = appState.currentUser?.id {
                             tourManager.start(
                                 for: uid,
@@ -65,20 +65,20 @@ struct MainTabView: View {
     }
 
     private func registerTabBounds(geo: GeometryProxy) {
+        let globalFrame = geo.frame(in: .global)
         let isMerchant = appState.currentUser?.role == .comercio
         let tabCount: CGFloat = isMerchant ? 4 : 3
-        let tabWidth = geo.size.width / tabCount
-        let safeBottom = geo.safeAreaInsets.bottom
-        let tabBarTop = geo.size.height - 49 - safeBottom
+        let tabWidth = globalFrame.width / tabCount
+        let tabBarTop = globalFrame.maxY - 49 - geo.safeAreaInsets.bottom
 
         tourManager.register(
             target: .favoritesTab,
-            bounds: CGRect(x: tabWidth * 1, y: tabBarTop, width: tabWidth, height: 49)
+            bounds: CGRect(x: globalFrame.minX + tabWidth * 1, y: tabBarTop, width: tabWidth, height: 49)
         )
         if isMerchant {
             tourManager.register(
                 target: .merchantDashboardTab,
-                bounds: CGRect(x: tabWidth * 2, y: tabBarTop, width: tabWidth, height: 49)
+                bounds: CGRect(x: globalFrame.minX + tabWidth * 2, y: tabBarTop, width: tabWidth, height: 49)
             )
         }
     }
