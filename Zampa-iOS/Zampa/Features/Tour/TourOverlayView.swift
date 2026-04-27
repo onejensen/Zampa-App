@@ -6,11 +6,20 @@ struct TourOverlayView: View {
 
     var body: some View {
         GeometryReader { geo in
+            // overlayOrigin: posición global de este overlay.
+            // Los bounds registrados por TourTargetModifier usan .global,
+            // así que restamos el origen del overlay para convertirlos al
+            // espacio de coordenadas local del GeometryReader.
+            let overlayOrigin = geo.frame(in: .global).origin
             if let step = tourManager.currentStep {
-                let targetRect = tourManager.currentTargetBounds ?? CGRect(
-                    x: geo.size.width / 2 - 100,
-                    y: geo.size.height / 2 - 50,
+                let globalRect = tourManager.currentTargetBounds ?? CGRect(
+                    x: overlayOrigin.x + geo.size.width / 2 - 100,
+                    y: overlayOrigin.y + geo.size.height / 2 - 50,
                     width: 200, height: 100
+                )
+                let targetRect = globalRect.offsetBy(
+                    dx: -overlayOrigin.x,
+                    dy: -overlayOrigin.y
                 )
                 ZStack(alignment: .topLeading) {
                     SpotlightShape(cutout: targetRect.insetBy(dx: -6, dy: -6).with(cornerRadius: 12))
