@@ -15,7 +15,7 @@ data class TourState(
     val bounds: Map<TourTarget, TourBounds> = emptyMap()
 ) {
     val currentStep: TourStep? get() = steps.getOrNull(currentStepIndex)
-    val isLastStep: Boolean get() = currentStepIndex == steps.size - 1
+    val isLastStep: Boolean get() = steps.isNotEmpty() && currentStepIndex == steps.size - 1
     val currentBounds: TourBounds? get() = currentStep?.let { bounds[it.target] }
 }
 
