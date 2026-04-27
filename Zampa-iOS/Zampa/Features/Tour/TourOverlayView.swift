@@ -6,13 +6,17 @@ struct TourOverlayView: View {
 
     var body: some View {
         GeometryReader { geo in
-            if let step = tourManager.currentStep,
-               let targetRect = tourManager.currentTargetBounds {
+            if let step = tourManager.currentStep {
+                let targetRect = tourManager.currentTargetBounds ?? CGRect(
+                    x: geo.size.width / 2 - 100,
+                    y: geo.size.height / 2 - 50,
+                    width: 200, height: 100
+                )
                 ZStack(alignment: .topLeading) {
                     SpotlightShape(cutout: targetRect.insetBy(dx: -6, dy: -6).with(cornerRadius: 12))
                         .fill(Color.black.opacity(0.78), style: FillStyle(eoFill: true))
                         .ignoresSafeArea()
-                        .animation(.easeInOut(duration: 0.25), value: targetRect)
+                        .animation(.easeInOut(duration: 0.25), value: tourManager.currentStepIndex)
 
                     TourTooltipView(
                         titleKey: step.titleKey,
@@ -21,7 +25,7 @@ struct TourOverlayView: View {
                         totalSteps: tourManager.totalSteps,
                         isLast: tourManager.isLastStep,
                         targetRect: targetRect,
-                        screenSize: geo.size
+                        screenSize: UIScreen.main.bounds.size
                     )
                 }
             }
@@ -104,7 +108,7 @@ struct TourTooltipView: View {
 
     private var tooltipY: CGFloat {
         showAbove
-            ? targetRect.minY - 140
+            ? targetRect.minY - 160
             : targetRect.maxY + 12
     }
 
@@ -169,7 +173,7 @@ struct TourTooltipView: View {
 
     @ViewBuilder
     private func arrowView(pointingDown: Bool) -> some View {
-        Triangle(pointingDown: pointingDown)
+        TourArrowShape(pointingDown: pointingDown)
             .fill(Color.white)
             .frame(width: 16, height: 8)
     }
@@ -177,7 +181,7 @@ struct TourTooltipView: View {
 
 // MARK: - Triangle arrow shape
 
-struct Triangle: Shape {
+struct TourArrowShape: Shape {
     var pointingDown: Bool
 
     func path(in rect: CGRect) -> Path {
