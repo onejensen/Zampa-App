@@ -73,6 +73,7 @@
 		FEED0003CAFEBABE00030003 /* MerchantProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEED0004CAFEBABE00040004 /* MerchantProfileView.swift */; };
 		TOUR0001CAFEBABE00010001 /* TourStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOUR0002CAFEBABE00020002 /* TourStep.swift */; };
 		TOUR0003CAFEBABE00030003 /* TourManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOUR0004CAFEBABE00040004 /* TourManager.swift */; };
+		TOUR0005CAFEBABE00050006 /* TourOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOUR0006CAFEBABE00060006 /* TourOverlayView.swift */; };
 		1E6A10001E6A00001E6A0001 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6A20001E6A00001E6A0002 /* LegalView.swift */; };
 		F2B3C4D5E6F7A8B9C0D1E2F3 /* MenuService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* MenuService.swift */; };
 		FF1122334455667788990011 /* SocialAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1122334455667788990012 /* SocialAuthService.swift */; };
@@ -171,6 +172,7 @@
 		FEED0004CAFEBABE00040004 /* MerchantProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantProfileView.swift; sourceTree = "<group>"; };
 		TOUR0002CAFEBABE00020002 /* TourStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TourStep.swift; sourceTree = "<group>"; };
 		TOUR0004CAFEBABE00040004 /* TourManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TourManager.swift; sourceTree = "<group>"; };
+		TOUR0006CAFEBABE00060006 /* TourOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TourOverlayView.swift; sourceTree = "<group>"; };
 		1E6A20001E6A00001E6A0002 /* LegalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		FEB596DBDBD3A16CC83CA9D6 /* icon.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = icon.json; sourceTree = "<group>"; };
 		FF1122334455667788990012 /* SocialAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialAuthService.swift; sourceTree = "<group>"; };
@@ -406,6 +408,7 @@
 			children = (
 				TOUR0002CAFEBABE00020002 /* TourStep.swift */,
 				TOUR0004CAFEBABE00040004 /* TourManager.swift */,
+				TOUR0006CAFEBABE00060006 /* TourOverlayView.swift */,
 			);
 			path = Tour;
 			sourceTree = "<group>";
@@ -646,6 +649,7 @@
 				FEED0003CAFEBABE00030003 /* MerchantProfileView.swift in Sources */,
 				TOUR0001CAFEBABE00010001 /* TourStep.swift in Sources */,
 				TOUR0003CAFEBABE00030003 /* TourManager.swift in Sources */,
+				TOUR0005CAFEBABE00050006 /* TourOverlayView.swift in Sources */,
 				1E6A10001E6A00001E6A0001 /* LegalView.swift in Sources */,
 				E88EFED8C803ABD7826CD752 /* FirebaseService.swift in Sources */,
 				3FBBB79AAFC40DB97590F318 /* KeychainManager.swift in Sources */,
