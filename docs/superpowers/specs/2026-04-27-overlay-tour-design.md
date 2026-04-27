@@ -22,7 +22,7 @@ A semi-transparent dark overlay covers the full screen. A cutout (rounded rect) 
 |---|---|---|---|
 | 1 | First feed card | Menús del día cerca de ti | Aquí aparecen las ofertas de los restaurantes cercanos actualizadas cada día. |
 | 2 | Filter button (top-right in FeedView) | Filtros | Filtra por precio, tipo de dieta y distancia. |
-| 3 | Map tab (tab bar) | Mapa | Explora los restaurantes cerca de ti en el mapa. |
+| 3 | Map/list toggle button (FeedView header) | Mapa | Alterna entre lista de restaurantes y vista de mapa. |
 | 4 | Favorites tab (tab bar) | Favoritos | Guarda tus favoritos y recibe notificaciones cuando publiquen. |
 
 ### Merchant (3 steps)
@@ -153,7 +153,7 @@ Canvas(
 | `tour_filters_title` | Filtros |
 | `tour_filters_desc` | Filtra por precio, tipo de dieta y distancia. |
 | `tour_map_title` | Mapa |
-| `tour_map_desc` | Explora los restaurantes cerca de ti en el mapa. |
+| `tour_map_desc` | Alterna entre lista de restaurantes y vista de mapa. |
 | `tour_favorites_title` | Favoritos |
 | `tour_favorites_desc` | Guarda tus favoritos y recibe notificaciones cuando publiquen. |
 | `tour_merchant_dashboard_title` | Tu dashboard |
