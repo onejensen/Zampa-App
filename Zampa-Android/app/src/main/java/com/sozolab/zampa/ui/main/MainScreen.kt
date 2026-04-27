@@ -80,6 +80,7 @@ fun MainScreen(
     // Flag local: una vez que el usuario termina el onboarding en esta sesión
     // hacemos swap a las tabs sin esperar a que SharedPreferences se relea.
     var onboardingFinishedThisSession by remember { mutableStateOf(false) }
+    var tourStartedThisSession by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(Tab.FEED) }
 
     // Decisión síncrona: sólo mostramos onboarding si (1) ya conocemos el uid,
@@ -111,9 +112,10 @@ fun MainScreen(
     }
 
     LaunchedEffect(currentUser, showOnboarding) {
-        if (currentUser != null && !showOnboarding) {
+        if (currentUser != null && !showOnboarding && !tourStartedThisSession) {
             val uid = currentUser!!.id
             if (!prefs.getBoolean("hasSeenTour_$uid", false)) {
+                tourStartedThisSession = true
                 kotlinx.coroutines.delay(1500)
                 tourViewModel.start(isMerchant = isMerchant)
             }
@@ -268,18 +270,19 @@ fun MainScreen(
         }
 
         if (tourState.isActive) {
+            val tourUid = currentUser?.id
             TourOverlay(
                 state = tourState,
                 onNext = {
                     if (tourState.isLastStep) {
-                        currentUser?.id?.let { uid ->
+                        tourUid?.let { uid ->
                             prefs.edit().putBoolean("hasSeenTour_$uid", true).apply()
                         }
                     }
                     tourViewModel.next()
                 },
                 onSkip = {
-                    currentUser?.id?.let { uid ->
+                    tourUid?.let { uid ->
                         prefs.edit().putBoolean("hasSeenTour_$uid", true).apply()
                     }
                     tourViewModel.skip()
