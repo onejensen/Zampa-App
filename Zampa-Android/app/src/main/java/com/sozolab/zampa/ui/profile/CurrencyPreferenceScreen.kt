@@ -11,28 +11,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sozolab.zampa.R
 
 private data class CurrencyOption(
     val code: String,
     val flag: String,
-    val name: String,
+    val nameResId: Int,
     val symbol: String,
 )
 
 private val options = listOf(
-    CurrencyOption("EUR", "🇪🇺", "Euro",                    "€"),
-    CurrencyOption("USD", "🇺🇸", "Dólar estadounidense",    "$"),
-    CurrencyOption("GBP", "🇬🇧", "Libra esterlina",          "£"),
-    CurrencyOption("JPY", "🇯🇵", "Yen japonés",              "¥"),
-    CurrencyOption("CHF", "🇨🇭", "Franco suizo",             "CHF"),
-    CurrencyOption("SEK", "🇸🇪", "Corona sueca",             "kr"),
-    CurrencyOption("NOK", "🇳🇴", "Corona noruega",           "kr"),
-    CurrencyOption("DKK", "🇩🇰", "Corona danesa",            "kr"),
-    CurrencyOption("CAD", "🇨🇦", "Dólar canadiense",         "C$"),
-    CurrencyOption("AUD", "🇦🇺", "Dólar australiano",        "A$"),
+    CurrencyOption("EUR", "🇪🇺", R.string.currency_eur,  "€"),
+    CurrencyOption("USD", "🇺🇸", R.string.currency_usd,  "$"),
+    CurrencyOption("GBP", "🇬🇧", R.string.currency_gbp,  "£"),
+    CurrencyOption("JPY", "🇯🇵", R.string.currency_jpy,  "¥"),
+    CurrencyOption("CHF", "🇨🇭", R.string.currency_chf,  "CHF"),
+    CurrencyOption("SEK", "🇸🇪", R.string.currency_sek,  "kr"),
+    CurrencyOption("NOK", "🇳🇴", R.string.currency_nok,  "kr"),
+    CurrencyOption("DKK", "🇩🇰", R.string.currency_dkk,  "kr"),
+    CurrencyOption("CAD", "🇨🇦", R.string.currency_cad,  "C$"),
+    CurrencyOption("AUD", "🇦🇺", R.string.currency_aud,  "A$"),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,12 +50,13 @@ fun CurrencyPreferenceScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Moneda") },
+                title = { Text(stringResource(R.string.currency_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
-                }
+                },
+                colors = com.sozolab.zampa.ui.theme.brandTopAppBarColors()
             )
         }
     ) { padding ->
@@ -97,7 +100,7 @@ fun CurrencyPreferenceScreen(
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            option.name,
+                            stringResource(option.nameResId),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -118,7 +121,7 @@ fun CurrencyPreferenceScreen(
                         option.code == currentCode -> {
                             Icon(
                                 Icons.Default.Check,
-                                contentDescription = "Seleccionado",
+                                contentDescription = stringResource(R.string.currency_selected),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -128,7 +131,7 @@ fun CurrencyPreferenceScreen(
             }
             item {
                 Text(
-                    text = "Los precios siempre se cobran en euros. Esta opción sólo cambia cómo se muestran en la app.",
+                    text = stringResource(R.string.currency_footer),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(24.dp)

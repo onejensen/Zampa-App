@@ -10,6 +10,7 @@ struct MenuDetailView: View {
     @State private var menu: Menu? = nil
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var merchant: Merchant? = nil
     @State private var isFavorite: Bool = false
     @State private var isLoading: Bool = true
@@ -33,7 +34,7 @@ struct MenuDetailView: View {
             if isLoading && menu == nil {
                 ZStack {
                     Color.appBackground.ignoresSafeArea()
-                    ProgressView("Cargando oferta...")
+                    ProgressView(localization.t("detail_loading"))
                 }
             } else if let menu = menu {
                 ScrollView(showsIndicators: false) {
@@ -54,7 +55,7 @@ struct MenuDetailView: View {
                                     }
                                 } else {
                                     Rectangle().fill(Color.appInputBackground)
-                                        .overlay(Image(systemName: "photo").font(.system(size: 50)).foregroundColor(.appTextSecondary.opacity(0.3)))
+                                        .overlay(Image(systemName: "photo").font(.custom("Sora-Regular", size: 50)).foregroundColor(.appTextSecondary.opacity(0.3)))
                                 }
                             }
                             .frame(height: 280)
@@ -69,63 +70,75 @@ struct MenuDetailView: View {
                             .frame(height: 280)
                             .allowsHitTesting(false)
 
-                            // Overlaid content — no intercepta toques
+                            // Overlaid content. Hit testing desactivado solo en los
+                            // elementos decorativos — el NavigationLink del nombre del
+                            // restaurante SÍ recibe taps.
                             VStack(alignment: .leading, spacing: 6) {
-                                // Cuisine + price tier tags
+                                // Cuisine + price tier tags (no tappable)
                                 HStack(spacing: 8) {
                                     if let cuisines = merchant?.cuisineTypes, let first = cuisines.first {
                                         Text(first)
-                                            .font(.system(size: 12, weight: .medium))
+                                            .font(.custom("Sora-Medium", size: 12))
                                             .foregroundColor(.white)
                                             .padding(.horizontal, 10).padding(.vertical, 4)
                                             .background(Color.white.opacity(0.2))
                                             .cornerRadius(12)
                                     }
                                     Text(priceRange(menu.priceTotal))
-                                        .font(.system(size: 12, weight: .medium))
+                                        .font(.custom("Sora-Medium", size: 12))
                                         .foregroundColor(.white)
                                         .padding(.horizontal, 10).padding(.vertical, 4)
                                         .background(Color.white.opacity(0.2))
                                         .cornerRadius(12)
                                 }
+                                .allowsHitTesting(false)
 
-                                // Restaurant name
-                                Text(merchant?.name ?? menu.title)
-                                    .font(.system(size: 26, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .lineLimit(2)
+                                // Restaurant name — tappable para abrir el perfil público.
+                                NavigationLink(destination: MerchantProfileView(merchantId: menu.businessId).environmentObject(appState)) {
+                                    HStack(spacing: 6) {
+                                        Text(merchant?.name ?? menu.title)
+                                            .font(.custom("Sora-Bold", size: 26))
+                                            .foregroundColor(.white)
+                                            .lineLimit(2)
+                                        Image(systemName: "chevron.right")
+                                            .font(.custom("Sora-SemiBold", size: 14))
+                                            .foregroundColor(.white.opacity(0.75))
+                                    }
+                                }
+                                .buttonStyle(.plain)
 
-                                // Distance + address
+                                // Distance + address (no tappable)
                                 HStack(alignment: .top, spacing: 4) {
                                     Image(systemName: "location.fill")
-                                        .font(.system(size: 11))
+                                        .font(.custom("Sora-Regular", size: 11))
                                         .padding(.top, 1)
                                     VStack(alignment: .leading, spacing: 2) {
                                         if let addr = merchant?.address {
                                             Text(addr.formatted)
                                                 .lineLimit(2)
-                                                .font(.system(size: 13))
+                                                .font(.custom("Sora-Regular", size: 13))
                                         }
                                         if let dist = distanceText {
                                             Text(dist)
-                                                .font(.system(size: 12, weight: .medium))
+                                                .font(.custom("Sora-Medium", size: 12))
                                                 .opacity(0.85)
                                         }
                                     }
                                 }
                                 .foregroundColor(.white.opacity(0.9))
+                                .allowsHitTesting(false)
 
-                                // Open / closed status
+                                // Open / closed status (no tappable)
                                 let status = openStatus()
                                 HStack(spacing: 5) {
                                     Circle()
                                         .fill(status.isOpen ? Color.green : Color.red)
                                         .frame(width: 7, height: 7)
-                                    Text(status.isOpen ? "Abierto ahora" : "Cerrado ahora")
-                                        .font(.system(size: 12, weight: .semibold))
+                                    Text(status.isOpen ? localization.t("detail_open_now") : localization.t("detail_closed_now"))
+                                        .font(.custom("Sora-SemiBold", size: 12))
                                     if let timeLabel = status.timeLabel {
                                         Text("· \(timeLabel)")
-                                            .font(.system(size: 12))
+                                            .font(.custom("Sora-Regular", size: 12))
                                             .opacity(0.85)
                                     }
                                 }
@@ -133,15 +146,15 @@ struct MenuDetailView: View {
                                 .padding(.horizontal, 8).padding(.vertical, 4)
                                 .background(Color.black.opacity(0.35))
                                 .cornerRadius(8)
+                                .allowsHitTesting(false)
                             }
                             .padding(16)
-                            .allowsHitTesting(false)
                         }
                         .frame(height: 280)
                         .overlay(alignment: .bottomTrailing) {
                             Button(action: { toggleFavorite(menu: menu) }) {
                                 Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                    .font(.system(size: 20, weight: .semibold))
+                                    .font(.custom("Sora-SemiBold", size: 20))
                                     .foregroundColor(isFavorite ? .red : .white)
                                     .padding(10)
                                     .background(Circle().fill(Color.black.opacity(0.45)))
@@ -153,7 +166,7 @@ struct MenuDetailView: View {
 
                         // ── ACTION BUTTONS ───────────────────────────────────
                         HStack(spacing: 12) {
-                            OutlineActionButton(icon: "phone", label: "Llamar") {
+                            OutlineActionButton(icon: "phone", label: localization.t("detail_call")) {
                                 if let phone = merchant?.phone,
                                    let url = URL(string: "tel://\(phone.replacingOccurrences(of: " ", with: ""))") {
                                     Task { await FirebaseService.shared.trackAction(menuId: menu.id, merchantId: menu.businessId, action: "call") }
@@ -161,7 +174,7 @@ struct MenuDetailView: View {
                                     UIApplication.shared.open(url)
                                 }
                             }
-                            OutlineActionButton(icon: "arrow.triangle.turn.up.right.circle.fill", label: "Cómo ir") {
+                            OutlineActionButton(icon: "arrow.triangle.turn.up.right.circle.fill", label: localization.t("detail_directions")) {
                                 if merchant?.address != nil {
                                     showingDirectionsDialog = true
                                 }
@@ -169,10 +182,10 @@ struct MenuDetailView: View {
                         }
                         .padding(16)
                         .background(Color.appSurface)
-                        .confirmationDialog("¿Cómo quieres ir?", isPresented: $showingDirectionsDialog, titleVisibility: .visible) {
-                            Button("Apple Maps") { openDirections(provider: .apple, menu: menu) }
-                            Button("Google Maps") { openDirections(provider: .google, menu: menu) }
-                            Button("Cancelar", role: .cancel) {}
+                        .confirmationDialog(localization.t("detail_how_to_go"), isPresented: $showingDirectionsDialog, titleVisibility: .visible) {
+                            Button(localization.t("detail_apple_maps")) { openDirections(provider: .apple, menu: menu) }
+                            Button(localization.t("detail_google_maps")) { openDirections(provider: .google, menu: menu) }
+                            Button(localization.t("common_cancel"), role: .cancel) {}
                         }
 
                         Divider()
@@ -186,7 +199,7 @@ struct MenuDetailView: View {
                                             selectedTag = (selectedTag == tag) ? nil : tag
                                         }) {
                                             Text(tag)
-                                                .font(.system(size: 14, weight: .semibold))
+                                                .font(.custom("Sora-SemiBold", size: 14))
                                                 .lineLimit(1)
                                                 .foregroundColor(selectedTag == tag ? .white : .appTextPrimary)
                                                 .padding(.horizontal, 18).padding(.vertical, 9)
@@ -211,16 +224,17 @@ struct MenuDetailView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "fork.knife")
                                     .foregroundColor(.appPrimary)
-                                Text(selectedTag ?? (menu.tags?.first ?? "Menú del día"))
-                                    .font(.system(size: 18, weight: .bold))
+                                Text(selectedTag ?? (menu.tags?.first ?? localization.t("feed_menu_del_dia")))
+                                    .font(.custom("Sora-Bold", size: 18))
                                     .foregroundColor(.appTextPrimary)
                                 if let type = menu.offerType {
-                                    Text(type)
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(.appPrimary)
+                                    let pillColor = Color(red: 0.91, green: 0.365, blue: 0.247)
+                                    Text(OfferTypes.label(for: type))
+                                        .font(.custom("Sora-SemiBold", size: 12))
+                                        .foregroundColor(pillColor)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 3)
-                                        .background(Color.appPrimary.opacity(0.12))
+                                        .background(pillColor.opacity(0.12))
                                         .cornerRadius(6)
                                 }
                             }
@@ -231,13 +245,13 @@ struct MenuDetailView: View {
                             // ── PRICE ────────────────────────────────────
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(CurrencyService.format(amount: menu.priceTotal, code: "EUR"))
-                                    .font(.system(size: 22, weight: .bold))
+                                    .font(.custom("Sora-Bold", size: 22))
                                     .foregroundColor(.appPrimary)
                                 if let prefCode = appState.currentUser?.currencyPreference,
                                    prefCode != "EUR",
                                    let converted = CurrencyService.formatConverted(eurAmount: menu.priceTotal, to: prefCode) {
                                     Text("~\(converted)")
-                                        .font(.system(size: 13))
+                                        .font(.custom("Sora-Regular", size: 13))
                                         .foregroundColor(.appTextSecondary)
                                 }
                             }
@@ -254,8 +268,8 @@ struct MenuDetailView: View {
                                 HStack(spacing: 8) {
                                     ForEach(includes, id: \.0) { label, icon in
                                         HStack(spacing: 4) {
-                                            Image(systemName: icon).font(.system(size: 11))
-                                            Text(label).font(.system(size: 12, weight: .medium))
+                                            Image(systemName: icon).font(.custom("Sora-Regular", size: 11))
+                                            Text(label).font(.custom("Sora-Medium", size: 12))
                                         }
                                         .foregroundColor(.appTextSecondary)
                                         .padding(.horizontal, 9)
@@ -290,13 +304,13 @@ struct MenuDetailView: View {
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(menu.title)
-                                        .font(.system(size: 15, weight: .bold))
+                                        .font(.custom("Sora-Bold", size: 15))
                                         .foregroundColor(.appTextPrimary)
                                         .lineLimit(2)
 
                                     if let desc = menu.description, !desc.isEmpty {
                                         Text(desc)
-                                            .font(.system(size: 13))
+                                            .font(.custom("Sora-Regular", size: 13))
                                             .foregroundColor(.appTextSecondary)
                                             .lineLimit(2)
                                     }
@@ -304,7 +318,7 @@ struct MenuDetailView: View {
                                     Spacer(minLength: 4)
 
                                     Text(menu.formattedPrice)
-                                        .font(.system(size: 16, weight: .bold))
+                                        .font(.custom("Sora-Bold", size: 16))
                                         .foregroundColor(.appPrimary)
                                 }
 
@@ -325,8 +339,8 @@ struct MenuDetailView: View {
                         if let desc = merchant?.shortDescription, !desc.isEmpty {
                             Divider()
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Sobre el restaurante")
-                                    .font(.system(size: 15, weight: .semibold))
+                                Text(localization.t("detail_about_restaurant"))
+                                    .font(.custom("Sora-SemiBold", size: 15))
                                     .foregroundColor(.appTextPrimary)
                                 Text(desc)
                                     .font(.appBody)
@@ -353,18 +367,18 @@ struct MenuDetailView: View {
                                     .symbolRenderingMode(.hierarchical)
                                     .foregroundColor(.appTextSecondary)
                             }
-                            .accessibilityLabel("Cerrar")
+                            .accessibilityLabel(localization.t("common_close"))
                         }
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {
                         // Compartimos un Universal Link al landing de Firebase Hosting.
                         // El receptor abre la app si la tiene instalada (App Link verificado),
                         // o aterriza en la landing que le redirige a la App Store / Play Store.
-                        if let shareURL = URL(string: "https://eatout-70b8b.web.app/o/\(menu.id)") {
+                        if let shareURL = URL(string: "https://www.getzampa.com/o/\(menu.id)") {
                             ShareLink(
                                 item: shareURL,
                                 subject: Text(menu.title),
-                                message: Text("¡Mira este menú en Zampa: \(menu.title)!")
+                                message: Text("\(localization.t("detail_share_text")) \(menu.title)!")
                             ) {
                                 Image(systemName: "square.and.arrow.up")
                                     .foregroundColor(.appTextPrimary)
@@ -386,7 +400,7 @@ struct MenuDetailView: View {
                             }
                             Button(action: { showingFullImage = false }) {
                                 Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 30)).foregroundColor(.white).padding()
+                                    .font(.custom("Sora-Regular", size: 30)).foregroundColor(.white).padding()
                             }
                             .padding(.top, 44)
                         }
@@ -395,8 +409,8 @@ struct MenuDetailView: View {
                 }
             } else {
                 VStack(spacing: 16) {
-                    Text("No se pudo cargar la oferta").font(.appBody)
-                    Button("Volver") { presentationMode.wrappedValue.dismiss() }
+                    Text(localization.t("detail_could_not_load")).font(.appBody)
+                    Button(localization.t("common_back")) { presentationMode.wrappedValue.dismiss() }
                         .foregroundColor(.appPrimary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -439,8 +453,8 @@ struct MenuDetailView: View {
         displayFmt.locale = Locale(identifier: "es_ES")
 
         let timeLabel = isOpen
-            ? "Cierra a las \(formatTime(entry.close))"
-            : "Abre a las \(formatTime(entry.open))"
+            ? "\(localization.t("detail_closes_at")) \(formatTime(entry.close))"
+            : "\(localization.t("detail_opens_at")) \(formatTime(entry.open))"
         return (isOpen, timeLabel)
     }
 
@@ -554,9 +568,9 @@ struct OutlineActionButton: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 15))
+                    .font(.custom("Sora-Regular", size: 15))
                 Text(label)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.custom("Sora-Medium", size: 14))
             }
             .foregroundColor(.appTextPrimary)
             .frame(maxWidth: .infinity)

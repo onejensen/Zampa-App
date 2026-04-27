@@ -16,13 +16,21 @@ android {
         applicationId = "com.sozolab.zampa"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        versionCode = 3
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Google Maps API key. Resolución: env `MAPS_API_KEY` → `local.properties`
+        // (`MAPS_API_KEY=AIza...`) → placeholder vacío (el mapa mostrará error in-app
+        // pero el build no falla, facilitando CI sin clave).
+        val mapsApiKey: String = System.getenv("MAPS_API_KEY")
+            ?: providers.gradleProperty("MAPS_API_KEY").orNull
+            ?: ""
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     signingConfigs {
@@ -35,7 +43,6 @@ android {
                 storeFile = file(keystorePath)
             }
             storePassword = System.getenv("ZAMPA_KEYSTORE_PASS") ?: ""
-            // Si tu keystore existente usa alias "eatout", cambia esto a "eatout"
             keyAlias = "zampa"
             keyPassword = System.getenv("ZAMPA_KEY_PASS") ?: ""
         }
@@ -91,6 +98,7 @@ dependencies {
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.firebase:firebase-crashlytics-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.56")
@@ -100,12 +108,22 @@ dependencies {
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
 
-    // Google Play Services (location + auth)
+    // Google Play Services (location + auth + maps)
     implementation("com.google.android.gms:play-services-location:21.1.0")
     implementation("com.google.android.gms:play-services-auth:21.0.0")
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+
+    // Google Maps Compose (+ utils para clustering)
+    implementation("com.google.maps.android:maps-compose:6.4.4")
+    implementation("com.google.maps.android:maps-compose-utils:6.4.4")
+    implementation("com.google.maps.android:android-maps-utils:3.8.2")
 
     // Coroutines Play Services (await() para Task<T>)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
+
+    // Haze: backdrop-blur estilo Liquid Glass (RenderEffect en Android 12+)
+    implementation("dev.chrisbanes.haze:haze:1.6.4")
+    implementation("dev.chrisbanes.haze:haze-materials:1.6.4")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

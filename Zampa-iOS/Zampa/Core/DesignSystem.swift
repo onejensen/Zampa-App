@@ -2,14 +2,14 @@ import SwiftUI
 
 // MARK: - Colors (aligned with design-system/tokens.json)
 extension Color {
-    // Brand
-    static let appPrimary = Color(red: 0.980, green: 0.686, blue: 0.196)            // #FAAF32
-    static let appPrimaryDark = Color(red: 0.820, green: 0.545, blue: 0.086)       // #D18B16
-    static let appPrimaryLight = Color(red: 1.000, green: 0.820, blue: 0.510)      // #FFD182
-    static let appPrimarySurface = Color(red: 1.000, green: 0.969, blue: 0.878)    // #FFF7E0
-    static let appSecondary = Color(red: 76/255, green: 175/255, blue: 80/255)     // #4CAF50
-    static let appSecondaryLight = Color(red: 232/255, green: 245/255, blue: 233/255) // #E8F5E9
-    static let appAccent = Color(red: 0.980, green: 0.686, blue: 0.196)            // #FAAF32
+    // Brand — pure 100% saturated
+    static let appPrimary = Color(red: 1.0, green: 0.667, blue: 0.110)             // #FFAA1C  RGB(255,170,28)
+    static let appPrimaryDark = Color(red: 0.878, green: 0.549, blue: 0.0)        // #E08C00
+    static let appPrimaryLight = Color(red: 1.0, green: 0.8, blue: 0.333)         // #FFCC55
+    static let appPrimarySurface = Color(red: 1.0, green: 0.949, blue: 0.851)     // #FFF2D9
+    static let appSecondary = Color(red: 0.0, green: 0.8, blue: 0.0)              // #00CC00  HSL(120°,100%,40%)
+    static let appSecondaryLight = Color(red: 0.8, green: 1.0, blue: 0.8)         // #CCFFCC  HSL(120°,100%,90%)
+    static let appAccent = Color(red: 1.0, green: 0.667, blue: 0.110)             // #FFAA1C
 }
 
 // MARK: - Spacing (aligned with design-system/tokens.json)
@@ -31,16 +31,16 @@ struct AppRadius {
     static let xl: CGFloat = 20
 }
 
-// MARK: - Fonts (aligned with design-system/tokens.json)
+// MARK: - Fonts (Sora)
 extension Font {
-    static let appLargeTitle = Font.system(size: 34, weight: .bold, design: .default)
-    static let appHeadline = Font.system(size: 28, weight: .bold, design: .default)
-    static let appSubheadline = Font.system(size: 18, weight: .semibold, design: .default)
-    static let appBody = Font.system(size: 14, weight: .regular, design: .default)
-    static let appBodyLarge = Font.system(size: 16, weight: .regular, design: .default)
-    static let appButton = Font.system(size: 16, weight: .bold, design: .default)
-    static let appCaption = Font.system(size: 12, weight: .regular, design: .default)
-    static let appLabel = Font.system(size: 14, weight: .semibold, design: .default)
+    static let appLargeTitle = Font.custom("Sora-Bold", size: 34)
+    static let appHeadline = Font.custom("Sora-Bold", size: 28)
+    static let appSubheadline = Font.custom("Sora-SemiBold", size: 18)
+    static let appBody = Font.custom("Sora-Regular", size: 14)
+    static let appBodyLarge = Font.custom("Sora-Regular", size: 16)
+    static let appButton = Font.custom("Sora-Bold", size: 16)
+    static let appCaption = Font.custom("Sora-Regular", size: 12)
+    static let appLabel = Font.custom("Sora-SemiBold", size: 14)
 }
 
 // MARK: - Design Constants & Styles

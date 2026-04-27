@@ -11,9 +11,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sozolab.zampa.R
 import com.sozolab.zampa.data.FirebaseService
 import com.sozolab.zampa.data.model.NotificationPreferences
 import kotlinx.coroutines.launch
@@ -44,12 +46,13 @@ fun NotificationPreferencesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Notificaciones") },
+                title = { Text(stringResource(R.string.profile_notifications)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.Default.ArrowBack, stringResource(R.string.common_back))
                     }
-                }
+                },
+                colors = com.sozolab.zampa.ui.theme.brandTopAppBarColors()
             )
         }
     ) { padding ->
@@ -71,7 +74,7 @@ fun NotificationPreferencesScreen(
 
             // Section: Restaurantes favoritos
             Text(
-                "Restaurantes favoritos",
+                stringResource(R.string.notif_favorite_restaurants),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -84,11 +87,11 @@ fun NotificationPreferencesScreen(
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(
-                            "Nuevas ofertas de favoritos",
+                            stringResource(R.string.notif_new_offers),
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Text(
-                            "Recibe una notificación cuando un restaurante favorito publique un nuevo menú o plato del día",
+                            stringResource(R.string.notif_new_offers_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -105,7 +108,7 @@ fun NotificationPreferencesScreen(
 
             // Section: Otras notificaciones
             Text(
-                "Otras notificaciones",
+                stringResource(R.string.notif_other),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -119,11 +122,11 @@ fun NotificationPreferencesScreen(
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(
-                                "Promociones y descuentos",
+                                stringResource(R.string.notif_promotions),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                "Ofertas especiales y descuentos exclusivos",
+                                stringResource(R.string.notif_promotions_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -143,11 +146,11 @@ fun NotificationPreferencesScreen(
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(
-                                "Novedades de Zampa",
+                                stringResource(R.string.notif_news),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                "Actualizaciones de la app y nuevas funcionalidades",
+                                stringResource(R.string.notif_news_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -183,13 +186,13 @@ fun NotificationPreferencesScreen(
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text(
-                            "Zampa Pro",
+                            stringResource(R.string.notif_pro_section),
                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                             color = Color(0xFFFF6B35)
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Los restaurantes con suscripción Pro envían notificaciones automáticas a sus seguidores cada vez que publican una nueva oferta.",
+                            stringResource(R.string.notif_pro_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -104,8 +104,7 @@ struct EditMenuView: View {
                 includesDrink: $viewModel.includesDrink,
                 includesDessert: $viewModel.includesDessert,
                 includesCoffee: $viewModel.includesCoffee,
-                serviceTime: $viewModel.serviceTime,
-                isPro: appState.isPremium
+                serviceTime: $viewModel.serviceTime
             )
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)

@@ -8,15 +8,17 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sozolab.zampa.R
 
 enum class LegalType { PRIVACY_POLICY, TERMS }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LegalScreen(type: LegalType, onBack: () -> Unit) {
-    val title = if (type == LegalType.PRIVACY_POLICY) "Política de Privacidad" else "Términos y Condiciones"
+    val title = if (type == LegalType.PRIVACY_POLICY) stringResource(R.string.legal_privacy_title) else stringResource(R.string.legal_terms_title)
 
     Scaffold(
         topBar = {
@@ -24,7 +26,7 @@ fun LegalScreen(type: LegalType, onBack: () -> Unit) {
                 title = { Text(title, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.legal_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -76,9 +78,9 @@ private val privacyPolicyText: List<Pair<String?, String>> = listOf(
         "Conservamos tus datos mientras mantengas la cuenta activa. Puedes solicitar la eliminación de tu cuenta y datos en cualquier momento.",
     "6. Tus derechos" to
         "Tienes derecho a acceder, rectificar, suprimir, limitar u oponerte al tratamiento de tus datos, " +
-        "así como a la portabilidad de los mismos. Puedes ejercerlos escribiendo a privacidad@zampa.app.",
+        "así como a la portabilidad de los mismos. Puedes ejercerlos escribiendo a soporte@getzampa.com.",
     "7. Contacto" to
-        "Para cualquier consulta sobre privacidad, escríbenos a privacidad@zampa.app."
+        "Para cualquier consulta sobre privacidad, escríbenos a soporte@getzampa.com."
 )
 
 private val termsText: List<Pair<String?, String>> = listOf(
@@ -109,5 +111,5 @@ private val termsText: List<Pair<String?, String>> = listOf(
     "8. Modificaciones" to
         "Podemos actualizar estos términos en cualquier momento. Te notificaremos los cambios significativos a través de la app.",
     "9. Contacto" to
-        "Para cualquier consulta escríbenos a legal@zampa.app."
+        "Para cualquier consulta escríbenos a soporte@getzampa.com."
 )

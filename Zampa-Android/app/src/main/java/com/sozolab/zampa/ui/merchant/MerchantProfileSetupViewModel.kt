@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sozolab.zampa.data.FirebaseService
+import com.sozolab.zampa.data.TaxIdValidator
 import com.sozolab.zampa.data.model.Merchant
 import com.sozolab.zampa.data.model.MerchantAddress
 import com.sozolab.zampa.data.model.ScheduleEntry
@@ -84,6 +85,7 @@ class MerchantProfileSetupViewModel @Inject constructor(
     fun saveProfile(
         name: String,
         phone: String,
+        taxId: String,
         description: String,
         addressText: String,
         cuisineTypes: List<String>,
@@ -113,6 +115,13 @@ class MerchantProfileSetupViewModel @Inject constructor(
                     return@launch
                 }
 
+                val normalizedTaxId = taxId.trim().uppercase()
+                if (!TaxIdValidator.isValid(normalizedTaxId)) {
+                    _error.value = context.getString(com.sozolab.zampa.R.string.merchant_setup_tax_id_invalid)
+                    _isLoading.value = false
+                    return@launch
+                }
+
                 val existing = _existingProfile.value
                 val merchant = Merchant(
                     id = uid,
@@ -125,7 +134,8 @@ class MerchantProfileSetupViewModel @Inject constructor(
                     coverPhotoUrl = coverUrl,
                     profilePhotoUrl = existing?.profilePhotoUrl,
                     planTier = existing?.planTier,
-                    isHighlighted = existing?.isHighlighted
+                    isHighlighted = existing?.isHighlighted,
+                    taxId = normalizedTaxId
                 )
 
                 firebaseService.updateMerchantProfile(merchant)

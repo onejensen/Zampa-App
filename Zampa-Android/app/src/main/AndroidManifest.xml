@@ -26,6 +26,12 @@
         android:usesCleartextTraffic="false"
         tools:targetApi="34">
 
+        <!-- Google Maps API key. Se inyecta desde build.gradle.kts via manifestPlaceholders.
+             Definir MAPS_API_KEY en env var o en ~/.gradle/gradle.properties / local.properties. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
+
         <service
             android:name=".data.ZampaMessagingService"
             android:exported="false">
@@ -44,11 +50,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- App Link verificado: https://eatout-70b8b.web.app/o/{offerId} -->
+            <!-- App Links verificados (autoVerify): https://www.getzampa.com/o/{offerId} -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="www.getzampa.com" android:pathPrefix="/o/" />
+                <data android:scheme="https" android:host="getzampa.com" android:pathPrefix="/o/" />
                 <data android:scheme="https" android:host="eatout-70b8b.web.app" android:pathPrefix="/o/" />
                 <data android:scheme="https" android:host="eatout-70b8b.firebaseapp.com" android:pathPrefix="/o/" />
             </intent-filter>

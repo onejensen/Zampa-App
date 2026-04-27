@@ -2,6 +2,15 @@
 .DS_Store
 *.log
 tmp/
+*.pxd
+Sin título*
+
+# macOS/iCloud accidental duplicates — patrones tipo "File 2.java" con espacio + dígito
+# Causan errores "class X is public, should be declared in a file named Y.java"
+# en el build de Android (Hilt los compila 2 veces).
+* 2.java
+* 2.kt
+* 2.class
 
 # Node.js
 node_modules/
@@ -19,6 +28,8 @@ local.properties
 *.iml
 captures/
 google-services.json
+*.bak-*
+Zampa-Android/app/release/
 
 # iOS
 .bundle/

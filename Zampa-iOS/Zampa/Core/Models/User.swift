@@ -19,6 +19,7 @@ struct User: Codable, Identifiable {
     /// Código ISO 4217 de la moneda preferida para mostrar precios.
     /// Default `"EUR"` cuando el campo no está presente en Firestore.
     let currencyPreference: String
+    let languagePreference: String
 
     init(
         id: String,
@@ -29,7 +30,8 @@ struct User: Codable, Identifiable {
         photoUrl: String? = nil,
         deletedAt: Date? = nil,
         scheduledPurgeAt: Date? = nil,
-        currencyPreference: String = "EUR"
+        currencyPreference: String = "EUR",
+        languagePreference: String = "auto"
     ) {
         self.id = id
         self.email = email
@@ -40,6 +42,7 @@ struct User: Codable, Identifiable {
         self.deletedAt = deletedAt
         self.scheduledPurgeAt = scheduledPurgeAt
         self.currencyPreference = currencyPreference
+        self.languagePreference = languagePreference
     }
 
     enum UserRole: String, Codable {

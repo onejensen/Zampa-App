@@ -13,6 +13,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.sozolab.zampa.R
 import com.sozolab.zampa.data.model.User
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -39,7 +41,7 @@ fun AccountDeletionRecoveryScreen(
             SimpleDateFormat("EEEE d 'de' MMMM 'de' yyyy", Locale("es", "ES"))
                 .format(date)
         } else {
-            "pronto"
+            null
         }
     }
 
@@ -67,7 +69,7 @@ fun AccountDeletionRecoveryScreen(
             Spacer(Modifier.height(24.dp))
 
             Text(
-                text = "Cuenta pendiente\nde eliminación",
+                text = stringResource(R.string.account_deletion_title),
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold
@@ -76,13 +78,13 @@ fun AccountDeletionRecoveryScreen(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "Tu cuenta se eliminará el",
+                text = stringResource(R.string.account_deletion_date),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
             Text(
-                text = purgeDateText,
+                text = purgeDateText ?: stringResource(R.string.account_deletion_soon),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -92,7 +94,7 @@ fun AccountDeletionRecoveryScreen(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "Si quieres conservarla, pulsa Recuperar cuenta.",
+                text = stringResource(R.string.account_deletion_recover_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -119,7 +121,7 @@ fun AccountDeletionRecoveryScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Recuperar cuenta", fontSize = 16.sp)
+                    Text(stringResource(R.string.account_deletion_recover), fontSize = 16.sp)
                 }
             }
 
@@ -129,7 +131,7 @@ fun AccountDeletionRecoveryScreen(
                 onClick = onLogout,
                 enabled = !isRecovering
             ) {
-                Text("Cerrar sesión")
+                Text(stringResource(R.string.profile_logout))
             }
 
             Spacer(Modifier.height(32.dp))

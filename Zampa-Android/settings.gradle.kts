@@ -15,5 +15,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "EatOut-Android"
+rootProject.name = "Zampa-Android"
 include(":app")

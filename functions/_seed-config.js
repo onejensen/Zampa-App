@@ -58,6 +58,23 @@ function deterministicOfferId(businessId, title, dateYMD) {
   return crypto.createHash("sha1").update(key).digest("hex").slice(0, 22);
 }
 
+/**
+ * Genera un NIF sintético VÁLIDO (algoritmo mod 23) a partir del uid del bot.
+ * Formato: 8 dígitos + letra de control. Determinista: mismo uid → mismo NIF.
+ * Estos NIF no corresponden a personas/empresas reales; solo sirven para que
+ * las rules de Firestore acepten el campo `taxId` en los seed bots.
+ */
+function syntheticBotTaxId(uid) {
+  const crypto = require("crypto");
+  const hash = crypto.createHash("sha1").update(`bot-taxid::${uid}`).digest("hex");
+  // Primeros 8 dígitos decimales estables a partir del hash (tratamos hex como int).
+  const num = parseInt(hash.slice(0, 12), 16) % 100000000;
+  const body = String(num).padStart(8, "0");
+  const letters = "TRWAGMYFPDXBNJZSQVHLCKE";
+  const letter = letters[num % 23];
+  return body + letter;
+}
+
 module.exports = {
   PROJECT_ID:           require_("EATOUT_PROJECT_ID"),
   API_KEY:              require_("EATOUT_FIREBASE_API_KEY"),
@@ -65,4 +82,5 @@ module.exports = {
   OAUTH_CLIENT_SECRET:  require_("EATOUT_FIREBASE_OAUTH_CLIENT_SECRET"),
   BOT_PASSWORD:         require_("EATOUT_BOT_PASSWORD"),
   deterministicOfferId,
+  syntheticBotTaxId,
 };

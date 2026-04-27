@@ -3,6 +3,7 @@ import PhotosUI
 import UIKit
 
 struct CreateMenuView: View {
+    @ObservedObject var localization = LocalizationManager.shared
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = CreateMenuViewModel()
@@ -42,9 +43,9 @@ struct CreateMenuView: View {
                                     .overlay(
                                         VStack(spacing: 12) {
                                             Image(systemName: "camera.fill")
-                                                .font(.system(size: 36))
+                                                .font(.custom("Sora-Regular", size: 36))
                                                 .foregroundColor(.appTextSecondary)
-                                            Text("Añadir foto del menú")
+                                            Text(localization.t("create_menu_add_photo"))
                                                 .font(.appBody)
                                                 .foregroundColor(.appTextSecondary)
                                         }
@@ -59,9 +60,8 @@ struct CreateMenuView: View {
 
                     // ── MEAL TYPE PICKER ────────────────────────────────
                     Picker("Tipo", selection: $mealType) {
-                        ForEach(MealType.allCases, id: \.self) { type in
-                            Text(type.rawValue).tag(type)
-                        }
+                        Text(localization.t("create_menu_lunch")).tag(MealType.lunch)
+                        Text(localization.t("create_menu_dinner")).tag(MealType.dinner)
                     }
                     .pickerStyle(.segmented)
 
@@ -71,17 +71,16 @@ struct CreateMenuView: View {
                         includesDrink: $viewModel.includesDrink,
                         includesDessert: $viewModel.includesDessert,
                         includesCoffee: $viewModel.includesCoffee,
-                        serviceTime: $viewModel.serviceTime,
-                        isPro: appState.isPremium
+                        serviceTime: $viewModel.serviceTime
                     )
 
                     // ── TITLE FIELD ─────────────────────────────────────
-                    CustomTextField(title: "Título del menú *", text: $viewModel.title, icon: "text.alignleft")
+                    CustomTextField(title: localization.t("create_menu_menu_title"), text: $viewModel.title, icon: "text.alignleft")
 
                     // ── DESCRIPTION ─────────────────────────────────────
                     ZStack(alignment: .topLeading) {
                         if viewModel.description.isEmpty {
-                            Text("Descripción del menú (opcional)")
+                            Text(localization.t("create_menu_description"))
                                 .foregroundColor(.appTextSecondary)
                                 .font(.appBody)
                                 .padding(EdgeInsets(top: 12, leading: 12, bottom: 0, trailing: 0))
@@ -100,7 +99,7 @@ struct CreateMenuView: View {
                         Image(systemName: "eurosign.circle")
                             .foregroundColor(.appTextSecondary)
                             .frame(width: 20)
-                        TextField("Precio", text: $viewModel.priceText)
+                        TextField(localization.t("create_menu_price"), text: $viewModel.priceText)
                             .keyboardType(.decimalPad)
                             .foregroundColor(.appTextPrimary)
                             .font(.appBody)
@@ -119,15 +118,15 @@ struct CreateMenuView: View {
                             HStack {
                                 Image(systemName: "star.fill")
                                     .foregroundColor(.yellow)
-                                Text("Límite alcanzado — Plan Free")
-                                    .font(.system(size: 15, weight: .bold))
+                                Text(localization.t("create_menu_limit_title"))
+                                    .font(.custom("Sora-Bold", size: 15))
                                     .foregroundColor(.appTextPrimary)
                             }
-                            Text("Actualiza a Pro para publicar menús ilimitados.")
-                                .font(.caption)
+                            Text(localization.t("create_menu_limit_body"))
+                                .font(.appCaption)
                                 .foregroundColor(.appTextSecondary)
                                 .multilineTextAlignment(.center)
-                            Button("Ver planes Pro") { showingSubscription = true }
+                            Button(localization.t("create_menu_see_pro")) { showingSubscription = true }
                                 .buttonStyle(AppDesign.ButtonStyle(isPrimary: true))
                         }
                         .padding(16)
@@ -146,8 +145,8 @@ struct CreateMenuView: View {
                                         .progressViewStyle(.circular)
                                         .tint(.white)
                                 }
-                                Text(viewModel.isLoading ? "Publicando..." : "PUBLICAR OFERTA")
-                                    .font(.system(size: 17, weight: .bold))
+                                Text(viewModel.isLoading ? localization.t("create_menu_publishing") : localization.t("create_menu_publish"))
+                                    .font(.custom("Sora-Bold", size: 17))
                             }
                         }
                         .buttonStyle(AppDesign.ButtonStyle(isPrimary: true, isDisabled: !viewModel.isValid || viewModel.isLoading))
@@ -156,25 +155,25 @@ struct CreateMenuView: View {
                 }
                 .padding(16)
             }
-            .navigationTitle("Nueva oferta")
+            .navigationTitle(localization.t("create_menu_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancelar") { dismiss() }
+                    Button(localization.t("common_cancel")) { dismiss() }
                 }
             }
             .sheet(isPresented: $showingSubscription) {
                 SubscriptionView()
             }
-            .alert("Error", isPresented: $viewModel.showingError) {
-                Button("OK", role: .cancel) {}
+            .alert(localization.t("common_error"), isPresented: $viewModel.showingError) {
+                Button(localization.t("common_ok"), role: .cancel) {}
             } message: {
                 Text(viewModel.errorMessage)
             }
-            .confirmationDialog("Foto del menú", isPresented: $showingPhotoSourceDialog, titleVisibility: .visible) {
-                Button("Cámara") { activePhotoSheet = .camera }
-                Button("Galería") { activePhotoSheet = .gallery }
-                Button("Cancelar", role: .cancel) {}
+            .confirmationDialog(localization.t("create_menu_photo"), isPresented: $showingPhotoSourceDialog, titleVisibility: .visible) {
+                Button(localization.t("profile_camera")) { activePhotoSheet = .camera }
+                Button(localization.t("profile_gallery")) { activePhotoSheet = .gallery }
+                Button(localization.t("common_cancel"), role: .cancel) {}
             }
             .sheet(item: $activePhotoSheet) { sheet in
                 switch sheet {
@@ -239,7 +238,7 @@ class CreateMenuViewModel: ObservableObject {
 
         do {
             guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-                errorMessage = "No se pudo procesar la imagen"
+                errorMessage = LocalizationManager.shared.t("profile_photo_error")
                 showingError = true
                 return
             }
@@ -257,7 +256,7 @@ class CreateMenuViewModel: ObservableObject {
                 includesDessert: includesDessert,
                 includesCoffee: includesCoffee,
                 serviceTime: serviceTime,
-                isPermanent: offerType == "Oferta permanente"
+                isPermanent: offerType == OfferTypes.ofertaPermanente
             )
 
             isSuccess = true
@@ -277,67 +276,60 @@ class CreateMenuViewModel: ObservableObject {
 // MARK: - Offer Details Section (type + inclusions)
 
 struct OfferDetailsSection: View {
+    @ObservedObject var localization = LocalizationManager.shared
     @Binding var offerType: String?
     @Binding var includesDrink: Bool
     @Binding var includesDessert: Bool
     @Binding var includesCoffee: Bool
     @Binding var serviceTime: String
-    var isPro: Bool = false
 
-    private let types = ["Menú del día", "Plato del día", "Oferta permanente"]
-    private let serviceTimes = [("lunch", "Mediodía"), ("dinner", "Noche"), ("both", "Ambos")]
+    /// (value, label): `value` es el valor canónico ES que se guarda en Firestore;
+    /// `label` es la traducción mostrada al usuario. Nunca persistir `label`.
+    private var typeOptions: [(value: String, label: String)] {[
+        (OfferTypes.menuDelDia, localization.t("create_menu_menu_del_dia")),
+        (OfferTypes.platoDelDia, localization.t("create_menu_plato_del_dia")),
+        (OfferTypes.ofertaDelDia, localization.t("create_menu_oferta_del_dia")),
+        (OfferTypes.ofertaPermanente, localization.t("create_menu_permanent")),
+    ]}
+    private var serviceTimes: [(String, String)] { [("lunch", localization.t("create_menu_midday")), ("dinner", localization.t("create_menu_night")), ("both", localization.t("create_menu_both"))] }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             // Offer type
             VStack(alignment: .leading, spacing: 8) {
-                Label("Tipo de oferta", systemImage: "tag")
-                    .font(.system(size: 15, weight: .semibold))
+                Label(localization.t("create_menu_offer_type"), systemImage: "tag")
+                    .font(.custom("Sora-SemiBold", size: 15))
                     .foregroundColor(.appTextPrimary)
-                HStack(spacing: 8) {
-                    ForEach(types, id: \.self) { type in
-                        let isPermanent = type == "Oferta permanente"
-                        let locked = isPermanent && !isPro
-                        let selected = offerType == type
-                        Button(action: { if !locked { offerType = selected ? nil : type } }) {
-                            HStack(spacing: 4) {
-                                if locked {
-                                    Image(systemName: "lock.fill")
-                                        .font(.system(size: 10))
-                                }
-                                Text(type)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .lineLimit(1)
-                            }
-                            .foregroundColor(locked ? .appTextSecondary : (selected ? .white : .appTextPrimary))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 9)
-                            .frame(maxWidth: .infinity)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(
-                                locked ? Color.appSurface.opacity(0.5) : (selected ? Color.appPrimary : Color.appSurface)
-                            ))
+                ChipFlow(spacing: 8) {
+                    ForEach(typeOptions, id: \.value) { option in
+                        let selected = offerType == option.value
+                        Button(action: { offerType = selected ? nil : option.value }) {
+                            Text(option.label)
+                                .font(.custom("Sora-SemiBold", size: 13))
+                                .lineLimit(1)
+                                .foregroundColor(selected ? .white : .appTextPrimary)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 9)
+                                .background(RoundedRectangle(cornerRadius: 10).fill(
+                                    selected ? Color.appPrimary : Color.appSurface
+                                ))
                         }
                         .buttonStyle(.borderless)
                     }
-                }
-                if !isPro {
-                    Text("«Oferta permanente» requiere Plan Pro — no caduca a las 24h")
-                        .font(.caption)
-                        .foregroundColor(.appTextSecondary)
                 }
             }
 
             // Service time (horario)
             VStack(alignment: .leading, spacing: 8) {
-                Label("Horario de la oferta", systemImage: "clock")
-                    .font(.system(size: 15, weight: .semibold))
+                Label(localization.t("create_menu_schedule"), systemImage: "clock")
+                    .font(.custom("Sora-SemiBold", size: 15))
                     .foregroundColor(.appTextPrimary)
                 HStack(spacing: 8) {
                     ForEach(serviceTimes, id: \.0) { (value, label) in
                         let selected = serviceTime == value
                         Button(action: { serviceTime = value }) {
                             Text(label)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.custom("Sora-SemiBold", size: 13))
                                 .lineLimit(1)
                                 .foregroundColor(selected ? .white : .appTextPrimary)
                                 .padding(.horizontal, 10)
@@ -354,13 +346,13 @@ struct OfferDetailsSection: View {
 
             // Includes
             VStack(alignment: .leading, spacing: 8) {
-                Label("Incluye", systemImage: "plus.circle")
-                    .font(.caption.weight(.semibold))
+                Label(localization.t("create_menu_includes"), systemImage: "plus.circle")
+                    .font(.appLabel)
                     .foregroundColor(.appTextSecondary)
                 HStack(spacing: 8) {
-                    DietaryChip(label: "Bebida", icon: "wineglass.fill", isOn: $includesDrink, color: .blue)
-                    DietaryChip(label: "Postre", icon: "birthday.cake.fill", isOn: $includesDessert, color: .pink)
-                    DietaryChip(label: "Café", icon: "cup.and.saucer.fill", isOn: $includesCoffee, color: Color(red: 0.5, green: 0.3, blue: 0.1))
+                    DietaryChip(label: localization.t("create_menu_drink"), icon: "wineglass.fill", isOn: $includesDrink, color: .blue)
+                    DietaryChip(label: localization.t("create_menu_dessert"), icon: "birthday.cake.fill", isOn: $includesDessert, color: .pink)
+                    DietaryChip(label: localization.t("create_menu_coffee"), icon: "cup.and.saucer.fill", isOn: $includesCoffee, color: Color(red: 0.5, green: 0.3, blue: 0.1))
                 }
             }
         }
@@ -372,48 +364,49 @@ struct OfferDetailsSection: View {
 // MARK: - Dietary Info Editor (shared by Create & Edit)
 
 struct DietaryInfoEditor: View {
+    @ObservedObject var localization = LocalizationManager.shared
     @Binding var dietaryInfo: DietaryInfo
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Información dietética")
-                .font(.system(size: 15, weight: .semibold))
+            Text(localization.t("create_menu_dietary_info"))
+                .font(.custom("Sora-SemiBold", size: 15))
                 .foregroundColor(.appTextPrimary)
 
             // Diet
             VStack(alignment: .leading, spacing: 8) {
-                Label("Dieta", systemImage: "leaf")
-                    .font(.caption.weight(.semibold))
+                Label(localization.t("create_menu_diet"), systemImage: "leaf")
+                    .font(.appLabel)
                     .foregroundColor(.appTextSecondary)
                 HStack(spacing: 8) {
-                    DietaryChip(label: "Vegetariano", icon: "leaf", isOn: $dietaryInfo.isVegetarian, color: .green)
-                    DietaryChip(label: "Vegano", icon: "leaf.fill", isOn: $dietaryInfo.isVegan, color: .green)
+                    DietaryChip(label: localization.t("dietary_vegetarian"), icon: "leaf", isOn: $dietaryInfo.isVegetarian, color: .green)
+                    DietaryChip(label: localization.t("dietary_vegan"), icon: "leaf.fill", isOn: $dietaryInfo.isVegan, color: .green)
                 }
             }
 
             // Protein
             VStack(alignment: .leading, spacing: 8) {
-                Label("Proteína principal", systemImage: "fork.knife")
-                    .font(.caption.weight(.semibold))
+                Label(localization.t("create_menu_protein"), systemImage: "fork.knife")
+                    .font(.appLabel)
                     .foregroundColor(.appTextSecondary)
                 HStack(spacing: 8) {
-                    DietaryChip(label: "Carne", icon: "fork.knife", isOn: $dietaryInfo.hasMeat)
-                    DietaryChip(label: "Pescado/Marisco", icon: "fish.fill", isOn: $dietaryInfo.hasFish, color: .blue)
+                    DietaryChip(label: localization.t("create_menu_meat"), icon: "fork.knife", isOn: $dietaryInfo.hasMeat)
+                    DietaryChip(label: localization.t("create_menu_fish"), icon: "fish.fill", isOn: $dietaryInfo.hasFish, color: .blue)
                 }
             }
 
             // Allergens
             VStack(alignment: .leading, spacing: 8) {
-                Label("Alérgenos presentes", systemImage: "exclamationmark.triangle")
-                    .font(.caption.weight(.semibold))
+                Label(localization.t("create_menu_allergens_present"), systemImage: "exclamationmark.triangle")
+                    .font(.appLabel)
                     .foregroundColor(.appTextSecondary)
                 HStack(spacing: 8) {
-                    DietaryChip(label: "Gluten", icon: "exclamationmark.triangle.fill", isOn: $dietaryInfo.hasGluten, color: .orange)
-                    DietaryChip(label: "Lácteos", icon: "exclamationmark.triangle.fill", isOn: $dietaryInfo.hasLactose, color: .orange)
+                    DietaryChip(label: localization.t("create_menu_gluten"), icon: "exclamationmark.triangle.fill", isOn: $dietaryInfo.hasGluten, color: .orange)
+                    DietaryChip(label: localization.t("create_menu_dairy"), icon: "exclamationmark.triangle.fill", isOn: $dietaryInfo.hasLactose, color: .orange)
                 }
                 HStack(spacing: 8) {
-                    DietaryChip(label: "Frutos secos", icon: "exclamationmark.triangle.fill", isOn: $dietaryInfo.hasNuts, color: .orange)
-                    DietaryChip(label: "Huevo", icon: "exclamationmark.triangle.fill", isOn: $dietaryInfo.hasEgg, color: .orange)
+                    DietaryChip(label: localization.t("create_menu_nuts"), icon: "exclamationmark.triangle.fill", isOn: $dietaryInfo.hasNuts, color: .orange)
+                    DietaryChip(label: localization.t("create_menu_egg"), icon: "exclamationmark.triangle.fill", isOn: $dietaryInfo.hasEgg, color: .orange)
                 }
             }
         }
@@ -432,9 +425,9 @@ struct DietaryChip: View {
         Button(action: { isOn.toggle() }) {
             HStack(spacing: 5) {
                 Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 12))
+                    .font(.custom("Sora-Regular", size: 12))
                 Text(label)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.custom("Sora-Medium", size: 13))
                     .lineLimit(1)
             }
             .foregroundColor(isOn ? .white : .appTextPrimary)
@@ -450,6 +443,7 @@ struct DietaryChip: View {
 // MARK: - Dietary Info Display (for MenuDetailView)
 
 struct DietaryInfoSection: View {
+    @ObservedObject var localization = LocalizationManager.shared
     let dietaryInfo: DietaryInfo
 
     var body: some View {
@@ -457,19 +451,19 @@ struct DietaryInfoSection: View {
             HStack(spacing: 6) {
                 Image(systemName: "info.circle.fill")
                     .foregroundColor(.appPrimary)
-                    .font(.system(size: 14))
-                Text("Información dietética")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.custom("Sora-Regular", size: 14))
+                Text(localization.t("create_menu_dietary_info"))
+                    .font(.custom("Sora-SemiBold", size: 15))
                     .foregroundColor(.appTextPrimary)
             }
 
             // Diet + protein badges
             let dietBadges: [(String, String, Color)] = [
-                dietaryInfo.isVegan       ? ("Vegano",          "leaf.fill",  Color.green) : nil,
+                dietaryInfo.isVegan       ? (localization.t("dietary_vegan"),          "leaf.fill",  Color.green) : nil,
                 dietaryInfo.isVegetarian && !dietaryInfo.isVegan
-                                          ? ("Vegetariano",     "leaf",       Color.green) : nil,
-                dietaryInfo.hasMeat       ? ("Carne",           "fork.knife", Color.appTextSecondary) : nil,
-                dietaryInfo.hasFish       ? ("Pescado/Marisco", "fish.fill",  Color.blue) : nil,
+                                          ? (localization.t("dietary_vegetarian"),     "leaf",       Color.green) : nil,
+                dietaryInfo.hasMeat       ? (localization.t("create_menu_meat"),           "fork.knife", Color.appTextSecondary) : nil,
+                dietaryInfo.hasFish       ? (localization.t("create_menu_fish"), "fish.fill",  Color.blue) : nil,
             ].compactMap { $0 }
 
             if !dietBadges.isEmpty {
@@ -482,19 +476,19 @@ struct DietaryInfoSection: View {
 
             // Allergens
             let allergens = [
-                dietaryInfo.hasGluten  ? "Gluten"       : nil,
-                dietaryInfo.hasLactose ? "Lácteos"      : nil,
-                dietaryInfo.hasNuts    ? "Frutos secos" : nil,
-                dietaryInfo.hasEgg     ? "Huevo"        : nil,
+                dietaryInfo.hasGluten  ? localization.t("create_menu_gluten")       : nil,
+                dietaryInfo.hasLactose ? localization.t("create_menu_dairy")      : nil,
+                dietaryInfo.hasNuts    ? localization.t("create_menu_nuts") : nil,
+                dietaryInfo.hasEgg     ? localization.t("create_menu_egg")        : nil,
             ].compactMap { $0 }
 
             if !allergens.isEmpty {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 11))
+                        .font(.custom("Sora-Regular", size: 11))
                         .foregroundColor(.orange)
-                    Text("Alérgenos: \(allergens.joined(separator: ", "))")
-                        .font(.system(size: 13))
+                    Text("\(localization.t("detail_allergens")) \(allergens.joined(separator: ", "))")
+                        .font(.custom("Sora-Regular", size: 13))
                         .foregroundColor(.orange)
                 }
             }
@@ -513,9 +507,9 @@ struct DietaryBadge: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 11))
+                .font(.custom("Sora-Regular", size: 11))
             Text(label)
-                .font(.system(size: 12, weight: .medium))
+                .font(.custom("Sora-Medium", size: 12))
         }
         .foregroundColor(color)
         .padding(.horizontal, 10)

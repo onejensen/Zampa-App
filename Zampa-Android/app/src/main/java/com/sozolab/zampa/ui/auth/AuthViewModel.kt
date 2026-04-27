@@ -24,6 +24,7 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(
     private val firebaseService: FirebaseService,
     private val currencyService: com.sozolab.zampa.data.CurrencyService,
+    val localizationManager: com.sozolab.zampa.data.LocalizationManager,
 ) : ViewModel() {
 
     private val _isAuthenticated = MutableStateFlow(firebaseService.isAuthenticated)

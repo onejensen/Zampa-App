@@ -16,6 +16,7 @@ struct DailyStat: Identifiable {
 }
 
 struct StatsView: View {
+    @ObservedObject var localization = LocalizationManager.shared
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
     @State private var stats: [DailyStat] = []
@@ -27,10 +28,10 @@ struct StatsView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     // Time Range Selector
-                    Picker("Periodo", selection: $selectedTimeRange) {
-                        Text("7 días").tag(7)
-                        Text("14 días").tag(14)
-                        Text("30 días").tag(30)
+                    Picker(localization.t("stats_period"), selection: $selectedTimeRange) {
+                        Text(localization.t("stats_7d")).tag(7)
+                        Text(localization.t("stats_14d")).tag(14)
+                        Text(localization.t("stats_30d")).tag(30)
                     }
                     .pickerStyle(SegmentedPickerStyle())
                     .padding(.horizontal)
@@ -44,9 +45,9 @@ struct StatsView: View {
                     } else if stats.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "chart.bar.xaxis")
-                                .font(.system(size: 40))
+                                .font(.custom("Sora-Regular", size: 40))
                                 .foregroundColor(.appTextSecondary.opacity(0.3))
-                            Text("No hay datos suficientes para mostrar")
+                            Text(localization.t("stats_no_data"))
                                 .font(.appSubheadline)
                                 .foregroundColor(.appTextSecondary)
                         }
@@ -54,16 +55,16 @@ struct StatsView: View {
                     } else {
                         // Summary Cards
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            StatSummaryCard(title: "Impresiones", value: "\(stats.reduce(0) { $0 + $1.impressions })", icon: "eye.fill", color: .appPrimary)
-                            StatSummaryCard(title: "Favoritos", value: "\(stats.reduce(0) { $0 + $1.favorites })", icon: "heart.fill", color: .red)
-                            StatSummaryCard(title: "Interacciones", value: "\(stats.reduce(0) { $0 + $1.totalClicks })", icon: "hand.tap.fill", color: .blue)
-                            StatSummaryCard(title: "Llamadas", value: "\(stats.reduce(0) { $0 + $1.calls })", icon: "phone.fill", color: .green)
+                            StatSummaryCard(title: localization.t("stats_impressions"), value: "\(stats.reduce(0) { $0 + $1.impressions })", icon: "eye.fill", color: .appPrimary)
+                            StatSummaryCard(title: localization.t("stats_favorites"), value: "\(stats.reduce(0) { $0 + $1.favorites })", icon: "heart.fill", color: .red)
+                            StatSummaryCard(title: localization.t("stats_interactions"), value: "\(stats.reduce(0) { $0 + $1.totalClicks })", icon: "hand.tap.fill", color: .blue)
+                            StatSummaryCard(title: localization.t("stats_calls"), value: "\(stats.reduce(0) { $0 + $1.calls })", icon: "phone.fill", color: .green)
                         }
                         .padding(.horizontal)
                         
                         // Impressions Chart
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Visibilidad (Impresiones)")
+                            Text(localization.t("stats_visibility"))
                                 .font(.appHeadline)
                             
                             Chart {
@@ -91,24 +92,24 @@ struct StatsView: View {
                         
                         // Interaction Types Chart
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Tipos de Interacción")
+                            Text(localization.t("stats_interaction_types"))
                                 .font(.appHeadline)
                             
                             Chart {
                                 BarMark(
-                                    x: .value("Tipo", "Llamar"),
+                                    x: .value("Tipo", localization.t("stats_call")),
                                     y: .value("Cantidad", stats.reduce(0) { $0 + $1.calls })
                                 )
                                 .foregroundStyle(.green)
-                                
+
                                 BarMark(
-                                    x: .value("Tipo", "Geolocalización"),
+                                    x: .value("Tipo", localization.t("stats_geolocation")),
                                     y: .value("Cantidad", stats.reduce(0) { $0 + $1.directions })
                                 )
                                 .foregroundStyle(.blue)
-                                
+
                                 BarMark(
-                                    x: .value("Tipo", "Compartir"),
+                                    x: .value("Tipo", localization.t("stats_share")),
                                     y: .value("Cantidad", stats.reduce(0) { $0 + $1.shares })
                                 )
                                 .foregroundStyle(.purple)
@@ -124,11 +125,11 @@ struct StatsView: View {
                 .padding(.vertical)
             }
             .background(Color.appBackground.ignoresSafeArea())
-            .navigationTitle("Estadísticas")
+            .navigationTitle(localization.t("stats_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cerrar") {
+                    Button(localization.t("common_close")) {
                         presentationMode.wrappedValue.dismiss()
                     }
                 }
@@ -189,16 +190,16 @@ struct StatSummaryCard: View {
             HStack {
                 Image(systemName: icon)
                     .foregroundColor(color)
-                    .font(.system(size: 18))
+                    .font(.custom("Sora-Regular", size: 18))
                 Spacer()
             }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(value)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.custom("Sora-Bold", size: 24))
                     .foregroundColor(.appTextPrimary)
                 Text(title)
-                    .font(.caption)
+                    .font(.appCaption)
                     .foregroundColor(.appTextSecondary)
             }
         }

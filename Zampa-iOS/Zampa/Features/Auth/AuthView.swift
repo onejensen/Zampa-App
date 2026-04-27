@@ -7,6 +7,7 @@ import GoogleSignIn
 
 struct AuthView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var email:        String = ""
     @State private var password:     String = ""
     @State private var name:         String = ""
@@ -31,77 +32,111 @@ struct AuthView: View {
             Color.appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Image("Logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 36, height: 36)
-                        .colorMultiply(.appPrimary)
-                    Text("Zampa")
-                        .font(.appSubheadline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.appTextPrimary)
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.top, 10)
-
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Hero
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 24)
-                                .fill(Color.appPrimary)
-                                .frame(height: 300)
-                            VStack(spacing: 16) {
+                        // ── Hero edge-to-edge, naranja hasta arriba ──────
+                        // El naranja se extiende por detrás del status bar (safe area
+                        // top ignorada). Logo + "Zampa" ahora dentro del hero, en blanco.
+                        ZStack(alignment: .topLeading) {
+                            Color.appPrimary
+                                .ignoresSafeArea(edges: .top)
+
+                            // Decoración: logo grande translúcido saliendo por la derecha
+                            Image("Logo")
+                                .resizable()
+                                .scaledToFit()
+                                .foregroundColor(.white)
+                                .opacity(0.18)
+                                .frame(width: 280, height: 280)
+                                .offset(x: 80, y: 30)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+                                .clipped()
+
+                            // Logo + "Zampa" top-left (integrado en el hero)
+                            HStack(spacing: 8) {
                                 Image("Logo")
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(width: 140, height: 140)
+                                    .frame(width: 40, height: 40)
+                                    .foregroundColor(.white)
                                 Text("Zampa")
-                                    .font(.system(size: 38, weight: .bold))
+                                    .font(.custom("Sora-Bold", size: 20))
                                     .foregroundColor(.white)
                             }
-                        }
-                        .padding(.top)
+                            .padding(.top, 12)
+                            .padding(.leading, 20)
 
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Come bien,\n")
-                                .font(.appHeadline)
-                                .foregroundColor(.appTextPrimary)
-                            + Text("paga lo justo.")
-                                .font(.appHeadline)
-                                .foregroundColor(.appPrimary)
-
-                            Text("Explora los menús del día de tus restaurantes favoritos. Filtra por cercanía o precio y reserva tu mesa hoy mismo.")
-                                .font(.appBody)
-                                .foregroundColor(.appTextSecondary)
-                                .lineSpacing(4)
+                            // Eyebrow + headline bottom-left
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(localization.t("auth_eyebrow"))
+                                    .font(.custom("Sora-SemiBold", size: 12))
+                                    .foregroundColor(.white.opacity(0.92))
+                                    .kerning(1.5)
+                                    .textCase(.uppercase)
+                                Text(localization.t("auth_headline"))
+                                    .font(.custom("Sora-Bold", size: 34))
+                                    .foregroundColor(.white)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                            .padding(.leading, 24)
+                            .padding(.bottom, 24)
                         }
+                        .frame(height: 320)
+                        .frame(maxWidth: .infinity)
+
+                        // ── Subtitle ──────────────────────────────────────
+                        Text(localization.t("auth_body_subtitle"))
+                            .font(.appBody)
+                            .foregroundColor(.appTextSecondary)
+                            .lineSpacing(4)
+                            .padding(.horizontal, 24)
 
                         VStack(spacing: 16) {
                             // ── Social buttons ───────────────────────────
-                            SignInWithAppleButton(
-                                .continue,
-                                onRequest:  { _ in },
-                                onCompletion: { _ in }   // handled manually below
-                            )
-                            .signInWithAppleButtonStyle(.black)
-                            .frame(height: 50)
-                            .cornerRadius(12)
-                            .onTapGesture { handleAppleSignIn() }
+                            // Apple = CTA primario (naranja brand, texto oscuro).
+                            // Botón custom porque SignInWithAppleButton no permite
+                            // color custom. Se dispara el mismo flujo nativo.
+                            Button(action: handleAppleSignIn) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "apple.logo")
+                                        .font(.custom("Sora-Medium", size: 18))
+                                    Text(localization.t("auth_continue_apple"))
+                                        .font(.custom("Sora-Medium", size: 16))
+                                }
+                                .foregroundColor(.appTextPrimary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color.appPrimary)
+                                .cornerRadius(12)
+                            }
+                            .disabled(isLoading)
+                            .opacity(isLoading ? 0.5 : 1)
 
                             #if canImport(GoogleSignIn)
-                            GoogleSignInButton(action: handleGoogleSignIn)
-                                .disabled(isLoading)
-                                .opacity(isLoading ? 0.5 : 1)
+                            Button(action: handleGoogleSignIn) {
+                                HStack(spacing: 10) {
+                                    Image("GoogleLogo")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 20, height: 20)
+                                    Text(localization.t("auth_continue_google"))
+                                        .font(.custom("Sora-Medium", size: 16))
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color.black)
+                                .cornerRadius(12)
+                            }
+                            .disabled(isLoading)
+                            .opacity(isLoading ? 0.5 : 1)
                             #endif
 
                             // ── Separator ────────────────────────────────
                             HStack {
                                 Rectangle().fill(Color.appTextSecondary.opacity(0.25)).frame(height: 1)
-                                Text("o continúa con email")
+                                Text(localization.t("auth_or_continue_email"))
                                     .font(.appCaption)
                                     .foregroundColor(.appTextSecondary)
                                     .fixedSize()
@@ -109,24 +144,24 @@ struct AuthView: View {
                             }
 
                             // ── Email / password form ────────────────────
-                            CustomTextField(title: "Email", text: $email, icon: "envelope")
+                            CustomTextField(title: localization.t("auth_email"), text: $email, icon: "envelope")
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
 
-                            CustomSecureField(title: "Contraseña", text: $password, icon: "lock")
+                            CustomSecureField(title: localization.t("auth_password"), text: $password, icon: "lock")
 
                             if !isLoginMode {
-                                CustomTextField(title: "Nombre", text: $name, icon: "person")
-                                CustomTextField(title: "Teléfono (opcional)", text: $phone, icon: "phone")
+                                CustomTextField(title: localization.t("auth_name"), text: $name, icon: "person")
+                                CustomTextField(title: localization.t("auth_phone"), text: $phone, icon: "phone")
                                     .keyboardType(.phonePad)
 
                                 VStack(alignment: .leading, spacing: 12) {
-                                    Text("Tipo de cuenta")
+                                    Text(localization.t("auth_account_type"))
                                         .font(.appBody)
                                         .foregroundColor(.appTextSecondary)
-                                    Picker("Rol", selection: $selectedRole) {
-                                        Text("Comensal").tag(User.UserRole.cliente)
-                                        Text("Restaurante").tag(User.UserRole.comercio)
+                                    Picker(localization.t("auth_account_type"), selection: $selectedRole) {
+                                        Text(localization.t("auth_diner")).tag(User.UserRole.cliente)
+                                        Text(localization.t("auth_restaurant")).tag(User.UserRole.comercio)
                                     }
                                     .pickerStyle(SegmentedPickerStyle())
                                 }
@@ -140,7 +175,7 @@ struct AuthView: View {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 } else {
-                                    Text(isLoginMode ? "Iniciar sesión" : "Registrarse")
+                                    Text(isLoginMode ? localization.t("auth_login") : localization.t("auth_register"))
                                 }
                             }
                             .buttonStyle(AppDesign.ButtonStyle(isPrimary: true,
@@ -151,20 +186,21 @@ struct AuthView: View {
                                 withAnimation { isLoginMode.toggle() }
                             } label: {
                                 Text(isLoginMode
-                                     ? "¿No tienes cuenta? Regístrate"
-                                     : "¿Ya tienes cuenta? Inicia sesión")
+                                     ? localization.t("auth_no_account")
+                                     : localization.t("auth_has_account"))
                                     .font(.appButton)
                                     .foregroundColor(.appPrimary)
                             }
                             .padding(.top, 8)
                         }
+                        .padding(.horizontal, 24)
                         .padding(.top, 20)
                     }
-                    .padding(24)
+                    .padding(.bottom, 24)
                 }
             }
         }
-        .alert("Error", isPresented: $showingError) {
+        .alert(localization.t("common_error"), isPresented: $showingError) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(errorMessage)
@@ -268,34 +304,6 @@ struct AuthView: View {
     }
 }
 
-// MARK: - Google Sign-In Button
-
-#if canImport(GoogleSignIn)
-private struct GoogleSignInButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: "globe")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.primary)
-                Text("Continuar con Google")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.primary)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background(Color(.systemBackground))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.secondary.opacity(0.35), lineWidth: 1)
-            )
-        }
-    }
-}
-#endif
 
 // MARK: - Role Selection Sheet (for new social users)
 
@@ -303,6 +311,7 @@ private struct SocialRoleSelectionView: View {
     let user: User
     let onComplete: (User) -> Void
 
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var selectedRole: User.UserRole = .cliente
     @State private var displayName: String
     @State private var isLoading = false
@@ -321,37 +330,37 @@ private struct SocialRoleSelectionView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("¡Bienvenido/a!")
+                            Text(localization.t("auth_welcome"))
                                 .font(.appHeadline)
                                 .foregroundColor(.appTextPrimary)
-                            Text("Cuéntanos un poco más para configurar tu cuenta.")
+                            Text(localization.t("auth_welcome_subtitle"))
                                 .font(.appBody)
                                 .foregroundColor(.appTextSecondary)
                         }
 
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Tu nombre")
+                            Text(localization.t("auth_your_name"))
                                 .font(.appBody)
                                 .foregroundColor(.appTextSecondary)
-                            CustomTextField(title: "Nombre", text: $displayName, icon: "person")
+                            CustomTextField(title: localization.t("auth_name"), text: $displayName, icon: "person")
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("¿Cómo quieres usar Zampa?")
+                            Text(localization.t("auth_how_use"))
                                 .font(.appBody)
                                 .foregroundColor(.appTextSecondary)
 
                             roleCard(
                                 role: .cliente,
-                                title: "Soy comensal",
-                                subtitle: "Exploro menús y encuentro restaurantes cercanos.",
+                                title: localization.t("auth_i_am_diner"),
+                                subtitle: localization.t("auth_diner_desc"),
                                 icon: "fork.knife"
                             )
 
                             roleCard(
                                 role: .comercio,
-                                title: "Tengo un restaurante",
-                                subtitle: "Publico mi menú del día y atraigo más clientes.",
+                                title: localization.t("auth_i_have_restaurant"),
+                                subtitle: localization.t("auth_restaurant_desc"),
                                 icon: "storefront"
                             )
                         }
@@ -367,7 +376,7 @@ private struct SocialRoleSelectionView: View {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         } else {
-                            Text("Empezar")
+                            Text(localization.t("auth_start"))
                         }
                     }
                     .buttonStyle(AppDesign.ButtonStyle(
@@ -381,7 +390,7 @@ private struct SocialRoleSelectionView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
         }
-        .alert("Error", isPresented: $showError) {
+        .alert(localization.t("common_error"), isPresented: $showError) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(errorMsg)
@@ -398,7 +407,7 @@ private struct SocialRoleSelectionView: View {
                         .fill(isSelected ? Color.appPrimary : Color.appInputBackground)
                         .frame(width: 48, height: 48)
                     Image(systemName: icon)
-                        .font(.system(size: 20))
+                        .font(.custom("Sora-Regular", size: 20))
                         .foregroundColor(isSelected ? .white : .appTextSecondary)
                 }
                 VStack(alignment: .leading, spacing: 4) {
@@ -413,7 +422,7 @@ private struct SocialRoleSelectionView: View {
                 Spacer()
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(isSelected ? .appPrimary : .appTextSecondary.opacity(0.4))
-                    .font(.system(size: 22))
+                    .font(.custom("Sora-Regular", size: 22))
             }
             .padding(16)
             .background(

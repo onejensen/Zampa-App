@@ -23,10 +23,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.sozolab.zampa.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +47,7 @@ fun MerchantProfileSetupScreen(
 
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
+    var taxId by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var addressText by remember { mutableStateOf("") }
     var acceptsReservations by remember { mutableStateOf(false) }
@@ -68,6 +72,7 @@ fun MerchantProfileSetupScreen(
             profileLoaded = true
             name = p.name
             phone = p.phone ?: ""
+            taxId = p.taxId ?: ""
             description = p.shortDescription ?: ""
             addressText = p.address?.formatted ?: p.addressText ?: ""
             acceptsReservations = p.acceptsReservations
@@ -105,7 +110,7 @@ fun MerchantProfileSetupScreen(
     if (showPhotoSourceDialog) {
         AlertDialog(
             onDismissRequest = { showPhotoSourceDialog = false },
-            title = { Text("Foto de portada") },
+            title = { Text(stringResource(R.string.setup_cover_photo)) },
             text = {
                 Column {
                     TextButton(
@@ -114,19 +119,19 @@ fun MerchantProfileSetupScreen(
                             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Cámara") }
+                    ) { Text(stringResource(R.string.profile_camera)) }
                     TextButton(
                         onClick = {
                             showPhotoSourceDialog = false
                             galleryLauncher.launch("image/*")
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Galería") }
+                    ) { Text(stringResource(R.string.profile_gallery)) }
                 }
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showPhotoSourceDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showPhotoSourceDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -141,7 +146,12 @@ fun MerchantProfileSetupScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(title = { Text(if (isEditMode) "Editar Restaurante" else "Configurar Restaurante", fontWeight = FontWeight.Bold) })
+            CenterAlignedTopAppBar(
+                title = { Text(if (isEditMode) stringResource(R.string.setup_edit_title) else stringResource(R.string.setup_create_title), fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
         }
     ) { padding ->
         Column(
@@ -154,10 +164,10 @@ fun MerchantProfileSetupScreen(
         ) {
             // Intro
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(if (isEditMode) "Editar perfil" else "Completa tu perfil", style = MaterialTheme.typography.headlineMedium)
+                Text(if (isEditMode) stringResource(R.string.setup_edit_profile) else stringResource(R.string.setup_create_profile), style = MaterialTheme.typography.headlineMedium)
                 Text(
-                    if (isEditMode) "Actualiza los datos de tu restaurante."
-                    else "Configura tu restaurante para empezar a publicar menús del día.",
+                    if (isEditMode) stringResource(R.string.setup_edit_subtitle)
+                    else stringResource(R.string.setup_create_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -165,7 +175,7 @@ fun MerchantProfileSetupScreen(
 
             // Cover Photo
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Foto de portada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.setup_cover_photo), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -196,7 +206,7 @@ fun MerchantProfileSetupScreen(
                         )
                         else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.CameraAlt, null, modifier = Modifier.size(32.dp))
-                            Text("Añadir foto", style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.setup_add_photo), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -204,11 +214,11 @@ fun MerchantProfileSetupScreen(
 
             // Information
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Información de contacto", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.setup_contact_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 
                 OutlinedTextField(
                     value = name, onValueChange = { name = it },
-                    label = { Text("Nombre del restaurante *") },
+                    label = { Text(stringResource(R.string.setup_name)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true
@@ -216,16 +226,38 @@ fun MerchantProfileSetupScreen(
                 
                 OutlinedTextField(
                     value = phone, onValueChange = { phone = it },
-                    label = { Text("Teléfono *") },
+                    label = { Text(stringResource(R.string.setup_phone)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true
                 )
-                
+
+                val taxIdNormalized = taxId.trim().uppercase()
+                val taxIdValid = com.sozolab.zampa.data.TaxIdValidator.isValid(taxIdNormalized)
+                val taxIdShowError = taxId.isNotBlank() && !taxIdValid
+                OutlinedTextField(
+                    value = taxId, onValueChange = { taxId = it.uppercase() },
+                    label = { Text(stringResource(R.string.setup_tax_id_label)) },
+                    supportingText = {
+                        Text(stringResource(
+                            if (taxIdShowError) R.string.setup_tax_id_invalid
+                            else R.string.setup_tax_id_hint
+                        ))
+                    },
+                    isError = taxIdShowError,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        capitalization = KeyboardCapitalization.Characters
+                    ),
+                    singleLine = true
+                )
+
                 OutlinedTextField(
                     value = addressText, onValueChange = { addressText = it },
-                    label = { Text("Dirección *") },
+                    label = { Text(stringResource(R.string.setup_address)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true
@@ -234,10 +266,10 @@ fun MerchantProfileSetupScreen(
 
             // Description
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Descripción", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.setup_description), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 OutlinedTextField(
                     value = description, onValueChange = { description = it },
-                    label = { Text("Cuéntanos sobre tu restaurante") },
+                    label = { Text(stringResource(R.string.setup_description_hint)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     minLines = 3
@@ -246,7 +278,7 @@ fun MerchantProfileSetupScreen(
 
             // Cuisines
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Tipo de cocina", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.setup_cuisine_type), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -266,7 +298,7 @@ fun MerchantProfileSetupScreen(
 
             // Schedule
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Horario", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.setup_schedule), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 schedule.forEach { entry ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -311,7 +343,7 @@ fun MerchantProfileSetupScreen(
             ) {
                 Icon(Icons.Default.CalendarToday, null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(12.dp))
-                Text("Acepta reservas", modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.setup_reservations), modifier = Modifier.weight(1f))
                 Switch(checked = acceptsReservations, onCheckedChange = { acceptsReservations = it })
             }
 
@@ -319,15 +351,16 @@ fun MerchantProfileSetupScreen(
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             
             Button(
-                onClick = { viewModel.saveProfile(name, phone, description, addressText, selectedCuisines, acceptsReservations, imageData) },
+                onClick = { viewModel.saveProfile(name, phone, taxId, description, addressText, selectedCuisines, acceptsReservations, imageData) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 enabled = !isLoading && name.isNotBlank() && phone.isNotBlank() && addressText.isNotBlank()
+                    && com.sozolab.zampa.data.TaxIdValidator.isValid(taxId.trim().uppercase())
             ) {
                 if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
-                else Text(if (isEditMode) "Guardar cambios" else "Guardar y continuar")
+                else Text(if (isEditMode) stringResource(R.string.setup_save_changes) else stringResource(R.string.setup_save_continue))
             }
 
             TextButton(
@@ -335,7 +368,7 @@ fun MerchantProfileSetupScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading
             ) {
-                Text("Completar más tarde", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.setup_complete_later), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             
             Spacer(Modifier.height(40.dp))

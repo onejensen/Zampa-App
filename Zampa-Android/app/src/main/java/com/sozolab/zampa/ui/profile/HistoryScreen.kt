@@ -9,7 +9,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.sozolab.zampa.R
 import com.sozolab.zampa.data.FirebaseService
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,12 +44,13 @@ fun HistoryScreen(onBack: () -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Historial") },
+                title = { Text(stringResource(R.string.history_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.history_back))
                     }
-                }
+                },
+                colors = com.sozolab.zampa.ui.theme.brandTopAppBarColors()
             )
         }
     ) { padding ->
@@ -65,7 +68,7 @@ fun HistoryScreen(onBack: () -> Unit = {}) {
             ) {
                 item {
                     Text(
-                        "Llamadas",
+                        stringResource(R.string.history_calls),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -73,7 +76,7 @@ fun HistoryScreen(onBack: () -> Unit = {}) {
                 if (calls.isEmpty()) {
                     item {
                         Text(
-                            "No hay registros",
+                            stringResource(R.string.history_no_records),
                             color = Color.Gray,
                             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                         )
@@ -91,7 +94,7 @@ fun HistoryScreen(onBack: () -> Unit = {}) {
 
                 item {
                     Text(
-                        "Como ir",
+                        stringResource(R.string.history_directions),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -99,7 +102,7 @@ fun HistoryScreen(onBack: () -> Unit = {}) {
                 if (directions.isEmpty()) {
                     item {
                         Text(
-                            "No hay registros",
+                            stringResource(R.string.history_no_records),
                             color = Color.Gray,
                             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                         )
@@ -117,7 +120,7 @@ fun HistoryScreen(onBack: () -> Unit = {}) {
 
                 item {
                     Text(
-                        "Favoritos",
+                        stringResource(R.string.history_favorites),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -125,7 +128,7 @@ fun HistoryScreen(onBack: () -> Unit = {}) {
                 if (favorites.isEmpty()) {
                     item {
                         Text(
-                            "No hay registros",
+                            stringResource(R.string.history_no_records),
                             color = Color.Gray,
                             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                         )

@@ -1,0 +1,65 @@
+wing: zampa
+rooms:
+- name: eatout
+  description: Files from EatOut/
+  keywords:
+  - eatout
+  - eatout
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: firebase
+  description: Files from firebase/
+  keywords:
+  - firebase
+  - firebase
+- name: logo_eatout
+  description: Files from LOGO_EatOut/
+  keywords:
+  - logo_eatout
+  - logo_eatout
+- name: public
+  description: Files from public/
+  keywords:
+  - public
+  - public
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: functions
+  description: Files from functions/
+  keywords:
+  - functions
+  - functions
+- name: zampa_ios
+  description: Files from Zampa-iOS/
+  keywords:
+  - zampa_ios
+  - zampa-ios
+- name: zampa_android
+  description: Files from Zampa-Android/
+  keywords:
+  - zampa_android
+  - zampa-android
+- name: zampa_landingpage
+  description: Files from Zampa-LandingPage/
+  keywords:
+  - zampa_landingpage
+  - zampa-landingpage
+- name: design_system
+  description: Files from design-system/
+  keywords:
+  - design_system
+  - design-system
+- name: design
+  description: Files from assets/
+  keywords:
+  - design
+  - assets
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

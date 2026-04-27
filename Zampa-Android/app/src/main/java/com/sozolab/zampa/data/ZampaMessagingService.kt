@@ -1,16 +1,17 @@
 package com.sozolab.zampa.data
 
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
+import android.net.Uri
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.sozolab.zampa.MainActivity
 import com.sozolab.zampa.R
+import com.sozolab.zampa.ZampaApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,26 +47,22 @@ class ZampaMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val channelId = "menu_updates"
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(androidx.core.R.drawable.notification_bg) // Use a better icon if available
+        // El canal ya fue creado por ZampaApp.onCreate() con el sonido custom.
+        // Aquí solo construimos la notificación; setSound() local por si la
+        // versión pre-O ignora el canal.
+        val soundUri = Uri.parse(
+            "${ContentResolver.SCHEME_ANDROID_RESOURCE}://${packageName}/${R.raw.zampa_bell}"
+        )
+        val notificationBuilder = NotificationCompat.Builder(this, ZampaApp.CHANNEL_ID)
+            .setSmallIcon(androidx.core.R.drawable.notification_bg)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setSound(soundUri)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Actualizaciones de Menú",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
-
         notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 }

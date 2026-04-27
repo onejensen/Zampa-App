@@ -43,10 +43,14 @@ class FirebaseService @Inject constructor() {
         batch.set(db.collection("users").document(uid), userData)
 
         if (role == User.UserRole.COMERCIO) {
+            val trialEndMs = System.currentTimeMillis() + 90L * 24 * 60 * 60 * 1000
             batch.set(db.collection("businesses").document(uid), mapOf(
                 "id" to uid, "userId" to uid, "name" to name,
                 "acceptsReservations" to false, "planTier" to "free",
-                "isHighlighted" to false, "createdAt" to FieldValue.serverTimestamp()
+                "isHighlighted" to false,
+                "subscriptionStatus" to com.sozolab.zampa.data.model.SubscriptionStatus.TRIAL,
+                "trialEndsAt" to trialEndMs,
+                "createdAt" to FieldValue.serverTimestamp()
             ))
         }
 
@@ -103,10 +107,14 @@ class FirebaseService @Inject constructor() {
         if (role == User.UserRole.COMERCIO) {
             val biz = db.collection("businesses").document(uid).get().await()
             if (!biz.exists()) {
+                val trialEndMs = System.currentTimeMillis() + 90L * 24 * 60 * 60 * 1000
                 batch.set(db.collection("businesses").document(uid), mapOf(
                     "id" to uid, "userId" to uid, "name" to name,
                     "acceptsReservations" to false, "planTier" to "free",
-                    "isHighlighted" to false, "createdAt" to FieldValue.serverTimestamp()
+                    "isHighlighted" to false,
+                    "subscriptionStatus" to com.sozolab.zampa.data.model.SubscriptionStatus.TRIAL,
+                    "trialEndsAt" to trialEndMs,
+                    "createdAt" to FieldValue.serverTimestamp()
                 ))
             }
         } else {
@@ -251,6 +259,22 @@ class FirebaseService @Inject constructor() {
         val planTier = businessDoc.getString("planTier") ?: "free"
         val isPro = planTier == "pro"
 
+        // Guard client-side: suscripción vigente (trial o pago).
+        // Las rules bloquean server-side de todas formas, pero esto evita subir la foto
+        // y da un mensaje más claro.
+        val status = businessDoc.getString("subscriptionStatus") ?: com.sozolab.zampa.data.model.SubscriptionStatus.TRIAL
+        val trialEnd = businessDoc.getLong("trialEndsAt") ?: 0L
+        val activeUntil = businessDoc.getLong("subscriptionActiveUntil") ?: 0L
+        val nowMs = System.currentTimeMillis()
+        val promoActive = (getPromoFreeUntilMs() ?: 0L) > nowMs
+        val canPublish = when {
+            promoActive -> true
+            status == com.sozolab.zampa.data.model.SubscriptionStatus.TRIAL -> trialEnd > nowMs
+            status == com.sozolab.zampa.data.model.SubscriptionStatus.ACTIVE -> activeUntil > nowMs
+            else -> false
+        }
+        if (!canPublish) throw Exception("subscription_expired")
+
         val imagePath = "dailyOffers/${UUID.randomUUID()}.jpg"
         val photoUrl = uploadImage(photoData, imagePath)
 
@@ -301,7 +325,7 @@ class FirebaseService @Inject constructor() {
 
     suspend fun addFavorite(merchantId: String) {
         val uid = currentUid ?: throw Exception("No autenticado")
-        val id = UUID.randomUUID().toString()
+        val id = "${uid}_${merchantId}"
         db.collection("favorites").document(id).set(mapOf(
             "id" to id, "customerId" to uid, "businessId" to merchantId,
             "createdAt" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date()),
@@ -404,13 +428,30 @@ class FirebaseService @Inject constructor() {
             planTier = d["planTier"] as? String,
             isHighlighted = d["isHighlighted"] as? Boolean,
             coverPhotoUrl = d["coverPhotoUrl"] as? String,
-            profilePhotoUrl = d["profilePhotoUrl"] as? String)
+            profilePhotoUrl = d["profilePhotoUrl"] as? String,
+            taxId = d["taxId"] as? String,
+            subscriptionStatus = d["subscriptionStatus"] as? String,
+            trialEndsAt = (d["trialEndsAt"] as? Number)?.toLong(),
+            subscriptionActiveUntil = (d["subscriptionActiveUntil"] as? Number)?.toLong())
+    }
+
+    /**
+     * Devuelve el timestamp (ms epoch) hasta el cual la app es gratis por promo
+     * global (config/promo.freeUntil). Null si no hay promo configurada.
+     * El admin controla esto desde Firebase Console.
+     */
+    suspend fun getPromoFreeUntilMs(): Long? {
+        val doc = db.collection("config").document("promo").get().await()
+        return doc.getLong("freeUntil")
     }
 
     suspend fun isMerchantProfileComplete(merchantId: String): Boolean {
         val doc = db.collection("businesses").document(merchantId).get().await()
         val d = doc.data ?: return false
-        return d["address"] != null && d["phone"] != null
+        val taxId = d["taxId"] as? String
+        return d["address"] != null
+            && d["phone"] != null
+            && !taxId.isNullOrBlank()
     }
 
     suspend fun updateUserName(name: String) {
@@ -493,6 +534,7 @@ class FirebaseService @Inject constructor() {
         merchant.planTier?.let { data["planTier"] = it }
         merchant.addressText?.let { data["addressText"] = it }
         merchant.isHighlighted?.let { data["isHighlighted"] = it }
+        merchant.taxId?.trim()?.takeIf { it.isNotEmpty() }?.let { data["taxId"] = it.uppercase() }
         merchant.address?.let { data["address"] = mapOf("formatted" to it.formatted, "lat" to it.lat, "lng" to it.lng, "placeId" to (it.placeId ?: "")) }
         merchant.schedule?.let { list -> data["schedule"] = list.map { mapOf("day" to it.day, "open" to it.open, "close" to it.close) } }
         db.collection("businesses").document(merchant.id).set(data, com.google.firebase.firestore.SetOptions.merge()).await()

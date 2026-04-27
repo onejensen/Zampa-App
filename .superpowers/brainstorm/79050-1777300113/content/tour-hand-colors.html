@@ -1,0 +1,252 @@
+<h2>Color de la mano — Elige una opción</h2>
+<p class="subtitle">Mismo icono, tres variantes de color</p>
+
+<style>
+  .phone-wrap {
+    display: flex; gap: 24px; justify-content: center;
+    align-items: flex-start; flex-wrap: wrap; margin-top: 24px;
+  }
+  .phone-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+  .phone {
+    width: 180px; height: 360px;
+    border-radius: 28px; border: 3px solid #333; position: relative;
+    overflow: hidden; box-shadow: 0 16px 48px rgba(0,0,0,0.4); flex-shrink: 0;
+    background: #111;
+  }
+  .app-bg { position: absolute; inset: 0; background: #f5f5f0; }
+  .app-topbar {
+    background: white; height: 42px; display: flex; align-items: center;
+    padding: 0 10px; justify-content: space-between; border-bottom: 1px solid #eee;
+  }
+  .app-topbar-title { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+  .app-topbar-btns { display: flex; gap: 5px; }
+  .app-btn {
+    width: 26px; height: 26px; background: #f0f0f0; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .app-btn.hl { background: #FF6B35; }
+  .card-list { padding: 8px 8px 0; display: flex; flex-direction: column; gap: 7px; }
+  .feed-card { background: white; border-radius: 10px; padding: 8px; display: flex; gap: 7px; align-items: center; }
+  .card-img { width: 36px; height: 36px; border-radius: 7px; flex-shrink: 0; }
+  .card-img.c1 { background: linear-gradient(135deg,#f6a,#fa6); }
+  .card-img.c2 { background: linear-gradient(135deg,#6af,#a6f); }
+  .card-img.c3 { background: linear-gradient(135deg,#6fa,#fa6); }
+  .card-name  { font-size: 10px; font-weight: 700; color: #1a1a1a; }
+  .card-price { font-size: 9px;  color: #FF6B35; font-weight: 600; }
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 46px;
+    background: white; border-top: 1px solid #eee;
+    display: flex; align-items: center; justify-content: space-around;
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 7px; color: #999; }
+  .nav-item.active { color: #FF6B35; }
+  .nav-icon { font-size: 15px; }
+
+  /* Spotlight */
+  .spotlight {
+    position: absolute; border-radius: 10px;
+    box-shadow: 0 0 0 400px rgba(0,0,0,0.78);
+    z-index: 11; border: 2px solid rgba(255,107,53,0.55);
+    top: 44px; left: 108px; width: 28px; height: 28px;
+  }
+  .pulse-ring {
+    position: absolute; border-radius: 12px;
+    border: 2px solid rgba(255,107,53,0.45); z-index: 12;
+    top: 42px; left: 106px; width: 32px; height: 32px;
+    animation: pulseRing 1.5s ease-out infinite;
+  }
+  @keyframes pulseRing {
+    0%   { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 0;   transform: scale(1.5); }
+  }
+
+  /* Tooltip */
+  .tooltip-card {
+    position: absolute; background: white; border-radius: 12px;
+    padding: 9px 11px 8px; z-index: 20;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25); left: 8px; right: 8px;
+    top: 84px;
+  }
+  .tooltip-arrow-down {
+    position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 7px solid transparent; border-right: 7px solid transparent;
+    border-top: 7px solid white;
+  }
+  .tooltip-step  { font-size: 8px; color: #FF6B35; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .tooltip-title { font-size: 11px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
+  .tooltip-desc  { font-size: 9px; color: #666; line-height: 1.4; margin-bottom: 7px; }
+  .tooltip-actions { display: flex; justify-content: space-between; align-items: center; }
+  .tooltip-skip { font-size: 8px; color: #bbb; }
+  .tooltip-next { background: #FF6B35; color: white; border-radius: 7px; padding: 3px 9px; font-size: 9px; font-weight: 700; }
+
+  /* Hand */
+  .hand {
+    position: absolute; z-index: 25;
+    width: 26px; height: 26px;
+    top: 72px; left: 112px;
+    animation: handUp 1s ease-in-out infinite;
+  }
+  @keyframes handUp {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-5px); }
+  }
+
+  .hand-white { filter: drop-shadow(0 1px 4px rgba(0,0,0,0.6)); }
+  .hand-black { filter: drop-shadow(0 1px 4px rgba(255,255,255,0.3)); }
+  .hand-yellow { filter: drop-shadow(0 1px 6px rgba(0,0,0,0.5)); }
+
+  /* Option labels */
+  .opt-label {
+    font-size: 13px; font-weight: 700; color: #eee;
+    text-align: center;
+  }
+  .opt-sub { font-size: 11px; color: #888; text-align: center; }
+</style>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="ptr-white" viewBox="0 0 100 130">
+    <path d="M42,4 C36,4 36,16 36,16 L36,66 C36,72 42,72 42,72 L58,72 C64,72 64,66 64,66 L64,16 C64,16 64,4 58,4 Z" fill="white"/>
+    <path d="M64,22 C58,22 58,30 58,30 L58,72 L78,72 L78,30 C78,30 78,22 72,22 Z" fill="white"/>
+    <path d="M78,34 C72,34 72,42 72,42 L72,72 L88,72 L88,42 C88,42 88,34 82,34 Z" fill="white"/>
+    <path d="M88,44 C83,44 83,52 83,52 L83,72 L96,72 L96,52 C96,52 96,44 92,44 Z" fill="white"/>
+    <path d="M12,54 C6,54 4,60 4,66 L4,78 C4,84 8,88 14,88 L36,88 L36,66 L18,66 C18,60 16,54 12,54 Z" fill="white"/>
+    <path d="M14,72 L96,72 L96,104 C96,118 86,126 74,126 L26,126 C14,126 4,118 4,104 L4,82 C4,76 8,72 14,72 Z" fill="white"/>
+  </symbol>
+  <symbol id="ptr-black" viewBox="0 0 100 130">
+    <path d="M42,4 C36,4 36,16 36,16 L36,66 C36,72 42,72 42,72 L58,72 C64,72 64,66 64,66 L64,16 C64,16 64,4 58,4 Z" fill="#1a1a1a"/>
+    <path d="M64,22 C58,22 58,30 58,30 L58,72 L78,72 L78,30 C78,30 78,22 72,22 Z" fill="#1a1a1a"/>
+    <path d="M78,34 C72,34 72,42 72,42 L72,72 L88,72 L88,42 C88,42 88,34 82,34 Z" fill="#1a1a1a"/>
+    <path d="M88,44 C83,44 83,52 83,52 L83,72 L96,72 L96,52 C96,52 96,44 92,44 Z" fill="#1a1a1a"/>
+    <path d="M12,54 C6,54 4,60 4,66 L4,78 C4,84 8,88 14,88 L36,88 L36,66 L18,66 C18,60 16,54 12,54 Z" fill="#1a1a1a"/>
+    <path d="M14,72 L96,72 L96,104 C96,118 86,126 74,126 L26,126 C14,126 4,118 4,104 L4,82 C4,76 8,72 14,72 Z" fill="#1a1a1a"/>
+  </symbol>
+  <symbol id="ptr-yellow" viewBox="0 0 100 130">
+    <path d="M42,4 C36,4 36,16 36,16 L36,66 C36,72 42,72 42,72 L58,72 C64,72 64,66 64,66 L64,16 C64,16 64,4 58,4 Z" fill="#FFC200"/>
+    <path d="M64,22 C58,22 58,30 58,30 L58,72 L78,72 L78,30 C78,30 78,22 72,22 Z" fill="#FFC200"/>
+    <path d="M78,34 C72,34 72,42 72,42 L72,72 L88,72 L88,42 C88,42 88,34 82,34 Z" fill="#FFC200"/>
+    <path d="M88,44 C83,44 83,52 83,52 L83,72 L96,72 L96,52 C96,52 96,44 92,44 Z" fill="#FFC200"/>
+    <path d="M12,54 C6,54 4,60 4,66 L4,78 C4,84 8,88 14,88 L36,88 L36,66 L18,66 C18,60 16,54 12,54 Z" fill="#FFC200"/>
+    <path d="M14,72 L96,72 L96,104 C96,118 86,126 74,126 L26,126 C14,126 4,118 4,104 L4,82 C4,76 8,72 14,72 Z" fill="#FFC200"/>
+  </symbol>
+</svg>
+
+<div class="phone-wrap">
+
+  <!-- Option A: White -->
+  <div class="phone-col option" data-choice="white" onclick="toggleSelect(this)">
+    <div class="opt-label">A — Blanca</div>
+    <div class="phone">
+      <div class="app-bg">
+        <div class="app-topbar">
+          <span class="app-topbar-title">Zampa</span>
+          <div class="app-topbar-btns"><div class="app-btn">⚙</div><div class="app-btn hl">🗺</div></div>
+        </div>
+        <div class="card-list">
+          <div class="feed-card"><div class="card-img c1"></div><div class="card-info"><div class="card-name">La Tasca</div><div class="card-price">12 € · 200m</div></div></div>
+          <div class="feed-card"><div class="card-img c2"></div><div class="card-info"><div class="card-name">Restaurante Sol</div><div class="card-price">9.50 €</div></div></div>
+          <div class="feed-card"><div class="card-img c3"></div><div class="card-info"><div class="card-name">El Rincón</div><div class="card-price">11 €</div></div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="nav-icon">🍽</div>Feed</div>
+          <div class="nav-item"><div class="nav-icon">🤍</div>Favoritos</div>
+          <div class="nav-item"><div class="nav-icon">👤</div>Perfil</div>
+        </div>
+      </div>
+      <div class="spotlight"></div>
+      <div class="pulse-ring"></div>
+      <svg class="hand hand-white" viewBox="0 0 100 130"><use href="#ptr-white"/></svg>
+      <div class="tooltip-card">
+        <div class="tooltip-arrow-down"></div>
+        <div class="tooltip-step">Paso 2 de 4</div>
+        <div class="tooltip-title">🗺 Vista de mapa</div>
+        <div class="tooltip-desc">Alterna entre lista y mapa para ver los restaurantes.</div>
+        <div class="tooltip-actions">
+          <span class="tooltip-skip">Saltar</span>
+          <div class="tooltip-next">Siguiente →</div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-sub">Contraste alto sobre overlay oscuro</div>
+  </div>
+
+  <!-- Option B: Black -->
+  <div class="phone-col option" data-choice="black" onclick="toggleSelect(this)">
+    <div class="opt-label">B — Negra</div>
+    <div class="phone">
+      <div class="app-bg">
+        <div class="app-topbar">
+          <span class="app-topbar-title">Zampa</span>
+          <div class="app-topbar-btns"><div class="app-btn">⚙</div><div class="app-btn hl">🗺</div></div>
+        </div>
+        <div class="card-list">
+          <div class="feed-card"><div class="card-img c1"></div><div class="card-info"><div class="card-name">La Tasca</div><div class="card-price">12 € · 200m</div></div></div>
+          <div class="feed-card"><div class="card-img c2"></div><div class="card-info"><div class="card-name">Restaurante Sol</div><div class="card-price">9.50 €</div></div></div>
+          <div class="feed-card"><div class="card-img c3"></div><div class="card-info"><div class="card-name">El Rincón</div><div class="card-price">11 €</div></div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="nav-icon">🍽</div>Feed</div>
+          <div class="nav-item"><div class="nav-icon">🤍</div>Favoritos</div>
+          <div class="nav-item"><div class="nav-icon">👤</div>Perfil</div>
+        </div>
+      </div>
+      <div class="spotlight"></div>
+      <div class="pulse-ring"></div>
+      <svg class="hand hand-black" viewBox="0 0 100 130"><use href="#ptr-black"/></svg>
+      <div class="tooltip-card">
+        <div class="tooltip-arrow-down"></div>
+        <div class="tooltip-step">Paso 2 de 4</div>
+        <div class="tooltip-title">🗺 Vista de mapa</div>
+        <div class="tooltip-desc">Alterna entre lista y mapa para ver los restaurantes.</div>
+        <div class="tooltip-actions">
+          <span class="tooltip-skip">Saltar</span>
+          <div class="tooltip-next">Siguiente →</div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-sub">Se pierde un poco en el overlay oscuro</div>
+  </div>
+
+  <!-- Option C: Yellow -->
+  <div class="phone-col option" data-choice="yellow" onclick="toggleSelect(this)">
+    <div class="opt-label">C — Amarilla</div>
+    <div class="phone">
+      <div class="app-bg">
+        <div class="app-topbar">
+          <span class="app-topbar-title">Zampa</span>
+          <div class="app-topbar-btns"><div class="app-btn">⚙</div><div class="app-btn hl">🗺</div></div>
+        </div>
+        <div class="card-list">
+          <div class="feed-card"><div class="card-img c1"></div><div class="card-info"><div class="card-name">La Tasca</div><div class="card-price">12 € · 200m</div></div></div>
+          <div class="feed-card"><div class="card-img c2"></div><div class="card-info"><div class="card-name">Restaurante Sol</div><div class="card-price">9.50 €</div></div></div>
+          <div class="feed-card"><div class="card-img c3"></div><div class="card-info"><div class="card-name">El Rincón</div><div class="card-price">11 €</div></div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="nav-icon">🍽</div>Feed</div>
+          <div class="nav-item"><div class="nav-icon">🤍</div>Favoritos</div>
+          <div class="nav-item"><div class="nav-icon">👤</div>Perfil</div>
+        </div>
+      </div>
+      <div class="spotlight"></div>
+      <div class="pulse-ring"></div>
+      <svg class="hand hand-yellow" viewBox="0 0 100 130"><use href="#ptr-yellow"/></svg>
+      <div class="tooltip-card">
+        <div class="tooltip-arrow-down"></div>
+        <div class="tooltip-step">Paso 2 de 4</div>
+        <div class="tooltip-title">🗺 Vista de mapa</div>
+        <div class="tooltip-desc">Alterna entre lista y mapa para ver los restaurantes.</div>
+        <div class="tooltip-actions">
+          <span class="tooltip-skip">Saltar</span>
+          <div class="tooltip-next">Siguiente →</div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-sub">Color pro de Zampa, llamativo</div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px;text-align:center">
+  Pulsa una opción para seleccionarla
+</p>

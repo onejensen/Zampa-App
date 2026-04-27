@@ -28,10 +28,14 @@ sealed class Route(val route: String) {
     data object NotificationPreferences : Route("notification_preferences")
     data object CurrencyPreference : Route("currency_preference")
     data object History : Route("history")
+    data object Language : Route("language")
     data object PrivacyPolicy : Route("privacy_policy")
     data object Terms : Route("terms")
     data object MenuDetail : Route("menu_detail/{menuId}") {
         fun createRoute(menuId: String) = "menu_detail/$menuId"
+    }
+    data object MerchantProfile : Route("merchant_profile/{merchantId}") {
+        fun createRoute(merchantId: String) = "merchant_profile/$merchantId"
     }
 }
 
@@ -140,6 +144,9 @@ fun ZampaNavHost(
                 onNavigateToDetail = { menuId ->
                     navController.navigate(Route.MenuDetail.createRoute(menuId))
                 },
+                onNavigateToMerchant = { merchantId ->
+                    navController.navigate(Route.MerchantProfile.createRoute(merchantId))
+                },
                 onNavigateToStats = {
                     navController.navigate(Route.Stats.route)
                 },
@@ -152,8 +159,11 @@ fun ZampaNavHost(
                 onNavigateToCurrencyPreference = {
                     navController.navigate(Route.CurrencyPreference.route)
                 },
-                onNavigateToHistory = {
-                    navController.navigate(Route.History.route)
+                onNavigateToLanguage = {
+                    navController.navigate(Route.Language.route)
+                },
+                onNavigateToLegal = {
+                    navController.navigate(Route.PrivacyPolicy.route)
                 }
             )
         }
@@ -202,6 +212,14 @@ fun ZampaNavHost(
                 onBack = { navController.popBackStack() }
             )
         }
+        composable(Route.Language.route) {
+            val user by authViewModel.currentUser.collectAsState()
+            com.sozolab.zampa.ui.profile.LanguagePickerScreen(
+                localizationManager = authViewModel.localizationManager,
+                userId = user?.id,
+                onBack = { navController.popBackStack() }
+            )
+        }
         composable(Route.History.route) {
             com.sozolab.zampa.ui.profile.HistoryScreen(
                 onBack = { navController.popBackStack() }
@@ -214,7 +232,23 @@ fun ZampaNavHost(
             val menuId = backStackEntry.arguments?.getString("menuId") ?: ""
             com.sozolab.zampa.ui.feed.MenuDetailScreen(
                 menuId = menuId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToMerchant = { merchantId ->
+                    navController.navigate(Route.MerchantProfile.createRoute(merchantId))
+                }
+            )
+        }
+        composable(
+            Route.MerchantProfile.route,
+            arguments = listOf(navArgument("merchantId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val merchantId = backStackEntry.arguments?.getString("merchantId") ?: ""
+            com.sozolab.zampa.ui.feed.MerchantProfileScreen(
+                merchantId = merchantId,
+                onBack = { navController.popBackStack() },
+                onNavigateToDetail = { menuId ->
+                    navController.navigate(Route.MenuDetail.createRoute(menuId))
+                }
             )
         }
     }

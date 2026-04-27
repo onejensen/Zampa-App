@@ -7,9 +7,11 @@
 		<string>Default</string>
 	</array>
 	<key>aps-environment</key>
-	<string>development</string>
+	<string>production</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
+		<string>applinks:www.getzampa.com</string>
+		<string>applinks:getzampa.com</string>
 		<string>applinks:eatout-70b8b.web.app</string>
 		<string>applinks:eatout-70b8b.firebaseapp.com</string>
 	</array>

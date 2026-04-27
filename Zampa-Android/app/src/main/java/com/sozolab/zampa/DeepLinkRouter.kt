@@ -16,6 +16,8 @@ import android.net.Uri
 object DeepLinkRouter {
 
     private val supportedHosts = setOf(
+        "www.getzampa.com",
+        "getzampa.com",
         "eatout-70b8b.web.app",
         "eatout-70b8b.firebaseapp.com",
     )

@@ -9,13 +9,13 @@ struct Favorite: Codable, Identifiable {
     let notificationsEnabled: Bool
     
     init(
-        id: String = UUID().uuidString,
+        id: String? = nil,
         customerId: String,
         businessId: String,
         createdAt: String = ISO8601DateFormatter().string(from: Date()),
         notificationsEnabled: Bool = true
     ) {
-        self.id = id
+        self.id = id ?? "\(customerId)_\(businessId)"
         self.customerId = customerId
         self.businessId = businessId
         self.createdAt = createdAt

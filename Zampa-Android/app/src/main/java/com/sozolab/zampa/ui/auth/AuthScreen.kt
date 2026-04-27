@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.sozolab.zampa.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -44,12 +45,12 @@ fun AuthScreen(
     var selectedRole by remember { mutableStateOf(User.UserRole.CLIENTE) }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    val passwordError = remember(isLogin, password) {
+    val passwordErrorRes = remember(isLogin, password) {
         if (isLogin || password.isEmpty()) null
         else when {
-            password.length < 8 -> "Mínimo 8 caracteres"
-            !password.any { it.isLetter() } -> "Debe contener al menos una letra"
-            !password.any { it.isDigit() } -> "Debe contener al menos un número"
+            password.length < 8 -> R.string.auth_password_min
+            !password.any { it.isLetter() } -> R.string.auth_password_letter
+            !password.any { it.isDigit() } -> R.string.auth_password_number
             else -> null
         }
     }
@@ -79,30 +80,30 @@ fun AuthScreen(
         var displayName by remember { mutableStateOf(socialUser.name) }
         AlertDialog(
             onDismissRequest = { viewModel.cancelSocialRegistration() },
-            title = { Text("¡Bienvenido/a!") },
+            title = { Text(stringResource(R.string.auth_welcome)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Cuéntanos un poco más para configurar tu cuenta.", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.auth_welcome_subtitle), style = MaterialTheme.typography.bodyMedium)
                     OutlinedTextField(
                         value = displayName,
                         onValueChange = { displayName = it },
-                        label = { Text("Tu nombre") },
+                        label = { Text(stringResource(R.string.auth_your_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
-                    Text("¿Cómo quieres usar Zampa?", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.auth_how_use), style = MaterialTheme.typography.labelLarge)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
                             selected = roleDialogSelected == User.UserRole.CLIENTE,
                             onClick = { roleDialogSelected = User.UserRole.CLIENTE },
-                            label = { Text("Comensal") },
+                            label = { Text(stringResource(R.string.auth_diner)) },
                             modifier = Modifier.weight(1f)
                         )
                         FilterChip(
                             selected = roleDialogSelected == User.UserRole.COMERCIO,
                             onClick = { roleDialogSelected = User.UserRole.COMERCIO },
-                            label = { Text("Restaurante") },
+                            label = { Text(stringResource(R.string.auth_restaurant)) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -112,10 +113,10 @@ fun AuthScreen(
                 Button(
                     onClick = { viewModel.finalizeSocialRegistration(roleDialogSelected, displayName.ifBlank { socialUser.name }) },
                     enabled = !isLoading
-                ) { Text("Empezar") }
+                ) { Text(stringResource(R.string.auth_start)) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.cancelSocialRegistration() }) { Text("Cancelar") }
+                TextButton(onClick = { viewModel.cancelSocialRegistration() }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -146,7 +147,7 @@ fun AuthScreen(
         Spacer(Modifier.height(12.dp))
         Text("Zampa", style = MaterialTheme.typography.headlineLarge)
         Text(
-            if (isLogin) "Inicia sesión para continuar" else "Crea tu cuenta",
+            if (isLogin) stringResource(R.string.auth_login_subtitle) else stringResource(R.string.auth_register_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -157,12 +158,12 @@ fun AuthScreen(
         Row(modifier = Modifier.fillMaxWidth()) {
             FilterChip(
                 selected = isLogin, onClick = { isLogin = true },
-                label = { Text("Iniciar Sesión") },
+                label = { Text(stringResource(R.string.auth_login)) },
                 modifier = Modifier.weight(1f).padding(end = 4.dp)
             )
             FilterChip(
                 selected = !isLogin, onClick = { isLogin = false },
-                label = { Text("Registrarse") },
+                label = { Text(stringResource(R.string.auth_register)) },
                 modifier = Modifier.weight(1f).padding(start = 4.dp)
             )
         }
@@ -173,7 +174,7 @@ fun AuthScreen(
         if (!isLogin) {
             OutlinedTextField(
                 value = name, onValueChange = { name = it },
-                label = { Text("Nombre completo") },
+                label = { Text(stringResource(R.string.auth_full_name)) },
                 leadingIcon = { Icon(Icons.Default.Person, null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -183,7 +184,7 @@ fun AuthScreen(
 
             OutlinedTextField(
                 value = phone, onValueChange = { phone = it },
-                label = { Text("Teléfono") },
+                label = { Text(stringResource(R.string.auth_phone_short)) },
                 leadingIcon = { Icon(Icons.Default.Phone, null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -193,20 +194,20 @@ fun AuthScreen(
             Spacer(Modifier.height(12.dp))
 
             // Role Selector
-            Text("Soy un:", style = MaterialTheme.typography.labelLarge, modifier = Modifier.fillMaxWidth())
+            Text(stringResource(R.string.auth_i_am), style = MaterialTheme.typography.labelLarge, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = selectedRole == User.UserRole.CLIENTE,
                     onClick = { selectedRole = User.UserRole.CLIENTE },
-                    label = { Text("Cliente") },
+                    label = { Text(stringResource(R.string.auth_client)) },
                     leadingIcon = { if (selectedRole == User.UserRole.CLIENTE) Icon(Icons.Default.Check, null, Modifier.size(18.dp)) },
                     modifier = Modifier.weight(1f)
                 )
                 FilterChip(
                     selected = selectedRole == User.UserRole.COMERCIO,
                     onClick = { selectedRole = User.UserRole.COMERCIO },
-                    label = { Text("Restaurante") },
+                    label = { Text(stringResource(R.string.auth_restaurant)) },
                     leadingIcon = { if (selectedRole == User.UserRole.COMERCIO) Icon(Icons.Default.Check, null, Modifier.size(18.dp)) },
                     modifier = Modifier.weight(1f)
                 )
@@ -224,9 +225,14 @@ fun AuthScreen(
             modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Icon(Icons.Default.AccountCircle, contentDescription = null, tint = Color(0xFF4285F4))
+            Icon(
+                painter = painterResource(id = com.sozolab.zampa.R.drawable.ic_google),
+                contentDescription = null,
+                tint = Color.Unspecified,
+                modifier = Modifier.size(20.dp)
+            )
             Spacer(Modifier.width(8.dp))
-            Text("Continuar con Google")
+            Text(stringResource(R.string.auth_continue_google))
         }
 
         HorizontalDivider(
@@ -237,7 +243,7 @@ fun AuthScreen(
         // Email
         OutlinedTextField(
             value = email, onValueChange = { email = it },
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.auth_email)) },
             leadingIcon = { Icon(Icons.Default.Email, null) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -249,7 +255,7 @@ fun AuthScreen(
         // Password
         OutlinedTextField(
             value = password, onValueChange = { password = it },
-            label = { Text("Contraseña") },
+            label = { Text(stringResource(R.string.auth_password)) },
             leadingIcon = { Icon(Icons.Default.Lock, null) },
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -260,8 +266,8 @@ fun AuthScreen(
             shape = RoundedCornerShape(12.dp),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             singleLine = true,
-            isError = passwordError != null,
-            supportingText = passwordError?.let { { Text(it) } }
+            isError = passwordErrorRes != null,
+            supportingText = passwordErrorRes?.let { resId -> { Text(stringResource(resId)) } }
         )
 
         // Error de autenticación
@@ -279,12 +285,12 @@ fun AuthScreen(
                 else viewModel.register(email, password, name, selectedRole, phone.ifBlank { null })
             },
             enabled = !isLoading && email.isNotBlank() && password.isNotEmpty() &&
-                (isLogin || passwordError == null),
+                (isLogin || passwordErrorRes == null),
             modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
             if (isLoading) CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-            else Text(if (isLogin) "Iniciar Sesión" else "Crear Cuenta")
+            else Text(if (isLogin) stringResource(R.string.auth_login) else stringResource(R.string.auth_create_account))
         }
 
         if (!isLogin) {
@@ -294,23 +300,23 @@ fun AuthScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    "Al registrarte aceptas los ",
+                    stringResource(R.string.auth_accept_terms_prefix) + " ",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    "Términos",
+                    stringResource(R.string.auth_terms),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = androidx.compose.ui.Modifier.clickable { onNavigateToTerms() }
                 )
                 Text(
-                    " y la ",
+                    " " + stringResource(R.string.auth_and) + " ",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    "Privacidad",
+                    stringResource(R.string.auth_privacy),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = androidx.compose.ui.Modifier.clickable { onNavigateToPrivacyPolicy() }
@@ -320,7 +326,7 @@ fun AuthScreen(
 
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = { isLogin = !isLogin }) {
-            Text(if (isLogin) "¿No tienes cuenta? Regístrate" else "¿Ya tienes cuenta? Inicia sesión")
+            Text(if (isLogin) stringResource(R.string.auth_no_account) else stringResource(R.string.auth_has_account))
         }
     }
 }

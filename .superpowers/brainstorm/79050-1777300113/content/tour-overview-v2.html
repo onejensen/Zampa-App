@@ -1,0 +1,254 @@
+<h2>Overlay Tour — Mano estilo Mickey Mouse</h2>
+<p class="subtitle">Mano blanca con guante redondeado, animada apuntando al elemento iluminado</p>
+
+<style>
+  .phone-wrap {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .phone {
+    width: 220px;
+    height: 440px;
+    background: #1a1a2e;
+    border-radius: 32px;
+    border: 3px solid #333;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+  .phone-label { text-align: center; font-size: 12px; color: #888; margin-top: 8px; font-family: monospace; }
+
+  .app-bg { position: absolute; inset: 0; background: #f5f5f0; }
+  .app-topbar {
+    background: white; height: 48px;
+    display: flex; align-items: center; padding: 0 12px;
+    justify-content: space-between; border-bottom: 1px solid #eee;
+  }
+  .app-topbar-title { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  .app-topbar-btns { display: flex; gap: 6px; }
+  .app-btn {
+    width: 30px; height: 30px; background: #f0f0f0;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .app-btn.hl { background: #FF6B35; }
+  .card-list { padding: 10px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+  .feed-card { background: white; border-radius: 12px; padding: 10px; display: flex; gap: 8px; align-items: center; }
+  .card-img { width: 44px; height: 44px; background: #eee; border-radius: 8px; flex-shrink: 0; }
+  .card-img.c1 { background: linear-gradient(135deg,#f6a,#fa6); }
+  .card-img.c2 { background: linear-gradient(135deg,#6af,#a6f); }
+  .card-img.c3 { background: linear-gradient(135deg,#6fa,#fa6); }
+  .card-name { font-size: 11px; font-weight: 700; color: #1a1a1a; }
+  .card-price { font-size: 10px; color: #FF6B35; font-weight: 600; }
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 52px;
+    background: white; border-top: 1px solid #eee;
+    display: flex; align-items: center; justify-content: space-around;
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 8px; color: #999; padding: 4px 8px; }
+  .nav-item.active { color: #FF6B35; }
+  .nav-icon { font-size: 18px; }
+
+  /* Spotlight */
+  .spotlight {
+    position: absolute;
+    border-radius: 12px;
+    box-shadow: 0 0 0 400px rgba(0,0,0,0.75);
+    z-index: 11;
+    border: 2px solid rgba(255,107,53,0.6);
+  }
+  .pulse-ring {
+    position: absolute; border-radius: 14px;
+    border: 2px solid rgba(255,107,53,0.5);
+    z-index: 12;
+    animation: pulseRing 1.5s ease-out infinite;
+  }
+  @keyframes pulseRing {
+    0%   { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 0;   transform: scale(1.4); }
+  }
+
+  /* Tooltip */
+  .tooltip-card {
+    position: absolute; background: white; border-radius: 14px;
+    padding: 12px 14px 10px; z-index: 20;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    left: 10px; right: 10px;
+  }
+  .tooltip-arrow { position: absolute; width: 0; height: 0; }
+  .tooltip-arrow.up {
+    top: -8px; left: 50%; transform: translateX(-50%);
+    border-left: 8px solid transparent; border-right: 8px solid transparent;
+    border-bottom: 8px solid white;
+  }
+  .tooltip-arrow.down {
+    bottom: -8px; left: 50%; transform: translateX(-50%);
+    border-left: 8px solid transparent; border-right: 8px solid transparent;
+    border-top: 8px solid white;
+  }
+  .tooltip-step  { font-size: 9px; color: #FF6B35; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .tooltip-title { font-size: 12px; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
+  .tooltip-desc  { font-size: 10px; color: #666; line-height: 1.4; margin-bottom: 8px; }
+  .tooltip-actions { display: flex; justify-content: space-between; align-items: center; }
+  .tooltip-skip { font-size: 9px; color: #999; cursor: pointer; }
+  .tooltip-next { background: #FF6B35; color: white; border-radius: 8px; padding: 4px 10px; font-size: 10px; font-weight: 700; cursor: pointer; }
+  .step-dots { display: flex; gap: 4px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: #ddd; }
+  .dot.active { background: #FF6B35; width: 12px; border-radius: 3px; }
+
+  /* ---- Mickey Mouse white glove hand SVG ---- */
+  .hand {
+    position: absolute;
+    z-index: 25;
+    width: 36px;
+    height: 36px;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+  }
+  /* pointing UP (default) */
+  .hand.up   { animation: handUp   1.2s ease-in-out infinite; }
+  /* pointing DOWN (for bottom nav) */
+  .hand.down { animation: handDown 1.2s ease-in-out infinite; transform: rotate(180deg); }
+
+  @keyframes handUp {
+    0%, 100% { transform: translateY(0)   scale(1); }
+    50%       { transform: translateY(-6px) scale(1.1); }
+  }
+  @keyframes handDown {
+    0%, 100% { transform: rotate(180deg) translateY(0)   scale(1); }
+    50%       { transform: rotate(180deg) translateY(-6px) scale(1.1); }
+  }
+
+  /* Phone 1 — map toggle button */
+  #p1 .spotlight  { top: 55px;  left: 132px; width: 34px; height: 34px; }
+  #p1 .pulse-ring { top: 53px;  left: 130px; width: 38px; height: 38px; }
+  #p1 .hand       { top: 90px;  left: 136px; }
+  #p1 .tooltip-card { top: 105px; }
+
+  /* Phone 2 — favorites tab */
+  #p2 .spotlight  { bottom: 6px;  left: 62px;  width: 46px; height: 40px; border-radius: 10px; }
+  #p2 .pulse-ring { bottom: 4px;  left: 60px;  width: 50px; height: 44px; border-radius: 12px; }
+  #p2 .hand       { bottom: 52px; left: 70px; }
+  #p2 .tooltip-card { bottom: 68px; }
+</style>
+
+<!-- Inline SVG: Mickey-style white glove pointing up -->
+<svg style="display:none">
+  <symbol id="glove" viewBox="0 0 36 48">
+    <!-- index finger -->
+    <rect x="14" y="2" width="9" height="22" rx="4.5" fill="white"/>
+    <!-- middle finger stump -->
+    <rect x="23" y="9" width="8" height="14" rx="4" fill="white"/>
+    <!-- ring finger stump -->
+    <rect x="5"  y="9" width="8" height="14" rx="4" fill="white"/>
+    <!-- palm -->
+    <rect x="5"  y="18" width="26" height="16" rx="5" fill="white"/>
+    <!-- thumb -->
+    <ellipse cx="4" cy="26" rx="4" ry="6" fill="white"/>
+    <!-- cuff band -->
+    <rect x="5" y="32" width="26" height="6" rx="3" fill="white"/>
+    <!-- cuff dark line -->
+    <rect x="5" y="32" width="26" height="2" rx="1" fill="rgba(0,0,0,0.12)"/>
+    <!-- outline/depth on index finger -->
+    <rect x="14" y="2" width="9" height="22" rx="4.5" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="1.2"/>
+  </symbol>
+</svg>
+
+<div class="phone-wrap">
+
+  <!-- Phone 1: Map toggle button step -->
+  <div>
+    <div class="phone" id="p1">
+      <div class="app-bg">
+        <div class="app-topbar">
+          <span class="app-topbar-title">Zampa</span>
+          <div class="app-topbar-btns">
+            <div class="app-btn">⚙</div>
+            <div class="app-btn hl">🗺</div>
+          </div>
+        </div>
+        <div class="card-list">
+          <div class="feed-card"><div class="card-img c1"></div><div class="card-info"><div class="card-name">La Tasca</div><div class="card-price">12 € · 200m</div></div></div>
+          <div class="feed-card"><div class="card-img c2"></div><div class="card-info"><div class="card-name">Restaurante Sol</div><div class="card-price">9.50 € · 350m</div></div></div>
+          <div class="feed-card"><div class="card-img c3"></div><div class="card-info"><div class="card-name">El Rincón</div><div class="card-price">11 € · 480m</div></div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="nav-icon">🍽</div>Feed</div>
+          <div class="nav-item"><div class="nav-icon">🤍</div>Favoritos</div>
+          <div class="nav-item"><div class="nav-icon">👤</div>Perfil</div>
+        </div>
+      </div>
+      <div class="spotlight"></div>
+      <div class="pulse-ring"></div>
+      <svg class="hand up"><use href="#glove"/></svg>
+      <div class="tooltip-card">
+        <div class="tooltip-arrow down"></div>
+        <div class="tooltip-step">Paso 2 de 4</div>
+        <div class="tooltip-title">🗺 Vista de mapa</div>
+        <div class="tooltip-desc">Alterna entre lista y mapa para ver dónde están los restaurantes cerca de ti.</div>
+        <div class="tooltip-actions">
+          <span class="tooltip-skip">Saltar tour</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="step-dots">
+              <div class="dot"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div class="tooltip-next">Siguiente →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">Paso: Botón mapa</div>
+  </div>
+
+  <!-- Phone 2: Favorites tab step -->
+  <div>
+    <div class="phone" id="p2">
+      <div class="app-bg">
+        <div class="app-topbar">
+          <span class="app-topbar-title">Zampa</span>
+          <div class="app-topbar-btns">
+            <div class="app-btn">⚙</div>
+            <div class="app-btn">🗺</div>
+          </div>
+        </div>
+        <div class="card-list">
+          <div class="feed-card"><div class="card-img c1"></div><div class="card-info"><div class="card-name">La Tasca</div><div class="card-price">12 € · 200m</div></div></div>
+          <div class="feed-card"><div class="card-img c2"></div><div class="card-info"><div class="card-name">Restaurante Sol</div><div class="card-price">9.50 € · 350m</div></div></div>
+          <div class="feed-card"><div class="card-img c3"></div><div class="card-info"><div class="card-name">El Rincón</div><div class="card-price">11 € · 480m</div></div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="nav-icon">🍽</div>Feed</div>
+          <div class="nav-item"><div class="nav-icon">🤍</div>Favoritos</div>
+          <div class="nav-item"><div class="nav-icon">👤</div>Perfil</div>
+        </div>
+      </div>
+      <div class="spotlight"></div>
+      <div class="pulse-ring"></div>
+      <svg class="hand down"><use href="#glove"/></svg>
+      <div class="tooltip-card">
+        <div class="tooltip-arrow up"></div>
+        <div class="tooltip-step">Paso 3 de 4</div>
+        <div class="tooltip-title">🤍 Tus favoritos</div>
+        <div class="tooltip-desc">Guarda los restaurantes que más te gustan y recibe notificaciones cuando publican menú.</div>
+        <div class="tooltip-actions">
+          <span class="tooltip-skip">Saltar tour</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="step-dots">
+              <div class="dot"></div><div class="dot"></div><div class="dot active"></div><div class="dot"></div>
+            </div>
+            <div class="tooltip-next">Siguiente →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">Paso: Tab Favoritos</div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px;text-align:center">
+  Guante blanco estilo Mickey · rebota apuntando al elemento · overlay oscuro con recorte iluminado
+</p>

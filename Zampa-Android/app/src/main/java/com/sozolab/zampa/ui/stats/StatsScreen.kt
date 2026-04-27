@@ -13,10 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sozolab.zampa.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,10 +31,10 @@ fun StatsScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Estadísticas", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.stats_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.stats_back))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -65,7 +67,7 @@ fun StatsScreen(
             } else if (uiState.stats.isEmpty()) {
                 item {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        Text("No hay datos suficientes", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.stats_no_data_short), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -75,7 +77,7 @@ fun StatsScreen(
 
                 item {
                     MetricChart(
-                        title = "Impresiones (Visibilidad)",
+                        title = stringResource(R.string.stats_impressions_visibility),
                         stats = uiState.stats,
                         valueSelector = { it.impressions.toFloat() },
                         color = MaterialTheme.colorScheme.primary
@@ -115,12 +117,12 @@ fun SummaryCards(stats: List<DailyStat>) {
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            StatCard(Modifier.weight(1f), "Impresiones", totalImpressions.toString(), Icons.Default.Visibility, MaterialTheme.colorScheme.primary)
-            StatCard(Modifier.weight(1f), "Favoritos", totalFavorites.toString(), Icons.Default.Favorite, Color.Red)
+            StatCard(Modifier.weight(1f), stringResource(R.string.stats_impressions), totalImpressions.toString(), Icons.Default.Visibility, MaterialTheme.colorScheme.primary)
+            StatCard(Modifier.weight(1f), stringResource(R.string.stats_favorites), totalFavorites.toString(), Icons.Default.Favorite, Color.Red)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            StatCard(Modifier.weight(1f), "Interacciones", totalInteractions.toString(), Icons.Default.TouchApp, Color.Blue)
-            StatCard(Modifier.weight(1f), "Llamadas", totalCalls.toString(), Icons.Default.Phone, Color(0xFF4CAF50))
+            StatCard(Modifier.weight(1f), stringResource(R.string.stats_interactions), totalInteractions.toString(), Icons.Default.TouchApp, Color.Blue)
+            StatCard(Modifier.weight(1f), stringResource(R.string.stats_calls), totalCalls.toString(), Icons.Default.Phone, Color(0xFF4CAF50))
         }
     }
 }
@@ -186,13 +188,13 @@ fun InteractionBreakdown(stats: List<DailyStat>) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("Tipos de Interacción", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
-            
-            InteractionRow("Llamadas", calls, Color(0xFF4CAF50), calls.toFloat() / total)
+            Text(stringResource(R.string.stats_interaction_types), fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
+
+            InteractionRow(stringResource(R.string.stats_calls), calls, Color(0xFF4CAF50), calls.toFloat() / total)
             Spacer(Modifier.height(12.dp))
-            InteractionRow("Cómo llegar", directions, Color.Blue, directions.toFloat() / total)
+            InteractionRow(stringResource(R.string.stats_directions), directions, Color.Blue, directions.toFloat() / total)
             Spacer(Modifier.height(12.dp))
-            InteractionRow("Compartir", shares, Color.Magenta, shares.toFloat() / total)
+            InteractionRow(stringResource(R.string.stats_share), shares, Color.Magenta, shares.toFloat() / total)
         }
     }
 }

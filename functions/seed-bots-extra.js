@@ -875,6 +875,8 @@ async function seed() {
       createdAt: isoNow,
     });
 
+    // Bots: suscripción activa hasta 2099 → exentos para demo sin topar con trial.
+    const demoUntilMs = new Date("2099-12-31T00:00:00Z").getTime();
     await firestoreSet("businesses", uid, {
       id: uid,
       userId: uid,
@@ -888,6 +890,10 @@ async function seed() {
       acceptsReservations: false,
       planTier: r.isPro ? "pro" : "free",
       isHighlighted: r.isPro || false,
+      subscriptionStatus: "active",
+      subscriptionActiveUntil: demoUntilMs,
+      isBot: true,
+      taxId: config.syntheticBotTaxId(uid),
       createdAt: isoNow,
     });
 

@@ -9,7 +9,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.sozolab.zampa.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,12 +35,13 @@ fun DietaryPreferencesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Preferencias Alimentarias") },
+                title = { Text(stringResource(R.string.dietary_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
-                }
+                },
+                colors = com.sozolab.zampa.ui.theme.brandTopAppBarColors()
             )
         }
     ) { paddingValues ->
@@ -57,17 +60,17 @@ fun DietaryPreferencesScreen(
                 // Dietas
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Dietas",
+                        stringResource(R.string.dietary_diets),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     PreferenceToggle(
-                        title = "Vegetariano",
+                        title = stringResource(R.string.dietary_vegetarian),
                         checked = isVegetarian,
                         onCheckedChange = { isVegetarian = it }
                     )
                     PreferenceToggle(
-                        title = "Vegano",
+                        title = stringResource(R.string.dietary_vegan),
                         checked = isVegan,
                         onCheckedChange = {
                             isVegan = it
@@ -79,39 +82,39 @@ fun DietaryPreferencesScreen(
                 // Alérgenos e Intolerancias
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Alérgenos e Intolerancias",
+                        stringResource(R.string.dietary_allergens),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     PreferenceToggle(
-                        title = "Sin Carne",
+                        title = stringResource(R.string.dietary_no_meat),
                         checked = isMeatFree,
                         onCheckedChange = { isMeatFree = it }
                     )
                     PreferenceToggle(
-                        title = "Sin Pescado",
+                        title = stringResource(R.string.dietary_no_fish),
                         checked = isFishFree,
                         onCheckedChange = { isFishFree = it }
                     )
                     PreferenceToggle(
-                        title = "Sin Gluten",
+                        title = stringResource(R.string.dietary_no_gluten),
                         checked = isGlutenFree,
                         onCheckedChange = { isGlutenFree = it }
                     )
                     PreferenceToggle(
-                        title = "Sin Lactosa",
+                        title = stringResource(R.string.dietary_no_lactose),
                         checked = isLactoseFree,
                         onCheckedChange = { isLactoseFree = it }
                     )
                     PreferenceToggle(
-                        title = "Sin Frutos Secos",
+                        title = stringResource(R.string.dietary_no_nuts),
                         checked = isNutFree,
                         onCheckedChange = { isNutFree = it }
                     )
                 }
 
                 Text(
-                    "Las ofertas que no sean compatibles con tus preferencias se ocultarán automáticamente en el feed. Las ofertas sin información dietética siempre se muestran.",
+                    stringResource(R.string.dietary_footer),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -136,7 +139,7 @@ fun DietaryPreferencesScreen(
                         .fillMaxWidth()
                         .padding(24.dp)
                 ) {
-                    Text("Guardar preferencias")
+                    Text(stringResource(R.string.dietary_save))
                 }
             }
         }

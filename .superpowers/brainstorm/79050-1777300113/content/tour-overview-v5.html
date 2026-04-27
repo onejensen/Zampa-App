@@ -1,0 +1,286 @@
+<h2>Overlay Tour — Mano blanca sólida</h2>
+<p class="subtitle">Mismo estilo minimalista, rellena de blanco</p>
+
+<style>
+  .phone-wrap {
+    display: flex; gap: 32px; justify-content: center;
+    align-items: flex-start; flex-wrap: wrap; margin-top: 24px;
+  }
+  .phone {
+    width: 220px; height: 440px; background: #1a1a2e;
+    border-radius: 32px; border: 3px solid #333; position: relative;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4); flex-shrink: 0;
+  }
+  .phone-label { text-align: center; font-size: 12px; color: #888; margin-top: 8px; font-family: monospace; }
+
+  .app-bg { position: absolute; inset: 0; background: #f5f5f0; }
+  .app-topbar {
+    background: white; height: 48px; display: flex; align-items: center;
+    padding: 0 12px; justify-content: space-between; border-bottom: 1px solid #eee;
+  }
+  .app-topbar-title { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  .app-topbar-btns { display: flex; gap: 6px; }
+  .app-btn {
+    width: 30px; height: 30px; background: #f0f0f0; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .app-btn.hl { background: #FF6B35; }
+  .card-list { padding: 10px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+  .feed-card { background: white; border-radius: 12px; padding: 10px; display: flex; gap: 8px; align-items: center; }
+  .card-img { width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0; }
+  .card-img.c1 { background: linear-gradient(135deg,#f6a,#fa6); }
+  .card-img.c2 { background: linear-gradient(135deg,#6af,#a6f); }
+  .card-img.c3 { background: linear-gradient(135deg,#6fa,#fa6); }
+  .card-name { font-size: 11px; font-weight: 700; color: #1a1a1a; }
+  .card-price { font-size: 10px; color: #FF6B35; font-weight: 600; }
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 52px;
+    background: white; border-top: 1px solid #eee;
+    display: flex; align-items: center; justify-content: space-around;
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 8px; color: #999; padding: 4px 8px; }
+  .nav-item.active { color: #FF6B35; }
+  .nav-icon { font-size: 18px; }
+
+  .spotlight {
+    position: absolute; border-radius: 12px;
+    box-shadow: 0 0 0 400px rgba(0,0,0,0.75);
+    z-index: 11; border: 2px solid rgba(255,107,53,0.6);
+  }
+  .pulse-ring {
+    position: absolute; border-radius: 14px;
+    border: 2px solid rgba(255,107,53,0.5); z-index: 12;
+    animation: pulseRing 1.5s ease-out infinite;
+  }
+  @keyframes pulseRing {
+    0%   { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 0;   transform: scale(1.4); }
+  }
+
+  .tooltip-card {
+    position: absolute; background: white; border-radius: 14px;
+    padding: 12px 14px 10px; z-index: 20;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25); left: 10px; right: 10px;
+  }
+  .tooltip-arrow { position: absolute; width: 0; height: 0; }
+  .tooltip-arrow.up {
+    top: -8px; left: 50%; transform: translateX(-50%);
+    border-left: 8px solid transparent; border-right: 8px solid transparent;
+    border-bottom: 8px solid white;
+  }
+  .tooltip-arrow.down {
+    bottom: -8px; left: 50%; transform: translateX(-50%);
+    border-left: 8px solid transparent; border-right: 8px solid transparent;
+    border-top: 8px solid white;
+  }
+  .tooltip-step  { font-size: 9px; color: #FF6B35; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .tooltip-title { font-size: 12px; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
+  .tooltip-desc  { font-size: 10px; color: #666; line-height: 1.4; margin-bottom: 8px; }
+  .tooltip-actions { display: flex; justify-content: space-between; align-items: center; }
+  .tooltip-skip { font-size: 9px; color: #999; cursor: pointer; }
+  .tooltip-next { background: #FF6B35; color: white; border-radius: 8px; padding: 4px 10px; font-size: 10px; font-weight: 700; }
+  .step-dots { display: flex; gap: 4px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: #ddd; }
+  .dot.active { background: #FF6B35; width: 12px; border-radius: 3px; }
+
+  .hand {
+    position: absolute;
+    z-index: 25;
+    width: 32px; height: 32px;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+  }
+  .hand.up   { animation: handUp   1s ease-in-out infinite; }
+  .hand.down { animation: handDown 1s ease-in-out infinite; }
+  @keyframes handUp {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-6px); }
+  }
+  @keyframes handDown {
+    0%, 100% { transform: rotate(180deg) translateY(0); }
+    50%       { transform: rotate(180deg) translateY(-6px); }
+  }
+
+  /* Phone positions */
+  #p1 .spotlight   { top: 55px;  left: 132px; width: 34px; height: 34px; }
+  #p1 .pulse-ring  { top: 53px;  left: 130px; width: 38px; height: 38px; }
+  #p1 .hand        { top: 84px;  left: 134px; }
+  #p1 .tooltip-card { top: 106px; }
+
+  #p2 .spotlight   { bottom: 6px; left: 62px;  width: 46px; height: 40px; border-radius: 10px; }
+  #p2 .pulse-ring  { bottom: 4px; left: 60px;  width: 50px; height: 44px; border-radius: 12px; }
+  #p2 .hand        { bottom: 50px; left: 70px; }
+  #p2 .tooltip-card { bottom: 68px; }
+</style>
+
+<!-- Solid white pointer hand — same style as Noun Project #126284, fully filled -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="ptr" viewBox="0 0 100 130">
+    <!-- index finger (tall, pointing up) -->
+    <path d="
+      M42,4
+      C42,4 36,4 36,16
+      L36,66
+      C36,66 36,72 42,72
+      L58,72
+      C58,72 64,72 64,66
+      L64,16
+      C64,16 64,4 58,4
+      Z
+    " fill="white"/>
+
+    <!-- middle finger -->
+    <path d="
+      M64,22
+      C64,22 58,22 58,30
+      L58,72
+      L78,72
+      L78,30
+      C78,30 78,22 72,22
+      Z
+    " fill="white"/>
+
+    <!-- ring finger -->
+    <path d="
+      M78,34
+      C78,34 72,34 72,42
+      L72,72
+      L88,72
+      L88,42
+      C88,42 88,34 82,34
+      Z
+    " fill="white"/>
+
+    <!-- pinky -->
+    <path d="
+      M88,44
+      C88,44 83,44 83,52
+      L83,72
+      L96,72
+      L96,52
+      C96,52 96,44 92,44
+      Z
+    " fill="white"/>
+
+    <!-- thumb -->
+    <path d="
+      M12,54
+      C6,54 4,60 4,66
+      L4,78
+      C4,84 8,88 14,88
+      L36,88
+      L36,66
+      L18,66
+      C18,60 16,54 12,54
+      Z
+    " fill="white"/>
+
+    <!-- palm -->
+    <path d="
+      M14,72
+      L96,72
+      L96,104
+      C96,118 86,126 74,126
+      L26,126
+      C14,126 4,118 4,104
+      L4,82
+      C4,76 8,72 14,72
+      Z
+    " fill="white"/>
+  </symbol>
+</svg>
+
+<div class="phone-wrap">
+
+  <!-- Phone 1: Map toggle -->
+  <div>
+    <div class="phone" id="p1">
+      <div class="app-bg">
+        <div class="app-topbar">
+          <span class="app-topbar-title">Zampa</span>
+          <div class="app-topbar-btns">
+            <div class="app-btn">⚙</div>
+            <div class="app-btn hl">🗺</div>
+          </div>
+        </div>
+        <div class="card-list">
+          <div class="feed-card"><div class="card-img c1"></div><div class="card-info"><div class="card-name">La Tasca</div><div class="card-price">12 € · 200m</div></div></div>
+          <div class="feed-card"><div class="card-img c2"></div><div class="card-info"><div class="card-name">Restaurante Sol</div><div class="card-price">9.50 € · 350m</div></div></div>
+          <div class="feed-card"><div class="card-img c3"></div><div class="card-info"><div class="card-name">El Rincón</div><div class="card-price">11 € · 480m</div></div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="nav-icon">🍽</div>Feed</div>
+          <div class="nav-item"><div class="nav-icon">🤍</div>Favoritos</div>
+          <div class="nav-item"><div class="nav-icon">👤</div>Perfil</div>
+        </div>
+      </div>
+      <div class="spotlight"></div>
+      <div class="pulse-ring"></div>
+      <svg class="hand up" viewBox="0 0 100 130"><use href="#ptr"/></svg>
+      <div class="tooltip-card">
+        <div class="tooltip-arrow down"></div>
+        <div class="tooltip-step">Paso 2 de 4</div>
+        <div class="tooltip-title">🗺 Vista de mapa</div>
+        <div class="tooltip-desc">Alterna entre lista y mapa para ver dónde están los restaurantes cerca de ti.</div>
+        <div class="tooltip-actions">
+          <span class="tooltip-skip">Saltar tour</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="step-dots">
+              <div class="dot"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div class="tooltip-next">Siguiente →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">Paso: Botón mapa</div>
+  </div>
+
+  <!-- Phone 2: Favorites tab -->
+  <div>
+    <div class="phone" id="p2">
+      <div class="app-bg">
+        <div class="app-topbar">
+          <span class="app-topbar-title">Zampa</span>
+          <div class="app-topbar-btns">
+            <div class="app-btn">⚙</div>
+            <div class="app-btn">🗺</div>
+          </div>
+        </div>
+        <div class="card-list">
+          <div class="feed-card"><div class="card-img c1"></div><div class="card-info"><div class="card-name">La Tasca</div><div class="card-price">12 € · 200m</div></div></div>
+          <div class="feed-card"><div class="card-img c2"></div><div class="card-info"><div class="card-name">Restaurante Sol</div><div class="card-price">9.50 € · 350m</div></div></div>
+          <div class="feed-card"><div class="card-img c3"></div><div class="card-info"><div class="card-name">El Rincón</div><div class="card-price">11 € · 480m</div></div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="nav-icon">🍽</div>Feed</div>
+          <div class="nav-item"><div class="nav-icon">🤍</div>Favoritos</div>
+          <div class="nav-item"><div class="nav-icon">👤</div>Perfil</div>
+        </div>
+      </div>
+      <div class="spotlight"></div>
+      <div class="pulse-ring"></div>
+      <svg class="hand down" viewBox="0 0 100 130"><use href="#ptr"/></svg>
+      <div class="tooltip-card">
+        <div class="tooltip-arrow up"></div>
+        <div class="tooltip-step">Paso 3 de 4</div>
+        <div class="tooltip-title">🤍 Tus favoritos</div>
+        <div class="tooltip-desc">Guarda los restaurantes que más te gustan y recibe notificaciones cuando publican menú.</div>
+        <div class="tooltip-actions">
+          <span class="tooltip-skip">Saltar tour</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="step-dots">
+              <div class="dot"></div><div class="dot"></div><div class="dot active"></div><div class="dot"></div>
+            </div>
+            <div class="tooltip-next">Siguiente →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">Paso: Tab Favoritos</div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px;text-align:center">
+  Mano blanca sólida · estilo minimalista pointer · rebote suave
+</p>

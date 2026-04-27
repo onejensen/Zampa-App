@@ -58,7 +58,6 @@
 		C8DCB8CB2F60839600C4D1FB /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = C8DCB8CA2F60839600C4D1FB /* GoogleSignIn */; };
 		C8E0A28E2F7FCC0000C7735E /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E0A28D2F7FCC0000C7735E /* HistoryView.swift */; };
 		CC001122334455667788AABB /* CropImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC001122334455667788AABC /* CropImageView.swift */; };
-		CC1122334455667788990011 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1122334455667788990012 /* OnboardingView.swift */; };
 		CP0011042500000000000001 /* CurrencyPreferenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CP0011042500000000000002 /* CurrencyPreferenceView.swift */; };
 		CS0011042500000000000001 /* CurrencyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CS0011042500000000000002 /* CurrencyService.swift */; };
 		D1A2B3C4D5E6F7A8B9C0D1E1 /* Merchant.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4D5E6F7A8B9C0D1E0 /* Merchant.swift */; };
@@ -153,7 +152,6 @@
 		C9452722A88897E68404995E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		CBD6E8F17B72E15DC5CF53A4 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		CC001122334455667788AABC /* CropImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropImageView.swift; sourceTree = "<group>"; };
-		CC1122334455667788990012 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		CP0011042500000000000002 /* CurrencyPreferenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyPreferenceView.swift; sourceTree = "<group>"; };
 		CS0011042500000000000002 /* CurrencyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyService.swift; sourceTree = "<group>"; };
 		D1A2B3C4D5E6F7A8B9C0D1E0 /* Merchant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Merchant.swift; sourceTree = "<group>"; };
@@ -332,7 +330,6 @@
 				86E17184305D2F143467FAC7 /* Favorites */,
 				DA0BB1A5E25CAA2FF24CDBAC /* Feed */,
 				12B1C0A995A0A244D0DCB8AC /* Merchant */,
-				CC1122334455667788990013 /* Onboarding */,
 				A0B3548FFBA815F7905DBB96 /* Profile */,
 				TOUR0005CAFEBABE00050005 /* Tour */,
 			);
@@ -379,14 +376,6 @@
 				647033203678E13F66B86C41 /* Date+Extensions.swift */,
 			);
 			path = Extensions;
-			sourceTree = "<group>";
-		};
-		CC1122334455667788990013 /* Onboarding */ = {
-			isa = PBXGroup;
-			children = (
-				CC1122334455667788990012 /* OnboardingView.swift */,
-			);
-			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		DA0BB1A5E25CAA2FF24CDBAC /* Feed */ = {
@@ -673,7 +662,6 @@
 				BB2233445566778899001103 /* CuisineType.swift in Sources */,
 				BB2233445566778899001105 /* AppNotification.swift in Sources */,
 				6180807EBBD3A99B1013A59A /* EditMenuView.swift in Sources */,
-				CC1122334455667788990011 /* OnboardingView.swift in Sources */,
 				DD1122334455667788990011 /* CachedAsyncImage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

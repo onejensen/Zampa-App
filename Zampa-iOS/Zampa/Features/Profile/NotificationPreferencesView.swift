@@ -1,20 +1,21 @@
 import SwiftUI
 
 struct NotificationPreferencesView: View {
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var prefs = NotificationPreferences()
     @State private var isLoading = true
     @State private var isSaving = false
 
     var body: some View {
         List {
-            Section(header: Text("Restaurantes favoritos")) {
+            Section(header: Text(localization.t("notif_favorite_restaurants"))) {
                 Toggle(isOn: $prefs.newMenuFromFavorites) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Nuevas ofertas de favoritos")
+                        Text(localization.t("notif_new_offers"))
                             .font(.appBody)
                             .foregroundColor(.appTextPrimary)
-                        Text("Recibe una notificación cuando un restaurante favorito publique un nuevo menú o plato del día")
-                            .font(.caption)
+                        Text(localization.t("notif_new_offers_desc"))
+                            .font(.appCaption)
                             .foregroundColor(.appTextSecondary)
                     }
                 }
@@ -22,14 +23,14 @@ struct NotificationPreferencesView: View {
                 .onChange(of: prefs.newMenuFromFavorites) { _, _ in savePrefs() }
             }
 
-            Section(header: Text("Otras notificaciones")) {
+            Section(header: Text(localization.t("notif_other"))) {
                 Toggle(isOn: $prefs.promotions) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Promociones y descuentos")
+                        Text(localization.t("notif_promotions"))
                             .font(.appBody)
                             .foregroundColor(.appTextPrimary)
-                        Text("Ofertas especiales y descuentos exclusivos")
-                            .font(.caption)
+                        Text(localization.t("notif_promotions_desc"))
+                            .font(.appCaption)
                             .foregroundColor(.appTextSecondary)
                     }
                 }
@@ -38,11 +39,11 @@ struct NotificationPreferencesView: View {
 
                 Toggle(isOn: $prefs.general) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Novedades de Zampa")
+                        Text(localization.t("notif_news"))
                             .font(.appBody)
                             .foregroundColor(.appTextPrimary)
-                        Text("Actualizaciones de la app y nuevas funcionalidades")
-                            .font(.caption)
+                        Text(localization.t("notif_news_desc"))
+                            .font(.appCaption)
                             .foregroundColor(.appTextSecondary)
                     }
                 }
@@ -55,13 +56,13 @@ struct NotificationPreferencesView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "star.fill")
                             .foregroundColor(.appPrimary)
-                            .font(.system(size: 14))
-                        Text("Zampa Pro")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.custom("Sora-Regular", size: 14))
+                        Text(localization.t("notif_pro_section"))
+                            .font(.custom("Sora-Bold", size: 14))
                             .foregroundColor(.appPrimary)
                     }
-                    Text("Los restaurantes con suscripción Pro envían notificaciones automáticas a sus seguidores cada vez que publican una nueva oferta.")
-                        .font(.caption)
+                    Text(localization.t("notif_pro_desc"))
+                        .font(.appCaption)
                         .foregroundColor(.appTextSecondary)
                 }
                 .padding(.vertical, 4)

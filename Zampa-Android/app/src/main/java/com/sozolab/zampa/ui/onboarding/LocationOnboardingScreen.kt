@@ -19,8 +19,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sozolab.zampa.R
 
 @Composable
 fun LocationOnboardingScreen(
@@ -53,7 +55,7 @@ fun LocationOnboardingScreen(
             // Header with Exit
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
                 }
             }
 
@@ -69,13 +71,13 @@ fun LocationOnboardingScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "Encuentra menús cerca de ti",
+                    stringResource(R.string.location_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    "Activa los permisos de tu ubicación para mostrarte los mejores menús diarios ordenados por distancia.",
+                    stringResource(R.string.location_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -99,7 +101,7 @@ fun LocationOnboardingScreen(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Tu ubicación será compartida solo con este propósito.",
+                    stringResource(R.string.location_disclaimer),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -119,11 +121,11 @@ fun LocationOnboardingScreen(
                     .height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Activar ubicación")
+                Text(stringResource(R.string.location_activate))
             }
 
             TextButton(onClick = onDismiss) {
-                Text("Buscar manualmente", color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.location_manual), color = MaterialTheme.colorScheme.primary)
             }
         }
     }

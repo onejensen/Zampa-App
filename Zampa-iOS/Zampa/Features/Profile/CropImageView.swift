@@ -67,7 +67,7 @@ struct CropImageView: View {
 
                 // MARK: Hint
                 Text("Arrastra y pellizca para encuadrar")
-                    .font(.caption)
+                    .font(.appCaption)
                     .foregroundColor(.white.opacity(0.6))
                     .position(x: cx, y: cy + cropDiameter / 2 + 24)
                     .allowsHitTesting(false)

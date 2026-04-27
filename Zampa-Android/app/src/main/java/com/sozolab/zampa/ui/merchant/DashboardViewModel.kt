@@ -46,6 +46,12 @@ class DashboardViewModel @Inject constructor(
     private val _todayStats = MutableStateFlow(TodayStats())
     val todayStats: StateFlow<TodayStats> = _todayStats
 
+    private val _merchant = MutableStateFlow<com.sozolab.zampa.data.model.Merchant?>(null)
+    val merchant: StateFlow<com.sozolab.zampa.data.model.Merchant?> = _merchant
+
+    private val _promoFreeUntilMs = MutableStateFlow<Long?>(null)
+    val promoFreeUntilMs: StateFlow<Long?> = _promoFreeUntilMs
+
     init { loadMenus() }
 
     fun loadMenus() {
@@ -54,10 +60,12 @@ class DashboardViewModel @Inject constructor(
             _isLoading.value = true
             try {
                 val profile = firebaseService.getMerchantProfile(uid)
+                _merchant.value = profile
                 _isPremium.value = profile?.planTier == "pro"
                 _businessName.value = profile?.name ?: ""
 
                 _menus.value = firebaseService.getMenusByMerchant(uid)
+                _promoFreeUntilMs.value = firebaseService.getPromoFreeUntilMs()
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
             }

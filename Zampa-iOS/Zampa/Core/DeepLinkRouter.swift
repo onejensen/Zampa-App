@@ -5,12 +5,16 @@ import Foundation
 /// a una ruta soportada.
 ///
 /// Formatos soportados:
-/// - `https://eatout-70b8b.web.app/o/{offerId}`
-/// - `https://eatout-70b8b.firebaseapp.com/o/{offerId}`
+/// - `https://www.getzampa.com/o/{offerId}`
+/// - `https://getzampa.com/o/{offerId}`
+/// - `https://eatout-70b8b.web.app/o/{offerId}` (legacy)
+/// - `https://eatout-70b8b.firebaseapp.com/o/{offerId}` (legacy)
 /// - `zampa://offer/{offerId}`
 enum DeepLinkRouter {
 
     static let supportedHosts: Set<String> = [
+        "www.getzampa.com",
+        "getzampa.com",
         "eatout-70b8b.web.app",
         "eatout-70b8b.firebaseapp.com",
     ]

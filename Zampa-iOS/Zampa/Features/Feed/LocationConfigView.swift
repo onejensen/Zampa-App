@@ -3,6 +3,7 @@ import SwiftUI
 struct LocationConfigView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
+    @ObservedObject var localization = LocalizationManager.shared
     
     var body: some View {
         ZStack {
@@ -28,15 +29,15 @@ struct LocationConfigView: View {
                 // Content Card
                 VStack(spacing: 24) {
                     Image(systemName: "mappin.circle.fill")
-                        .font(.system(size: 80))
+                        .font(.custom("Sora-Regular", size: 80))
                         .foregroundColor(.appPrimary)
                     
                     VStack(spacing: 12) {
-                        Text("Encuentra menús cerca de ti")
+                        Text(localization.t("location_title"))
                             .font(.appHeadline)
                             .multilineTextAlignment(.center)
-                        
-                        Text("Activa los permisos de tu ubicación para mostrarte los mejores menús diarios ordenados por distancia.")
+
+                        Text(localization.t("location_subtitle"))
                             .font(.appBody)
                             .foregroundColor(.appTextSecondary)
                             .multilineTextAlignment(.center)
@@ -46,8 +47,8 @@ struct LocationConfigView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle")
                             .foregroundColor(.appPrimary)
-                        Text("Tu ubicación será compartida solo con este propósito.")
-                            .font(.caption)
+                        Text(localization.t("location_disclaimer"))
+                            .font(.appCaption)
                             .foregroundColor(.appTextSecondary)
                     }
                     .padding()
@@ -56,11 +57,11 @@ struct LocationConfigView: View {
                     Button(action: {
                         appState.locationManager.requestAuthorization()
                     }) {
-                        Text("Activar ubicación")
+                        Text(localization.t("location_activate"))
                     }
                     .buttonStyle(AppDesign.ButtonStyle(isPrimary: true))
                     
-                    Button("Buscar manualmente") {
+                    Button(localization.t("location_manual")) {
                         presentationMode.wrappedValue.dismiss()
                     }
                     .font(.appButton)

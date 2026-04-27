@@ -14,6 +14,7 @@ data class User(
     val scheduledPurgeAt: com.google.firebase.Timestamp? = null,
     /** Código ISO 4217 de la moneda preferida. Default EUR cuando ausente. */
     val currencyPreference: String = "EUR",
+    val languagePreference: String = "auto",
 ) {
     enum class UserRole {
         CLIENTE, COMERCIO;
@@ -43,6 +44,18 @@ data class ScheduleEntry(
 )
 
 /** Perfil de comercio (colección `businesses` en Firestore) */
+/**
+ * Estado de suscripción de un merchant.
+ *  - "trial": dentro del periodo gratuito de 90 días tras registro
+ *  - "active": suscripción de pago vigente (webhook RevenueCat)
+ *  - "expired": trial o suscripción caducada — no puede publicar
+ */
+object SubscriptionStatus {
+    const val TRIAL = "trial"
+    const val ACTIVE = "active"
+    const val EXPIRED = "expired"
+}
+
 data class Merchant(
     val id: String = "",
     val userId: String? = null,
@@ -58,7 +71,33 @@ data class Merchant(
     val profilePhotoUrl: String? = null,
     val planTier: String? = "free",
     val isHighlighted: Boolean? = false,
-)
+    /** NIF/CIF (España) del negocio. Normalizado: sin espacios, en mayúsculas. */
+    val taxId: String? = null,
+    /** Estado efectivo. Legacy null = trial. */
+    val subscriptionStatus: String? = null,
+    /** Fin del periodo de prueba (ms epoch). */
+    val trialEndsAt: Long? = null,
+    /** Fin de la suscripción de pago vigente (ms epoch). */
+    val subscriptionActiveUntil: Long? = null,
+) {
+    /** Trial no expirado o suscripción vigente. */
+    fun canPublish(nowMs: Long = System.currentTimeMillis()): Boolean {
+        val status = subscriptionStatus ?: SubscriptionStatus.TRIAL
+        return when (status) {
+            SubscriptionStatus.TRIAL -> (trialEndsAt ?: 0L) > nowMs
+            SubscriptionStatus.ACTIVE -> (subscriptionActiveUntil ?: 0L) > nowMs
+            else -> false
+        }
+    }
+
+    /** Días restantes de trial (0 si expiró, null si no está en trial). */
+    fun trialDaysRemaining(nowMs: Long = System.currentTimeMillis()): Int? {
+        val status = subscriptionStatus ?: SubscriptionStatus.TRIAL
+        if (status != SubscriptionStatus.TRIAL) return null
+        val end = trialEndsAt ?: return 0
+        return maxOf(0, ((end - nowMs) / (24 * 60 * 60 * 1000L)).toInt())
+    }
+}
 
 /** Información dietética y alérgenos de una oferta */
 data class DietaryInfo(

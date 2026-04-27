@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -15,12 +16,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sozolab.zampa.R
+import com.sozolab.zampa.data.model.SubscriptionStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,19 +30,26 @@ fun SubscriptionScreen(
     onDismiss: () -> Unit,
     viewModel: SubscriptionViewModel = hiltViewModel()
 ) {
-    val isPremium by viewModel.isPremium.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val merchant by viewModel.merchant.collectAsState()
+    val promoFreeUntilMs by viewModel.promoFreeUntilMs.collectAsState()
     val error by viewModel.error.collectAsState()
+
+    val nowMs = System.currentTimeMillis()
+    val promoActive = (promoFreeUntilMs ?: 0L) > nowMs
+    val status = merchant?.subscriptionStatus ?: SubscriptionStatus.TRIAL
+    val trialDays = merchant?.trialDaysRemaining()
+    val canPublish = promoActive || (merchant?.canPublish() ?: true)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Zampa Pro", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.subscription_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, "Cerrar")
+                        Icon(Icons.Default.Close, stringResource(R.string.subscription_close))
                     }
-                }
+                },
+                colors = com.sozolab.zampa.ui.theme.brandTopAppBarColors()
             )
         }
     ) { padding ->
@@ -50,121 +59,127 @@ fun SubscriptionScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                Icons.Default.Star,
-                null,
-                modifier = Modifier.size(80.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(Modifier.height(16.dp))
-            
-            Text(
-                "Impulsa tu negocio",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(Modifier.height(8.dp))
-            
-            Text(
-                "Atrae a más clientes y destaca sobre la competencia con herramientas exclusivas.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(Modifier.height(32.dp))
-            
+            // ── Estado actual ─────────────────────────────────────────────
+            StatusBanner(status = status, trialDays = trialDays, canPublish = canPublish, promoFreeUntilMs = if (promoActive) promoFreeUntilMs else null)
+
+            // ── Value props ──────────────────────────────────────────────
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(0.3f))
             ) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    PlanFeatureItem("Menús activos", "1", "Ilimitados")
-                    PlanFeatureItem("Fotos por menú", "1", "Hasta 5")
-                    PlanFeatureItem("Estadísticas", "7 días", "30 días")
-                    PlanFeatureItem("Badge 'Pro'", "No", "Sí", isHighlight = true)
-                    PlanFeatureItem("Perfil destacado", "No", "Sí", isHighlight = true)
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    ValueRow(stringResource(R.string.subscription_value_unlimited))
+                    ValueRow(stringResource(R.string.subscription_value_push))
+                    ValueRow(stringResource(R.string.subscription_value_stats))
+                    ValueRow(stringResource(R.string.subscription_value_profile))
                 }
             }
-            
-            Spacer(Modifier.height(40.dp))
-            
-            if (isPremium) {
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        "¡Ya eres Pro! Gracias por tu apoyo.",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            } else {
-                // Pagos pendientes de integrar (RevenueCat + Google Play Billing).
-                // Hasta entonces el upgrade está deshabilitado para evitar el bypass
-                // que permitía marcarse como Pro sin pagar.
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            "Próximamente",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "Estamos integrando los pagos in-app de Google Play. Muy pronto podrás suscribirte a Zampa Pro desde la app.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+
+            // ── CTA suscripción ───────────────────────────────────────────
+            Text(
+                stringResource(R.string.subscription_price_monthly),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Button(
+                onClick = { /* TODO: integrar RevenueCat + Play Billing */ },
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                shape = RoundedCornerShape(12.dp),
+                enabled = false // Billing aún no integrado
+            ) {
+                Text(stringResource(R.string.subscription_subscribe_cta), fontWeight = FontWeight.Bold)
             }
+
+            Text(
+                stringResource(R.string.subscription_coming_soon_android),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
         }
     }
 
     error?.let {
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
-            title = { Text("Error") },
+            title = { Text(stringResource(R.string.common_error)) },
             text = { Text(it) },
-            confirmButton = { TextButton(onClick = { viewModel.clearError() }) { Text("OK") } }
+            confirmButton = { TextButton(onClick = { viewModel.clearError() }) { Text(stringResource(R.string.common_ok)) } }
         )
     }
 }
 
+/** Banner de estado: promo global, trial con countdown, activa, o expirada. */
 @Composable
-fun PlanFeatureItem(feature: String, free: String, pro: String, isHighlight: Boolean = false) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(feature, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-        Text(
-            free,
-            modifier = Modifier.width(70.dp),
-            textAlign = TextAlign.End,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            pro,
-            modifier = Modifier.width(80.dp),
-            textAlign = TextAlign.End,
-            style = if (isHighlight) MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.bodyMedium,
-            color = if (isHighlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-        )
+private fun StatusBanner(
+    status: String,
+    trialDays: Int?,
+    canPublish: Boolean,
+    promoFreeUntilMs: Long?,
+) {
+    val container: Color
+    val onContainer: Color
+    val title: String
+    val body: String?
+
+    when {
+        promoFreeUntilMs != null -> {
+            container = MaterialTheme.colorScheme.primaryContainer
+            onContainer = MaterialTheme.colorScheme.onPrimaryContainer
+            title = stringResource(R.string.subscription_promo_title)
+            val fmt = java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG, java.util.Locale.getDefault())
+            body = stringResource(R.string.subscription_promo_body, fmt.format(java.util.Date(promoFreeUntilMs)))
+        }
+        !canPublish -> {
+            container = MaterialTheme.colorScheme.errorContainer
+            onContainer = MaterialTheme.colorScheme.onErrorContainer
+            title = stringResource(R.string.subscription_expired_title)
+            body = stringResource(R.string.subscription_expired_body)
+        }
+        status == SubscriptionStatus.ACTIVE -> {
+            container = MaterialTheme.colorScheme.primaryContainer
+            onContainer = MaterialTheme.colorScheme.onPrimaryContainer
+            title = stringResource(R.string.subscription_active_title)
+            body = null
+        }
+        else -> {
+            // trial
+            container = MaterialTheme.colorScheme.primaryContainer
+            onContainer = MaterialTheme.colorScheme.onPrimaryContainer
+            title = when {
+                trialDays == null -> stringResource(R.string.subscription_title)
+                trialDays <= 0 -> stringResource(R.string.subscription_trial_ends_today)
+                else -> stringResource(R.string.subscription_trial_days_remaining, trialDays)
+            }
+            body = null
+        }
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = container,
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(Icons.Default.Star, null, tint = onContainer, modifier = Modifier.size(40.dp))
+            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = onContainer, textAlign = TextAlign.Center)
+            body?.let {
+                Text(it, style = MaterialTheme.typography.bodyMedium, color = onContainer, textAlign = TextAlign.Center)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ValueRow(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
     }
 }

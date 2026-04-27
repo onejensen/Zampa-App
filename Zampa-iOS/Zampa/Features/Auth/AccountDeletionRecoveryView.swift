@@ -5,6 +5,7 @@ import SwiftUI
 /// Ofrece recuperar la cuenta o cerrar sesión.
 struct AccountDeletionRecoveryView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var isRecovering = false
     @State private var errorMessage: String?
     @State private var showRecoveredToast = false
@@ -28,16 +29,16 @@ struct AccountDeletionRecoveryView: View {
                 Spacer()
 
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 64))
+                    .font(.custom("Sora-Regular", size: 64))
                     .foregroundColor(.orange)
 
-                Text("Cuenta pendiente\nde eliminación")
+                Text(localization.t("account_deletion_title"))
                     .font(.appHeadline)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.appTextPrimary)
 
                 VStack(spacing: 8) {
-                    Text("Tu cuenta se eliminará el")
+                    Text(localization.t("account_deletion_date"))
                         .font(.appBody)
                         .foregroundColor(.appTextSecondary)
                     Text(formattedPurgeDate)
@@ -47,7 +48,7 @@ struct AccountDeletionRecoveryView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                Text("Si quieres conservarla, pulsa Recuperar cuenta.")
+                Text(localization.t("account_deletion_recover_hint"))
                     .font(.appBody)
                     .foregroundColor(.appTextSecondary)
                     .multilineTextAlignment(.center)
@@ -62,7 +63,7 @@ struct AccountDeletionRecoveryView: View {
                             if isRecovering {
                                 ProgressView().tint(.white)
                             } else {
-                                Text("Recuperar cuenta")
+                                Text(localization.t("account_deletion_recover"))
                             }
                             Spacer()
                         }
@@ -70,7 +71,7 @@ struct AccountDeletionRecoveryView: View {
                     .buttonStyle(AppDesign.ButtonStyle(isPrimary: true, isDisabled: isRecovering))
                     .disabled(isRecovering)
 
-                    Button("Cerrar sesión") {
+                    Button(localization.t("profile_logout")) {
                         appState.logout()
                     }
                     .foregroundColor(.appTextSecondary)
@@ -82,7 +83,7 @@ struct AccountDeletionRecoveryView: View {
 
             if showRecoveredToast {
                 VStack {
-                    Text("Cuenta recuperada")
+                    Text(localization.t("account_deletion_recovered"))
                         .font(.appBody)
                         .foregroundColor(.white)
                         .padding(.horizontal, 20)
@@ -94,11 +95,11 @@ struct AccountDeletionRecoveryView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .alert("Error", isPresented: Binding(
+        .alert(localization.t("common_error"), isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button("OK") { errorMessage = nil }
+            Button(localization.t("common_ok")) { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
         }

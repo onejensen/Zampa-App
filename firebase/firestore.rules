@@ -21,6 +21,36 @@ service cloud.firestore {
     function isMerchantProUser(uid) {
       return merchantPlanTier(uid) == 'pro';
     }
+
+    /**
+     * Promo global: si `config/promo.freeUntil` (ms epoch) > now, todos los
+     * merchants se consideran activos sin importar su estado individual.
+     * Pensado para periodos de lanzamiento con gratuidad general. El admin
+     * cambia la fecha directamente desde Firebase Console.
+     */
+    function isPromoActive() {
+      return exists(/databases/$(database)/documents/config/promo)
+        && get(/databases/$(database)/documents/config/promo).data.get('freeUntil', 0) > request.time.toMillis();
+    }
+
+    /**
+     * ¿El merchant tiene suscripción vigente (trial no expirado o pago activo)?
+     * - `trial`: trialEndsAt > now
+     * - `active`: subscriptionActiveUntil > now
+     * - `expired` o status ausente legacy: aplicamos gracia vía `trialEndsAt`
+     * - Promo global activa: siempre true.
+     *
+     * Los valores de timestamp se guardan como ms epoch (Int) para ser
+     * interoperables entre iOS/Android. Firestore compara Int con Int.
+     */
+    function hasActiveSubscription(uid) {
+      let biz = get(/databases/$(database)/documents/businesses/$(uid)).data;
+      let status = biz.get('subscriptionStatus', 'trial');
+      let nowMs = request.time.toMillis();
+      return isPromoActive()
+          || (status == 'trial' && biz.get('trialEndsAt', 0) > nowMs)
+          || (status == 'active' && biz.get('subscriptionActiveUntil', 0) > nowMs);
+    }
     function unchanged(field) {
       return !(field in request.resource.data.diff(resource.data).affectedKeys());
     }
@@ -57,16 +87,23 @@ service cloud.firestore {
     }
 
     // ── Merchant Profiles ──
+    // NIF/CIF validado cliente-side antes de enviar (ver TaxIdValidator.kt/swift).
+    // Server-side exigimos solo forma razonable: 9 caracteres alfanuméricos mayúsculos.
+    function isValidTaxIdShape(value) {
+      return value is string && value.size() == 9 && value.matches('^[A-Z0-9]{9}$');
+    }
     match /businesses/{merchantId} {
       allow read: if true; // Perfiles públicos
       allow create: if isOwner(merchantId) && isMerchant()
         // El cliente nunca puede crearse como pro/destacado
         && (!('planTier' in request.resource.data) || request.resource.data.planTier == 'free')
-        && (!('isHighlighted' in request.resource.data) || request.resource.data.isHighlighted == false);
+        && (!('isHighlighted' in request.resource.data) || request.resource.data.isHighlighted == false)
+        && (!('taxId' in request.resource.data) || isValidTaxIdShape(request.resource.data.taxId));
       allow update: if isOwner(merchantId)
         // planTier e isHighlighted solo los modifica backend (Cloud Function tras webhook de pago)
         && unchanged('planTier')
-        && unchanged('isHighlighted');
+        && unchanged('isHighlighted')
+        && (!('taxId' in request.resource.data) || isValidTaxIdShape(request.resource.data.taxId));
       allow delete: if false;
     }
 
@@ -81,9 +118,12 @@ service cloud.firestore {
     // ── Daily Offers ──
     match /dailyOffers/{menuId} {
       allow read: if true; // Feed público
-      // Validamos isMerchantPro server-side leyendo el doc del comercio:
-      // un comercio free no puede publicar ofertas marcadas como pro.
+      // Validamos isMerchantPro server-side leyendo el doc del comercio.
+      // Además: el merchant necesita suscripción vigente (trial o pago) para crear.
+      // Sin suscripción activa se bloquean NUEVAS ofertas; las existentes expiran
+      // naturalmente a las 24h vía Cloud Function `expireMenus`.
       allow create: if isMerchant()
+        && hasActiveSubscription(request.auth.uid)
         && request.resource.data.businessId == request.auth.uid
         && request.resource.data.isMerchantPro == isMerchantProUser(request.auth.uid);
       allow update: if isAuth()

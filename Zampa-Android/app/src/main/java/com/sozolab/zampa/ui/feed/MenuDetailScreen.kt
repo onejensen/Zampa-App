@@ -23,7 +23,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.sozolab.zampa.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -35,6 +37,7 @@ import java.util.Calendar
 fun MenuDetailScreen(
     menuId: String,
     onBack: () -> Unit,
+    onNavigateToMerchant: (String) -> Unit = {},
     viewModel: MenuDetailViewModel = hiltViewModel()
 ) {
     val authViewModel: com.sozolab.zampa.ui.auth.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
@@ -60,7 +63,10 @@ fun MenuDetailScreen(
         if (meters < 1000) "${meters.toInt()}m" else "${"%.1f".format(meters / 1000)} km"
     }
 
-    val openStatus: Pair<Boolean, String?> = remember(merchant) {
+    val strClosesAt = stringResource(R.string.detail_closes_at)
+    val strOpensAt = stringResource(R.string.detail_opens_at)
+
+    val openStatus: Pair<Boolean, String?> = remember(merchant, strClosesAt, strOpensAt) {
         val schedule = merchant?.schedule ?: return@remember false to null
         val cal = Calendar.getInstance()
         val keys = listOf("sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday")
@@ -76,8 +82,8 @@ fun MenuDetailScreen(
         }
 
         val isOpen = nowMins >= timeMins(entry.open) && nowMins <= timeMins(entry.close)
-        val label = if (isOpen) "Cierra a las ${formatScheduleTime(entry.close)}"
-                    else "Abre a las ${formatScheduleTime(entry.open)}"
+        val label = if (isOpen) "$strClosesAt ${formatScheduleTime(entry.close)}"
+                    else "$strOpensAt ${formatScheduleTime(entry.open)}"
         isOpen to label
     }
 
@@ -91,8 +97,8 @@ fun MenuDetailScreen(
     val currentMenu = menu ?: run {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("No se pudo cargar la oferta")
-                TextButton(onClick = onBack) { Text("Volver") }
+                Text(stringResource(R.string.detail_could_not_load))
+                TextButton(onClick = onBack) { Text(stringResource(R.string.detail_back)) }
             }
         }
         return
@@ -108,7 +114,7 @@ fun MenuDetailScreen(
     if (showDirectionsDialog) {
         AlertDialog(
             onDismissRequest = { showDirectionsDialog = false },
-            title = { Text("Cómo ir") },
+            title = { Text(stringResource(R.string.detail_directions)) },
             text = {
                 val addr = merchant?.address
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -140,7 +146,7 @@ fun MenuDetailScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp)
-                    ) { Text("Google Maps") }
+                    ) { Text(stringResource(R.string.detail_google_maps)) }
 
                     // Generic geo intent (opens default maps app)
                     OutlinedButton(
@@ -163,12 +169,12 @@ fun MenuDetailScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp)
-                    ) { Text("Otras aplicaciones") }
+                    ) { Text(stringResource(R.string.detail_other_apps)) }
                 }
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showDirectionsDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDirectionsDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -183,7 +189,7 @@ fun MenuDetailScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.detail_back))
             }
             Text(
                 merchant?.name ?: currentMenu.title,
@@ -195,8 +201,9 @@ fun MenuDetailScreen(
                 // Compartimos un App Link verificado al landing de Firebase Hosting.
                 // El receptor abre la app si la tiene instalada (verified App Link),
                 // o aterriza en la landing que le redirige a la Play Store / App Store.
-                val shareUrl = "https://eatout-70b8b.web.app/o/${currentMenu.id}"
-                val shareText = "¡Mira este menú en Zampa: ${currentMenu.title}!\n$shareUrl"
+                val shareUrl = "https://www.getzampa.com/o/${currentMenu.id}"
+                val sharePrefix = context.getString(R.string.detail_share_text)
+                val shareText = "$sharePrefix ${currentMenu.title}!\n$shareUrl"
                 val sendIntent = Intent().apply {
                     action = Intent.ACTION_SEND
                     putExtra(Intent.EXTRA_SUBJECT, currentMenu.title)
@@ -206,7 +213,7 @@ fun MenuDetailScreen(
                 context.startActivity(Intent.createChooser(sendIntent, null))
                 viewModel.trackAction("share")
             }) {
-                Icon(Icons.Default.Share, contentDescription = "Compartir")
+                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.detail_share))
             }
         }
 
@@ -257,13 +264,25 @@ fun MenuDetailScreen(
                         TagPill(priceRange)
                     }
 
-                    // Restaurant name
-                    Text(
-                        merchant?.name ?: currentMenu.title,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
-                        maxLines = 2
-                    )
+                    // Restaurant name — tappable → abre perfil público del comercio
+                    Row(
+                        modifier = Modifier.clickable { onNavigateToMerchant(currentMenu.businessId) },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            merchant?.name ?: currentMenu.title,
+                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White,
+                            maxLines = 2
+                        )
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.75f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
 
                     // Location row
                     Row(
@@ -293,7 +312,7 @@ fun MenuDetailScreen(
                     // Open / closed pill
                     if (merchant?.schedule != null) {
                         val isOpen = openStatus.first
-                        val statusLabel = if (isOpen) "Abierto ahora" else "Cerrado ahora"
+                        val statusLabel = if (isOpen) stringResource(R.string.detail_open_now) else stringResource(R.string.detail_closed_now)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -333,7 +352,7 @@ fun MenuDetailScreen(
                 ) {
                     Icon(
                         if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Favorito",
+                        contentDescription = stringResource(R.string.detail_favorite),
                         tint = if (isFavorite) Color.Red else Color.White,
                         modifier = Modifier.size(22.dp)
                     )
@@ -350,7 +369,7 @@ fun MenuDetailScreen(
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlineDetailButton(icon = Icons.Default.Phone, label = "Llamar", modifier = Modifier.weight(1f)) {
+                OutlineDetailButton(icon = Icons.Default.Phone, label = stringResource(R.string.detail_call), modifier = Modifier.weight(1f)) {
                     merchant?.phone?.let { p ->
                         viewModel.trackAction("call")
                         viewModel.saveHistoryEntry("call")
@@ -358,7 +377,7 @@ fun MenuDetailScreen(
                         context.startActivity(intent)
                     }
                 }
-                OutlineDetailButton(icon = Icons.Default.Directions, label = "Cómo ir", modifier = Modifier.weight(1f)) {
+                OutlineDetailButton(icon = Icons.Default.Directions, label = stringResource(R.string.detail_directions), modifier = Modifier.weight(1f)) {
                     showDirectionsDialog = true
                 }
             }
@@ -445,19 +464,20 @@ fun MenuDetailScreen(
                 ) {
                     Icon(Icons.Default.RestaurantMenu, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                     Text(
-                        selectedTag ?: currentMenu.tags?.firstOrNull() ?: "Menú del día",
+                        selectedTag ?: currentMenu.tags?.firstOrNull() ?: stringResource(R.string.feed_menu_del_dia),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.weight(1f)
                     )
                     currentMenu.offerType?.let { type ->
+                        val pillColor = Color(0xFFE85D3F)
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            color = pillColor.copy(alpha = 0.12f)
                         ) {
                             Text(
-                                type,
+                                offerTypeLabel(type),
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.primary,
+                                color = pillColor,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
@@ -465,10 +485,13 @@ fun MenuDetailScreen(
                 }
 
                 // Includes chips
+                val strDrink = stringResource(R.string.create_menu_drink)
+                val strDessert = stringResource(R.string.create_menu_dessert)
+                val strCoffee = stringResource(R.string.create_menu_coffee)
                 val includes = buildList {
-                    if (currentMenu.includesDrink)   add("Bebida")
-                    if (currentMenu.includesDessert) add("Postre")
-                    if (currentMenu.includesCoffee)  add("Café")
+                    if (currentMenu.includesDrink)   add(strDrink)
+                    if (currentMenu.includesDessert) add(strDessert)
+                    if (currentMenu.includesCoffee)  add(strCoffee)
                 }
                 if (includes.isNotEmpty()) {
                     Row(
@@ -555,7 +578,7 @@ fun MenuDetailScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Sobre el restaurante", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                    Text(stringResource(R.string.detail_about_restaurant), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                     Text(desc, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -595,7 +618,7 @@ fun MenuDetailScreen(
                         .windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBars)
                         .padding(8.dp)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.White, modifier = Modifier.size(32.dp))
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = Color.White, modifier = Modifier.size(32.dp))
                 }
             }
         }
@@ -660,15 +683,15 @@ fun DietaryInfoSection(dietaryInfo: com.sozolab.zampa.data.model.DietaryInfo) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-            Text("Información dietética", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+            Text(stringResource(R.string.detail_dietary_info), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
         }
 
         // Diet + protein badges
         val dietItems = buildList {
-            if (dietaryInfo.isVegan) add("🌿 Vegano")
-            else if (dietaryInfo.isVegetarian) add("🥗 Vegetariano")
-            if (dietaryInfo.hasMeat) add("🍖 Carne")
-            if (dietaryInfo.hasFish) add("🐟 Pescado/Marisco")
+            if (dietaryInfo.isVegan) add("\uD83C\uDF3F ${stringResource(R.string.dietary_vegan)}")
+            else if (dietaryInfo.isVegetarian) add("\uD83E\uDD57 ${stringResource(R.string.dietary_vegetarian)}")
+            if (dietaryInfo.hasMeat) add("\uD83C\uDF56 ${stringResource(R.string.create_menu_meat)}")
+            if (dietaryInfo.hasFish) add("\uD83D\uDC1F ${stringResource(R.string.create_menu_fish)}")
         }
         if (dietItems.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -687,16 +710,16 @@ fun DietaryInfoSection(dietaryInfo: com.sozolab.zampa.data.model.DietaryInfo) {
 
         // Allergens
         val allergens = buildList {
-            if (dietaryInfo.hasGluten)  add("Gluten")
-            if (dietaryInfo.hasLactose) add("Lácteos")
-            if (dietaryInfo.hasNuts)    add("Frutos secos")
-            if (dietaryInfo.hasEgg)     add("Huevo")
+            if (dietaryInfo.hasGluten)  add(stringResource(R.string.create_menu_gluten))
+            if (dietaryInfo.hasLactose) add(stringResource(R.string.create_menu_dairy))
+            if (dietaryInfo.hasNuts)    add(stringResource(R.string.create_menu_nuts))
+            if (dietaryInfo.hasEgg)     add(stringResource(R.string.create_menu_egg))
         }
         if (allergens.isNotEmpty()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(Icons.Default.Warning, null, tint = Color(0xFFF97316), modifier = Modifier.size(14.dp))
                 Text(
-                    "Alérgenos: ${allergens.joinToString(", ")}",
+                    "${stringResource(R.string.detail_allergens)} ${allergens.joinToString(", ")}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFFF97316)
                 )

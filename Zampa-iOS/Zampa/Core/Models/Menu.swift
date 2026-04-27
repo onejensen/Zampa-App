@@ -36,6 +36,30 @@ struct DietaryInfo: Codable, Equatable {
     }
 }
 
+// MARK: - OfferTypes
+
+/// Valores canónicos de `offerType` tal como se guardan en Firestore.
+enum OfferTypes {
+    static let menuDelDia = "Menú del día"
+    static let platoDelDia = "Plato del día"
+    static let ofertaDelDia = "Oferta del día"
+    static let ofertaPermanente = "Oferta permanente"
+    static let all = [menuDelDia, platoDelDia, ofertaDelDia, ofertaPermanente]
+
+    /// Traduce un valor canónico a la etiqueta del idioma actual.
+    /// Si el valor es desconocido (datos legacy en otro idioma), lo devuelve tal cual.
+    static func label(for value: String) -> String {
+        let t = LocalizationManager.shared
+        switch value {
+        case menuDelDia: return t.t("offer_type_menu")
+        case platoDelDia: return t.t("offer_type_plato")
+        case ofertaDelDia: return t.t("offer_type_oferta")
+        case ofertaPermanente: return t.t("offer_type_permanente")
+        default: return value
+        }
+    }
+}
+
 // MARK: - Menu
 
 /// Modelo de oferta diaria (colección `dailyOffers` en Firestore)

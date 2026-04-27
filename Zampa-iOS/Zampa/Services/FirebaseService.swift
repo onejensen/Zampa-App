@@ -39,7 +39,8 @@ class FirebaseService {
             photoUrl: data["photoUrl"] as? String,
             deletedAt: (data["deletedAt"] as? Timestamp)?.dateValue(),
             scheduledPurgeAt: (data["scheduledPurgeAt"] as? Timestamp)?.dateValue(),
-            currencyPreference: data["currencyPreference"] as? String ?? "EUR"
+            currencyPreference: data["currencyPreference"] as? String ?? "EUR",
+            languagePreference: data["languagePreference"] as? String ?? "auto"
         )
     }
 
@@ -91,6 +92,8 @@ class FirebaseService {
         
         // Si es comercio, crear documento base en businesses/
         if role == .comercio {
+            // Trial de 90 días desde la creación (en ms epoch para ser idéntico a Android).
+            let trialEndMs = Int64(Date().addingTimeInterval(90 * 24 * 60 * 60).timeIntervalSince1970 * 1000)
             try await db.collection("businesses").document(fbUser.uid).setData([
                 "id": fbUser.uid,
                 "userId": fbUser.uid,
@@ -98,6 +101,8 @@ class FirebaseService {
                 "acceptsReservations": false,
                 "planTier": "free",
                 "isHighlighted": false,
+                "subscriptionStatus": SubscriptionStatus.trial.rawValue,
+                "trialEndsAt": trialEndMs,
                 "createdAt": FieldValue.serverTimestamp()
             ])
         }
@@ -217,10 +222,14 @@ class FirebaseService {
         if role == .comercio {
             let biz = try await db.collection("businesses").document(userId).getDocument()
             if !biz.exists {
+                let trialEndMs = Int64(Date().addingTimeInterval(90 * 24 * 60 * 60).timeIntervalSince1970 * 1000)
                 try await db.collection("businesses").document(userId).setData([
                     "id": userId, "userId": userId, "name": name,
                     "acceptsReservations": false, "planTier": "free",
-                    "isHighlighted": false, "createdAt": FieldValue.serverTimestamp()
+                    "isHighlighted": false,
+                    "subscriptionStatus": SubscriptionStatus.trial.rawValue,
+                    "trialEndsAt": trialEndMs,
+                    "createdAt": FieldValue.serverTimestamp()
                 ])
             }
         } else {
@@ -331,6 +340,9 @@ class FirebaseService {
         if let plan = merchant.planTier { data["planTier"] = plan }
         if let addressText = merchant.addressText { data["addressText"] = addressText }
         if let isHighlighted = merchant.isHighlighted { data["isHighlighted"] = isHighlighted }
+        if let taxId = merchant.taxId?.trimmingCharacters(in: .whitespaces), !taxId.isEmpty {
+            data["taxId"] = taxId.uppercased()
+        }
         
         if let address = merchant.address {
             data["address"] = [
@@ -351,10 +363,25 @@ class FirebaseService {
     }
     
     /// Verifica si el comercio ha completado su perfil (tiene dirección)
+    /// Devuelve el timestamp (ms epoch) hasta el cual la app es gratis por
+    /// promo global (config/promo.freeUntil). Nil si no hay promo configurada.
+    /// El admin controla esto desde Firebase Console.
+    func getPromoFreeUntilMs() async throws -> Int64? {
+        let doc = try await db.collection("config").document("promo").getDocument()
+        guard let data = doc.data() else { return nil }
+        if let v = data["freeUntil"] as? Int64 { return v }
+        if let v = data["freeUntil"] as? Int { return Int64(v) }
+        if let v = data["freeUntil"] as? Double { return Int64(v) }
+        return nil
+    }
+
     func isMerchantProfileComplete(merchantId: String) async throws -> Bool {
         let doc = try await db.collection("businesses").document(merchantId).getDocument()
         guard let data = doc.data() else { return false }
-        return data["address"] != nil && data["phone"] != nil
+        let taxId = (data["taxId"] as? String)?.trimmingCharacters(in: .whitespaces) ?? ""
+        return data["address"] != nil
+            && data["phone"] != nil
+            && !taxId.isEmpty
     }
     
     // MARK: - Daily Offers
@@ -444,6 +471,26 @@ class FirebaseService {
         let businessDoc = try await db.collection("businesses").document(businessId).getDocument()
         let planTier = (businessDoc.data()?["planTier"] as? String) ?? "free"
         let isPro = (planTier == "pro")
+
+        // Guard client-side: suscripción vigente (trial o pago) o promo global.
+        // Las rules bloquean server-side de todas formas, pero esto evita subir la foto
+        // y permite mostrar un mensaje claro.
+        let status = (businessDoc.data()?["subscriptionStatus"] as? String) ?? SubscriptionStatus.trial.rawValue
+        let trialEnd = (businessDoc.data()?["trialEndsAt"] as? Int64)
+            ?? Int64(businessDoc.data()?["trialEndsAt"] as? Int ?? 0)
+        let activeUntil = (businessDoc.data()?["subscriptionActiveUntil"] as? Int64)
+            ?? Int64(businessDoc.data()?["subscriptionActiveUntil"] as? Int ?? 0)
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let promoActive = (try? await getPromoFreeUntilMs()).map { $0 > nowMs } ?? false
+        let canPublish: Bool = {
+            if promoActive { return true }
+            switch status {
+            case SubscriptionStatus.trial.rawValue: return trialEnd > nowMs
+            case SubscriptionStatus.active.rawValue: return activeUntil > nowMs
+            default: return false
+            }
+        }()
+        guard canPublish else { throw FirebaseServiceError.subscriptionExpired }
 
         // Upload image
         let imagePath = "dailyOffers/\(UUID().uuidString).jpg"
@@ -963,6 +1010,22 @@ class FirebaseService {
             }
         }
         
+        // Campos de suscripción. `trialEndsAt` / `subscriptionActiveUntil` se guardan
+        // como ms epoch (Int64) para ser interoperables con Android.
+        let status = (data["subscriptionStatus"] as? String).flatMap(SubscriptionStatus.init(rawValue:))
+        let trialEndsAt: Date? = {
+            if let ms = data["trialEndsAt"] as? Int64 { return Date(timeIntervalSince1970: Double(ms) / 1000) }
+            if let ms = data["trialEndsAt"] as? Int { return Date(timeIntervalSince1970: Double(ms) / 1000) }
+            if let ms = data["trialEndsAt"] as? Double { return Date(timeIntervalSince1970: ms / 1000) }
+            return nil
+        }()
+        let activeUntil: Date? = {
+            if let ms = data["subscriptionActiveUntil"] as? Int64 { return Date(timeIntervalSince1970: Double(ms) / 1000) }
+            if let ms = data["subscriptionActiveUntil"] as? Int { return Date(timeIntervalSince1970: Double(ms) / 1000) }
+            if let ms = data["subscriptionActiveUntil"] as? Double { return Date(timeIntervalSince1970: ms / 1000) }
+            return nil
+        }()
+
         return Merchant(
             id: id,
             userId: data["userId"] as? String,
@@ -977,7 +1040,11 @@ class FirebaseService {
             coverPhotoUrl: data["coverPhotoUrl"] as? String,
             profilePhotoUrl: data["profilePhotoUrl"] as? String,
             planTier: data["planTier"] as? String,
-            isHighlighted: data["isHighlighted"] as? Bool
+            isHighlighted: data["isHighlighted"] as? Bool,
+            taxId: data["taxId"] as? String,
+            subscriptionStatus: status,
+            trialEndsAt: trialEndsAt,
+            subscriptionActiveUntil: activeUntil
         )
     }
 
@@ -1012,7 +1079,8 @@ enum FirebaseServiceError: LocalizedError {
     case notAuthenticated
     case profileNotFound
     case invalidData
-    
+    case subscriptionExpired
+
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
@@ -1021,6 +1089,8 @@ enum FirebaseServiceError: LocalizedError {
             return "Perfil no encontrado"
         case .invalidData:
             return "Datos inválidos"
+        case .subscriptionExpired:
+            return LocalizationManager.shared.t("subscription_required_error")
         }
     }
 }

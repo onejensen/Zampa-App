@@ -114,7 +114,7 @@ exports.onMenuPublished = onDocumentCreated("dailyOffers/{menuId}", async (event
             .where("isMerchantPro", "==", true)
             .where("createdAt", ">", sixHoursAgo)
             .get();
-        if (recentOffersSnap.size > 5) {
+        if (recentOffersSnap.size > 20) {
             logger.warn(`Rate limit: merchant ${merchantId} ha publicado ${recentOffersSnap.size} ofertas en las últimas 6h. Se omiten notificaciones push.`);
             return;
         }
@@ -136,9 +136,11 @@ exports.onMenuPublished = onDocumentCreated("dailyOffers/{menuId}", async (event
             return;
         }
 
-        const followerUserIds = followersSnapshot.docs
-            .map(doc => doc.data().customerId)
-            .filter(Boolean); // eliminar nulls
+        const followerUserIds = [...new Set(
+            followersSnapshot.docs
+                .map(doc => doc.data().customerId)
+                .filter(Boolean)
+        )];
 
         if (followerUserIds.length === 0) {
             logger.info("No hay IDs de seguidores válidos.");
@@ -169,6 +171,19 @@ exports.onMenuPublished = onDocumentCreated("dailyOffers/{menuId}", async (event
         const body = `Acaba de publicar: ${menuData.title || "nueva oferta"}`;
         const menuId = event.params.menuId;
 
+        // Idempotencia: evitar envío duplicado si el trigger se dispara más de una vez.
+        // Usa create() que falla atómicamente si el doc ya existe (evita race condition).
+        const lockRef = db.collection("_pushLocks").doc(menuId);
+        try {
+            await lockRef.create({ createdAt: admin.firestore.FieldValue.serverTimestamp() });
+        } catch (lockError) {
+            if (lockError.code === 6) { // ALREADY_EXISTS
+                logger.info(`Push ya enviada para oferta ${menuId}, saliendo (idempotencia).`);
+                return;
+            }
+            throw lockError;
+        }
+
         // 3. Crear notificaciones in-app (batch de máx 400 para no rozar el límite de 500)
         for (const chunk of chunkArray(eligibleUserIds, 400)) {
             const notifBatch = db.batch();
@@ -191,7 +206,9 @@ exports.onMenuPublished = onDocumentCreated("dailyOffers/{menuId}", async (event
         logger.info(`Creadas ${eligibleUserIds.length} notificaciones in-app.`);
 
         // 4. Obtener tokens FCM (batches de 30 por limitación de 'in')
-        const tokens = [];
+        // Se deduplica por token para evitar enviar 2 push al mismo dispositivo
+        // cuando el usuario cambia de cuenta en el mismo teléfono.
+        const tokenSet = new Set();
         const tokenUserMap = {};
         for (const batch of chunkArray(eligibleUserIds, 30)) {
             const tokensSnap = await db.collection("deviceTokens")
@@ -199,12 +216,13 @@ exports.onMenuPublished = onDocumentCreated("dailyOffers/{menuId}", async (event
                 .get();
             tokensSnap.docs.forEach(doc => {
                 const data = doc.data();
-                if (data.token) {
-                    tokens.push(data.token);
+                if (data.token && !tokenSet.has(data.token)) {
+                    tokenSet.add(data.token);
                     tokenUserMap[data.token] = data.userId;
                 }
             });
         }
+        const tokens = [...tokenSet];
 
         if (tokens.length === 0) {
             logger.info("No hay tokens FCM disponibles.");
@@ -221,6 +239,19 @@ exports.onMenuPublished = onDocumentCreated("dailyOffers/{menuId}", async (event
                         menuId: menuId,
                         businessId: merchantId,
                         type: "NEW_OFFER_FAVORITE",
+                    },
+                    apns: {
+                        payload: {
+                            aps: {
+                                sound: "zampa_bell.caf",
+                            },
+                        },
+                    },
+                    android: {
+                        notification: {
+                            channelId: "menu_updates_v2",
+                            sound: "zampa_bell",
+                        },
                     },
                 });
                 logger.info(`Push enviadas: ${response.successCount} OK, ${response.failureCount} fallidas.`);

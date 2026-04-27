@@ -4,25 +4,26 @@ import SwiftUI
 private struct CurrencyOption: Identifiable {
     let code: String
     let flag: String
-    let name: String
+    let nameKey: String
     let symbol: String
     var id: String { code }
 }
 
 private let currencyOptions: [CurrencyOption] = [
-    .init(code: "EUR", flag: "🇪🇺", name: "Euro",                    symbol: "€"),
-    .init(code: "USD", flag: "🇺🇸", name: "Dólar estadounidense",    symbol: "$"),
-    .init(code: "GBP", flag: "🇬🇧", name: "Libra esterlina",          symbol: "£"),
-    .init(code: "JPY", flag: "🇯🇵", name: "Yen japonés",              symbol: "¥"),
-    .init(code: "CHF", flag: "🇨🇭", name: "Franco suizo",             symbol: "CHF"),
-    .init(code: "SEK", flag: "🇸🇪", name: "Corona sueca",             symbol: "kr"),
-    .init(code: "NOK", flag: "🇳🇴", name: "Corona noruega",           symbol: "kr"),
-    .init(code: "DKK", flag: "🇩🇰", name: "Corona danesa",            symbol: "kr"),
-    .init(code: "CAD", flag: "🇨🇦", name: "Dólar canadiense",         symbol: "C$"),
-    .init(code: "AUD", flag: "🇦🇺", name: "Dólar australiano",        symbol: "A$"),
+    .init(code: "EUR", flag: "🇪🇺", nameKey: "currency_eur",  symbol: "€"),
+    .init(code: "USD", flag: "🇺🇸", nameKey: "currency_usd",  symbol: "$"),
+    .init(code: "GBP", flag: "🇬🇧", nameKey: "currency_gbp",  symbol: "£"),
+    .init(code: "JPY", flag: "🇯🇵", nameKey: "currency_jpy",  symbol: "¥"),
+    .init(code: "CHF", flag: "🇨🇭", nameKey: "currency_chf",  symbol: "CHF"),
+    .init(code: "SEK", flag: "🇸🇪", nameKey: "currency_sek",  symbol: "kr"),
+    .init(code: "NOK", flag: "🇳🇴", nameKey: "currency_nok",  symbol: "kr"),
+    .init(code: "DKK", flag: "🇩🇰", nameKey: "currency_dkk",  symbol: "kr"),
+    .init(code: "CAD", flag: "🇨🇦", nameKey: "currency_cad",  symbol: "C$"),
+    .init(code: "AUD", flag: "🇦🇺", nameKey: "currency_aud",  symbol: "A$"),
 ]
 
 struct CurrencyPreferenceView: View {
+    @ObservedObject var localization = LocalizationManager.shared
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) private var dismiss
 
@@ -47,13 +48,13 @@ struct CurrencyPreferenceView: View {
                     Button(action: { select(option.code) }) {
                         HStack(spacing: 12) {
                             Text(option.flag)
-                                .font(.system(size: 24))
+                                .font(.custom("Sora-Regular", size: 24))
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(option.code)
                                     .font(.appBody)
                                     .fontWeight(.semibold)
                                     .foregroundColor(.appTextPrimary)
-                                Text(option.name)
+                                Text(localization.t(option.nameKey))
                                     .font(.appCaption)
                                     .foregroundColor(.appTextSecondary)
                             }
@@ -74,13 +75,13 @@ struct CurrencyPreferenceView: View {
                     .disabled(pendingCode != nil)
                 }
             } footer: {
-                Text("Los precios siempre se cobran en euros. Esta opción sólo cambia cómo se muestran en la app.")
+                Text(localization.t("currency_footer"))
                     .font(.appCaption)
                     .foregroundColor(.appTextSecondary)
             }
         }
         .listStyle(InsetGroupedListStyle())
-        .navigationTitle("Moneda")
+        .navigationTitle(localization.t("currency_title"))
         .navigationBarTitleDisplayMode(.inline)
     }
 

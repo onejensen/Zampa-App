@@ -4,6 +4,7 @@ import CoreLocation
 
 /// Vista para que el merchant complete o edite su perfil
 struct MerchantProfileSetupView: View {
+    @ObservedObject var localization = LocalizationManager.shared
     @EnvironmentObject var appState: AppState
 
     /// Cuando se pasa un perfil existente, la vista opera en modo edición
@@ -11,6 +12,7 @@ struct MerchantProfileSetupView: View {
 
     @State private var businessName: String = ""
     @State private var phone: String = ""
+    @State private var taxId: String = ""
     @State private var description: String = ""
     @State private var addressText: String = ""
     @State private var acceptsReservations: Bool = false
@@ -35,8 +37,15 @@ struct MerchantProfileSetupView: View {
 
     private var isEditMode: Bool { existingProfile != nil }
 
+    private var normalizedTaxId: String {
+        taxId.trimmingCharacters(in: .whitespaces).uppercased()
+    }
+
     private var isValid: Bool {
-        !businessName.isEmpty && !phone.isEmpty && !addressText.isEmpty
+        !businessName.isEmpty
+            && !phone.isEmpty
+            && !addressText.isEmpty
+            && TaxIdValidator.isValid(normalizedTaxId)
     }
     
     var body: some View {
@@ -45,17 +54,17 @@ struct MerchantProfileSetupView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     // Header
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(isEditMode ? "Editar perfil" : "Completa tu perfil")
+                        Text(isEditMode ? localization.t("setup_edit_title") : localization.t("setup_create_title"))
                             .font(.appHeadline)
                             .foregroundColor(.appTextPrimary)
-                        Text(isEditMode ? "Actualiza los datos de tu restaurante." : "Configura tu restaurante para empezar a publicar menús del día.")
+                        Text(isEditMode ? localization.t("setup_edit_subtitle") : localization.t("setup_create_subtitle"))
                             .font(.appBody)
                             .foregroundColor(.appTextSecondary)
                     }
 
                     // Cover Photo
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Foto de portada")
+                        Text(localization.t("setup_cover_photo"))
                             .font(.appSubheadline)
                             .fontWeight(.bold)
                         
@@ -86,8 +95,8 @@ struct MerchantProfileSetupView: View {
                                             .overlay(
                                                 VStack(spacing: 8) {
                                                     Image(systemName: "camera.fill")
-                                                        .font(.system(size: 30))
-                                                    Text("Cambiar foto")
+                                                        .font(.custom("Sora-Regular", size: 30))
+                                                    Text(localization.t("setup_change_photo"))
                                                         .font(.appBody)
                                                 }
                                                 .foregroundColor(.appTextSecondary)
@@ -106,8 +115,8 @@ struct MerchantProfileSetupView: View {
                                     .overlay(
                                         VStack(spacing: 8) {
                                             Image(systemName: "camera.fill")
-                                                .font(.system(size: 30))
-                                            Text("Añadir foto")
+                                                .font(.custom("Sora-Regular", size: 30))
+                                            Text(localization.t("setup_add_photo"))
                                                 .font(.appBody)
                                         }
                                         .foregroundColor(.appTextSecondary)
@@ -119,21 +128,30 @@ struct MerchantProfileSetupView: View {
                     
                     // Business name + Contact Info
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Información del restaurante")
+                        Text(localization.t("setup_info"))
                             .font(.appSubheadline)
                             .fontWeight(.bold)
 
-                        CustomTextField(title: "Nombre del restaurante *", text: $businessName, icon: "fork.knife")
+                        CustomTextField(title: localization.t("setup_name"), text: $businessName, icon: "fork.knife")
 
-                        CustomTextField(title: "Teléfono *", text: $phone, icon: "phone")
+                        CustomTextField(title: localization.t("setup_phone"), text: $phone, icon: "phone")
                             .keyboardType(.phonePad)
 
-                        CustomTextField(title: "Dirección *", text: $addressText, icon: "mappin")
+                        CustomTextField(title: localization.t("setup_tax_id_label"), text: $taxId, icon: "checkmark.seal")
+                            .autocapitalization(.allCharacters)
+                            .disableAutocorrection(true)
+                        // Hint / error
+                        let taxIdShowError = !taxId.isEmpty && !TaxIdValidator.isValid(normalizedTaxId)
+                        Text(taxIdShowError ? localization.t("setup_tax_id_invalid") : localization.t("setup_tax_id_hint"))
+                            .font(.appCaption)
+                            .foregroundColor(taxIdShowError ? .red : .appTextSecondary)
+
+                        CustomTextField(title: localization.t("setup_address"), text: $addressText, icon: "mappin")
                     }
                     
                     // Description
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Descripción")
+                        Text(localization.t("setup_description"))
                             .font(.appSubheadline)
                             .fontWeight(.bold)
                         
@@ -151,7 +169,7 @@ struct MerchantProfileSetupView: View {
                     
                     // Cuisine Types
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Tipo de cocina")
+                        Text(localization.t("setup_cuisine_type"))
                             .font(.appSubheadline)
                             .fontWeight(.bold)
                         
@@ -172,7 +190,7 @@ struct MerchantProfileSetupView: View {
                     
                     // Schedule
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Horario")
+                        Text(localization.t("setup_schedule"))
                             .font(.appSubheadline)
                             .fontWeight(.bold)
                         
@@ -186,7 +204,7 @@ struct MerchantProfileSetupView: View {
                                 .toggleStyle(SwitchToggleStyle(tint: .appPrimary))
                                 
                                 if entry.isOpen {
-                                    TextField("Abre", text: $entry.openTime)
+                                    TextField(localization.t("setup_opens"), text: $entry.openTime)
                                         .font(.appBody)
                                         .frame(width: 55)
                                         .padding(6)
@@ -196,7 +214,7 @@ struct MerchantProfileSetupView: View {
                                     Text("–")
                                         .foregroundColor(.appTextSecondary)
                                     
-                                    TextField("Cierra", text: $entry.closeTime)
+                                    TextField(localization.t("setup_closes"), text: $entry.closeTime)
                                         .font(.appBody)
                                         .frame(width: 55)
                                         .padding(6)
@@ -213,7 +231,7 @@ struct MerchantProfileSetupView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "calendar.badge.checkmark")
                                 .foregroundColor(.appPrimary)
-                            Text("Acepta reservas")
+                            Text(localization.t("setup_reservations"))
                                 .font(.appBody)
                         }
                     }
@@ -227,7 +245,7 @@ struct MerchantProfileSetupView: View {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         } else {
-                            Text(isEditMode ? "Guardar cambios" : "Guardar y continuar")
+                            Text(isEditMode ? localization.t("setup_save_changes") : localization.t("setup_save_continue"))
                         }
                     }
                     .buttonStyle(AppDesign.ButtonStyle(isPrimary: true, isDisabled: !isValid || isLoading))
@@ -237,7 +255,7 @@ struct MerchantProfileSetupView: View {
                         Button(action: {
                             appState.needsMerchantSetup = false
                         }) {
-                            Text("Completar más tarde")
+                            Text(localization.t("setup_complete_later"))
                                 .font(.appButton)
                                 .foregroundColor(.appTextSecondary)
                                 .frame(maxWidth: .infinity)
@@ -247,7 +265,7 @@ struct MerchantProfileSetupView: View {
                 }
                 .padding(24)
             }
-            .navigationTitle(isEditMode ? "Editar Restaurante" : "Mi Restaurante")
+            .navigationTitle(isEditMode ? localization.t("setup_edit_title") : localization.t("setup_create_title"))
             .navigationBarTitleDisplayMode(.inline)
             .background(Color.appBackground)
             .onAppear {
@@ -255,6 +273,7 @@ struct MerchantProfileSetupView: View {
                 if let p = existingProfile {
                     businessName = p.name
                     phone = p.phone ?? ""
+                    taxId = p.taxId ?? ""
                     addressText = p.address?.formatted ?? p.addressText ?? ""
                     description = p.shortDescription ?? ""
                     acceptsReservations = p.acceptsReservations
@@ -276,15 +295,15 @@ struct MerchantProfileSetupView: View {
                     }
                 }
             }
-            .alert("Error", isPresented: $showingError) {
-                Button("OK", role: .cancel) { }
+            .alert(localization.t("common_error"), isPresented: $showingError) {
+                Button(localization.t("common_ok"), role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
-            .confirmationDialog("Foto de portada", isPresented: $showingPhotoSourceDialog, titleVisibility: .visible) {
-                Button("Cámara") { activePhotoSheet = .camera }
-                Button("Galería") { activePhotoSheet = .gallery }
-                Button("Cancelar", role: .cancel) {}
+            .confirmationDialog(localization.t("setup_cover_photo"), isPresented: $showingPhotoSourceDialog, titleVisibility: .visible) {
+                Button(localization.t("profile_camera")) { activePhotoSheet = .camera }
+                Button(localization.t("profile_gallery")) { activePhotoSheet = .gallery }
+                Button(localization.t("common_cancel"), role: .cancel) {}
             }
             .sheet(item: $activePhotoSheet) { sheet in
                 switch sheet {
@@ -325,7 +344,7 @@ struct MerchantProfileSetupView: View {
                 if geocodedAddress.lat == 0 && geocodedAddress.lng == 0 {
                     await MainActor.run {
                         isLoading = false
-                        errorMessage = "No se ha podido verificar la dirección. Revisa que sea correcta e incluya ciudad y país."
+                        errorMessage = localization.t("setup_address_error")
                         showingError = true
                     }
                     return
@@ -344,7 +363,8 @@ struct MerchantProfileSetupView: View {
                     coverPhotoUrl: coverUrl,
                     profilePhotoUrl: existingProfile?.profilePhotoUrl,
                     planTier: existingProfile?.planTier,
-                    isHighlighted: existingProfile?.isHighlighted
+                    isHighlighted: existingProfile?.isHighlighted,
+                    taxId: normalizedTaxId
                 )
                 
                 try await FirebaseService.shared.updateMerchantProfile(merchant)

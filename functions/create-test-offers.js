@@ -130,7 +130,7 @@ async function main() {
     isActive: true,
     isMerchantPro: true,
     dietaryInfo: fullDietaryInfo({ hasFish: true, hasLactose: true, hasNuts: true }),
-    offerType: "Menu del dia",
+    offerType: "Menú del día",
     includesDrink: true,
     includesDessert: true,
     includesCoffee: true,

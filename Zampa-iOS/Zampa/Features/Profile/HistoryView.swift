@@ -2,6 +2,7 @@ import SwiftUI
 import FirebaseFirestore
 
 struct HistoryView: View {
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var callEntries: [[String: Any]] = []
     @State private var directionEntries: [[String: Any]] = []
     @State private var favoriteNames: [(id: String, name: String, date: String)] = []
@@ -9,9 +10,9 @@ struct HistoryView: View {
 
     var body: some View {
         List {
-            Section(header: Label("Llamadas", systemImage: "phone.fill").foregroundColor(.green)) {
+            Section(header: Label(localization.t("history_calls"), systemImage: "phone.fill").foregroundColor(.green)) {
                 if callEntries.isEmpty && !isLoading {
-                    Text("No hay registros")
+                    Text(localization.t("history_no_records"))
                         .font(.appBody)
                         .foregroundColor(.appTextSecondary)
                 } else {
@@ -26,9 +27,9 @@ struct HistoryView: View {
                 }
             }
 
-            Section(header: Label("Cómo ir", systemImage: "arrow.triangle.turn.up.right.circle.fill").foregroundColor(.blue)) {
+            Section(header: Label(localization.t("history_directions"), systemImage: "arrow.triangle.turn.up.right.circle.fill").foregroundColor(.blue)) {
                 if directionEntries.isEmpty && !isLoading {
-                    Text("No hay registros")
+                    Text(localization.t("history_no_records"))
                         .font(.appBody)
                         .foregroundColor(.appTextSecondary)
                 } else {
@@ -43,9 +44,9 @@ struct HistoryView: View {
                 }
             }
 
-            Section(header: Label("Favoritos", systemImage: "heart.fill").foregroundColor(.red)) {
+            Section(header: Label(localization.t("history_favorites"), systemImage: "heart.fill").foregroundColor(.red)) {
                 if favoriteNames.isEmpty && !isLoading {
-                    Text("No hay registros")
+                    Text(localization.t("history_no_records"))
                         .font(.appBody)
                         .foregroundColor(.appTextSecondary)
                 } else {
@@ -61,7 +62,7 @@ struct HistoryView: View {
             }
         }
         .listStyle(InsetGroupedListStyle())
-        .navigationTitle("Historial")
+        .navigationTitle(localization.t("history_title"))
         .navigationBarTitleDisplayMode(.large)
         .background(Color.appBackground)
         .onAppear { loadData() }
@@ -79,11 +80,11 @@ struct HistoryView: View {
                     .foregroundColor(.appTextPrimary)
                 if let ts = timestamp {
                     Text(relativeTime(from: ts.dateValue()))
-                        .font(.caption)
+                        .font(.appCaption)
                         .foregroundColor(.appTextSecondary)
                 } else if let ds = dateString, !ds.isEmpty {
                     Text(relativeTime(from: ISO8601DateFormatter().date(from: ds) ?? Date()))
-                        .font(.caption)
+                        .font(.appCaption)
                         .foregroundColor(.appTextSecondary)
                 }
             }

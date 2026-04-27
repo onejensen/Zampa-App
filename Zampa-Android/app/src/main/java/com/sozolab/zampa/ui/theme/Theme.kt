@@ -2,13 +2,42 @@ package com.sozolab.zampa.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.sozolab.zampa.data.ThemeManager
+
+val LocalThemeManager = compositionLocalOf<ThemeManager?> { null }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun brandTopAppBarColors(): TopAppBarColors = TopAppBarDefaults.topAppBarColors(
+    containerColor = MaterialTheme.colorScheme.background,
+    scrolledContainerColor = MaterialTheme.colorScheme.background,
+)
+
+@Composable
+fun brandFilterChipColors(): SelectableChipColors = FilterChipDefaults.filterChipColors(
+    selectedContainerColor = MaterialTheme.colorScheme.primary,
+    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+    selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
+)
+
+@Composable
+fun brandFilterChipBorder(selected: Boolean): BorderStroke? = FilterChipDefaults.filterChipBorder(
+    enabled = true,
+    selected = selected,
+    borderColor = MaterialTheme.colorScheme.outlineVariant,
+    selectedBorderColor = MaterialTheme.colorScheme.primary,
+)
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
@@ -19,26 +48,30 @@ private val LightColorScheme = lightColorScheme(
     secondaryContainer = SecondaryLight,
     background = Background,
     surface = Surface,
+    surfaceContainer = InputBackground,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = InputBackground,
     onSurfaceVariant = TextSecondary,
+    outline = TextSecondary,
     outlineVariant = Divider,
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryLight,
-    onPrimary = PrimaryDark,
+    primary = Primary,
+    onPrimary = SurfaceDark,
     primaryContainer = PrimaryDark,
     onPrimaryContainer = PrimarySurface,
     secondary = Secondary,
     secondaryContainer = SecondaryLight,
     background = BackgroundDark,
     surface = SurfaceDark,
+    surfaceContainer = InputBackgroundDark,
     onBackground = TextPrimaryDark,
     onSurface = TextPrimaryDark,
     surfaceVariant = InputBackgroundDark,
     onSurfaceVariant = TextSecondaryDark,
+    outline = TextSecondaryDark,
     outlineVariant = DividerDark,
 )
 
@@ -61,6 +94,7 @@ fun ZampaTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = ZampaShapes,
         content = content
     )
 }

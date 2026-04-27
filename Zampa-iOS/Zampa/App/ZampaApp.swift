@@ -15,6 +15,7 @@ struct ZampaApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
+                .tint(.appPrimary)
                 .preferredColorScheme(appState.appColorScheme.colorScheme)
                 .onAppear {
                     PushManager.shared.registerForNotifications()
