@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
+    @StateObject private var tourManager = TourManager()
     @State private var deepLinkedOfferId: String?
     /// Marca local que se activa al terminar el onboarding en esta sesión.
     /// Se usa para que el siguiente render eval haga swap a `MainTabView` sin
@@ -20,7 +21,7 @@ struct ContentView: View {
                             .scaledToFit()
                             .frame(width: 120, height: 120)
                         Text("Zampa")
-                            .font(.system(size: 36, weight: .bold))
+                            .font(.custom("Sora-Bold", size: 36))
                             .foregroundColor(.white)
                         ProgressView()
                             .tint(.white)
@@ -49,6 +50,14 @@ struct ContentView: View {
                 } else {
                     // Usuario autenticado: pantalla principal
                     MainTabView()
+                        .environmentObject(tourManager)
+                        .overlay {
+                            if tourManager.isActive {
+                                TourOverlayView()
+                                    .environmentObject(tourManager)
+                                    .ignoresSafeArea()
+                            }
+                        }
                 }
             } else {
                 // No autenticado: login/registro

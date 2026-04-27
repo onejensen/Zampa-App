@@ -7,6 +7,8 @@ struct FeedView: View {
     var onNavigateToProfile: () -> Void = {}
 
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var tourManager: TourManager
+    @ObservedObject var localization = LocalizationManager.shared
 
     @State private var menus: [Menu] = []
     @State private var isLoading: Bool = false
@@ -21,10 +23,18 @@ struct FeedView: View {
     @State private var showingFilters = false
     @State private var showingLocationPrompt = false
     @State private var onlyOpen: Bool = false
+    @State private var offerType: String? = nil
     @State private var merchantMap: [String: Merchant] = [:]
-    enum SortOption { case distance, price }
+    @State private var viewMode: FeedViewMode = .list
+    @State private var presentedMenu: Menu? = nil
+    @State private var presentedMerchantId: String? = nil
 
-    var hasClientSideFilters: Bool { maxDistanceKm != nil || onlyFavorites || onlyOpen }
+    /// Wrapper para usar `String` como item en `.sheet(item:)`.
+    private struct IdentifiableId: Identifiable { let id: String }
+    enum SortOption { case distance, price }
+    enum FeedViewMode { case list, map }
+
+    var hasClientSideFilters: Bool { maxDistanceKm != nil || onlyFavorites || onlyOpen || offerType != nil }
 
     var body: some View {
         NavigationView {
@@ -34,19 +44,18 @@ struct FeedView: View {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(greeting)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.custom("Sora-SemiBold", size: 11))
                             .foregroundColor(.appPrimary)
                             .kerning(1.5)
-                        Text(greeting == "BUENAS NOCHES" ? "¿Dónde cenamos hoy?" : "¿Qué comemos hoy?")
-                            .font(.system(size: 24, weight: .bold))
+                        Text(greeting == localization.t("feed_good_evening") ? localization.t("feed_dinner_question") : localization.t("feed_lunch_question"))
+                            .font(.custom("Sora-Bold", size: 24))
                             .foregroundColor(.appTextPrimary)
                     }
                     Spacer()
-                    Button(action: onNavigateToProfile) {
-                        Image(systemName: "person.circle")
-                            .font(.system(size: 28))
-                            .foregroundColor(.appTextPrimary)
-                    }
+                    Image("Logo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 36)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -54,13 +63,13 @@ struct FeedView: View {
 
                 // ── SECTION HEADER ──────────────────────────────────────
                 HStack {
-                    Text(sortOption == .price ? "Ofertas por precio" : "Ofertas cerca de ti")
-                        .font(.system(size: 17, weight: .bold))
+                    Text(sortOption == .price ? localization.t("feed_by_price") : localization.t("feed_nearby"))
+                        .font(.custom("Sora-Bold", size: 17))
                         .foregroundColor(.appTextPrimary)
                     Spacer()
                     if !menus.isEmpty {
-                        Text("\(sortedMenus.count) encontrados")
-                            .font(.caption)
+                        Text("\(sortedMenus.count) \(localization.t("feed_found"))")
+                            .font(.appCaption)
                             .foregroundColor(.appTextSecondary)
                     }
                 }
@@ -69,13 +78,31 @@ struct FeedView: View {
 
                 // ── SORT + FILTER ────────────────────────────────────────
                 HStack(spacing: 10) {
-                    SortPill(title: "Distancia", icon: "location.fill", isSelected: sortOption == .distance) {
-                        sortOption = .distance
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            // Sort pills solo en vista lista: el mapa muestra posición/distancia visualmente.
+                            if viewMode == .list {
+                                SortPill(title: localization.t("feed_distance"), icon: "location.fill", isSelected: sortOption == .distance) {
+                                    sortOption = .distance
+                                }
+                                SortPill(title: localization.t("feed_price"), icon: "banknote", isSelected: sortOption == .price) {
+                                    sortOption = .price
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
                     }
-                    SortPill(title: "Precio", icon: "banknote", isSelected: sortOption == .price) {
-                        sortOption = .price
+                    Button(action: {
+                        viewMode = (viewMode == .list) ? .map : .list
+                    }) {
+                        Image(systemName: viewMode == .list ? "map.fill" : "list.bullet")
+                            .padding(10)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(
+                                viewMode == .map ? Color.appPrimary : Color.appInputBackground
+                            ))
+                            .foregroundColor(viewMode == .map ? .white : .appTextPrimary)
                     }
-                    Spacer()
+                    .tourTarget(.mapToggle)
                     Button(action: { showingFilters = true }) {
                         ZStack(alignment: .topTrailing) {
                             Image(systemName: "slider.horizontal.3")
@@ -90,34 +117,48 @@ struct FeedView: View {
                             }
                         }
                     }
+                    .tourTarget(.filterButton)
+                    .padding(.trailing, 20)
                 }
-                .padding(.horizontal, 20)
                 .padding(.bottom, 12)
 
                 // ── CONTENT ──────────────────────────────────────────────
                 if isLoading && menus.isEmpty {
-                    ProgressView("Buscando menús...")
+                    ProgressView(localization.t("feed_searching"))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if sortedMenus.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "fork.knife")
-                            .font(.system(size: 60))
+                            .font(.custom("Sora-Regular", size: 60))
                             .foregroundColor(.appTextSecondary.opacity(0.3))
-                        Text("No encontramos menús con estos filtros")
+                        Text(localization.t("feed_no_results"))
                             .font(.appSubheadline)
                             .foregroundColor(.appTextSecondary)
-                        Button("Limpiar filtros") {
+                        Button(localization.t("feed_clear_filters")) {
                             selectedCuisine = nil
                             maxPrice = nil
                             maxDistanceKm = nil
                             onlyFavorites = false
                             onlyOpen = false
+                            offerType = nil
                             loadMenus()
                         }
                         .foregroundColor(.appPrimary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.appBackground)
+                } else if viewMode == .map {
+                    FeedMapView(
+                        menus: sortedMenus,
+                        merchantMap: merchantMap,
+                        userLocation: appState.locationManager.location,
+                        onNavigateToDetail: { offerId in
+                            presentedMenu = sortedMenus.first { $0.id == offerId }
+                        },
+                        onNavigateToMerchant: { merchantId in
+                            presentedMerchantId = merchantId
+                        }
+                    )
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
@@ -127,6 +168,7 @@ struct FeedView: View {
                                 })
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
+                                .tourTarget(.feedCard, when: menu.id == sortedMenus.first?.id)
                                 .onAppear {
                                     if menu == menus.last && canLoadMore {
                                         loadMoreMenus()
@@ -155,13 +197,15 @@ struct FeedView: View {
                     maxPrice: maxPrice ?? 30,
                     maxDistanceKm: maxDistanceKm,
                     onlyFavorites: onlyFavorites,
-                    onlyOpen: onlyOpen
-                ) { cuisine, price, distance, favOnly, openOnly in
+                    onlyOpen: onlyOpen,
+                    offerType: offerType
+                ) { cuisine, price, distance, favOnly, openOnly, type in
                     self.selectedCuisine = cuisine
                     self.maxPrice = price
                     self.maxDistanceKm = distance
                     self.onlyFavorites = favOnly
                     self.onlyOpen = openOnly
+                    self.offerType = type
                     loadMenus()
                 }
             }
@@ -180,18 +224,49 @@ struct FeedView: View {
                 LocationConfigView()
                     .environmentObject(appState)
             }
+            .sheet(item: $presentedMenu) { menu in
+                NavigationView {
+                    MenuDetailView(menu: menu)
+                        .environmentObject(appState)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button(action: { presentedMenu = nil }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.appTextSecondary)
+                                }
+                            }
+                        }
+                }
+            }
+            .sheet(item: Binding(
+                get: { presentedMerchantId.map { IdentifiableId(id: $0) } },
+                set: { presentedMerchantId = $0?.id }
+            )) { wrapper in
+                NavigationView {
+                    MerchantProfileView(merchantId: wrapper.id)
+                        .environmentObject(appState)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button(action: { presentedMerchantId = nil }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.appTextSecondary)
+                                }
+                            }
+                        }
+                }
+            }
         }
     }
 
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
-        if hour < 12 { return "BUENOS DÍAS" }
-        else if hour < 20 { return "BUENAS TARDES" }
-        else { return "BUENAS NOCHES" }
+        if hour < 12 { return localization.t("feed_good_morning") }
+        else if hour < 20 { return localization.t("feed_good_afternoon") }
+        else { return localization.t("feed_good_evening") }
     }
 
     private var filtersActive: Bool {
-        selectedCuisine != nil || (maxPrice != nil && maxPrice! < 100) || maxDistanceKm != nil || onlyFavorites || onlyOpen
+        selectedCuisine != nil || (maxPrice != nil && maxPrice! < 100) || maxDistanceKm != nil || onlyFavorites || onlyOpen || offerType != nil
     }
 
     private var filteredMenus: [Menu] {
@@ -215,6 +290,14 @@ struct FeedView: View {
             result = result.filter { menu in
                 guard let m = merchantMap[menu.businessId] else { return true }
                 return isOpenNow(schedule: m.schedule)
+            }
+        }
+        if let type = offerType {
+            result = result.filter { menu in
+                if type == OfferTypes.ofertaPermanente {
+                    return menu.isPermanent || menu.offerType == OfferTypes.ofertaPermanente
+                }
+                return menu.offerType == type
             }
         }
         if sortOption == .price {
@@ -430,9 +513,9 @@ struct SortPill: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.custom("Sora-Regular", size: 12))
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.custom("Sora-SemiBold", size: 14))
                     .lineLimit(1)
             }
             .foregroundColor(isSelected ? .white : .appTextPrimary)
@@ -446,11 +529,38 @@ struct SortPill: View {
     }
 }
 
+// MARK: - Inline Chip
+
+struct InlineChip: View {
+    let icon: String?
+    let label: String
+    let foreground: Color
+    let background: Color
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if let icon = icon {
+                Image(systemName: icon)
+                    .font(.custom("Sora-Regular", size: 10))
+            }
+            Text(label)
+                .font(.custom("Sora-SemiBold", size: 11))
+                .lineLimit(1)
+        }
+        .foregroundColor(foreground)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(background)
+        .cornerRadius(6)
+    }
+}
+
 // MARK: - Menu Card
 
 struct MenuCard: View {
     let menu: Menu
     @EnvironmentObject var appState: AppState
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var merchant: Merchant? = nil
     @State private var userLocation: CLLocation? = nil
     var onMerchantLoaded: ((String, Merchant) -> Void)? = nil
@@ -467,129 +577,96 @@ struct MenuCard: View {
                                 image.resizable().aspectRatio(contentMode: .fill)
                             } placeholder: {
                                 Rectangle().fill(Color.appInputBackground)
-                                    .overlay(
-                                        Image(systemName: "photo")
-                                            .font(.system(size: 36))
-                                            .foregroundColor(.appTextSecondary.opacity(0.3))
-                                    )
                             }
                         } else {
                             Rectangle().fill(Color.appInputBackground)
-                                .overlay(
-                                    Image(systemName: "photo")
-                                        .font(.system(size: 36))
-                                        .foregroundColor(.appTextSecondary.opacity(0.3))
-                                )
                         }
                     }
-                    .frame(height: 210)
+                    .frame(height: 190)
                     .clipped()
-                    .overlay(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.6)]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
 
-                    // TOP LEFT: Destacado badge
-                    if merchant?.planTier == "pro" || menu.isMerchantPro == true {
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 9))
-                            Text("Destacado")
-                                .font(.system(size: 11, weight: .bold))
+                    // TOP: offer type + price chip (right)
+                    HStack(alignment: .top) {
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 4) {
+                            if let offerType = menu.offerType, !offerType.isEmpty {
+                                Text(OfferTypes.label(for: offerType))
+                                    .font(.custom("Sora-Bold", size: 10))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(offerTypeColor(offerType))
+                                    .cornerRadius(6)
+                                    .shadow(color: Color.black.opacity(0.2), radius: 3, x: 0, y: 1)
+                            }
+                            Text(menu.formattedPrice)
+                                .font(.custom("Sora-Bold", size: 17))
+                                .foregroundColor(Color(red: 0.102, green: 0.102, blue: 0.180))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 7)
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
                         }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
-                        .background(Color.appPrimary)
-                        .cornerRadius(8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
                     }
-
-                    // TOP RIGHT: Offer type + Price badge
-                    VStack(spacing: 4) {
-                        if let offerType = menu.offerType, !offerType.isEmpty {
-                            Text(offerType)
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(offerTypeColor(offerType))
-                                .cornerRadius(6)
-                        }
-                        Text(menu.formattedPrice)
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.black)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(Color.white.opacity(0.95))
-                            .cornerRadius(10)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(12)
-
-                    // BOTTOM LEFT: Distance chip
-                    if let distance = calculateDistance() {
-                        HStack(spacing: 4) {
-                            Image(systemName: "location.fill")
-                                .font(.system(size: 9))
-                            Text(distance)
-                                .font(.system(size: 12, weight: .medium))
-                        }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.black.opacity(0.5))
-                        .cornerRadius(8)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                        .padding(12)
-                    }
-
-                    // BOTTOM RIGHT: Open status chip
-                    let status = scheduleStatus()
-                    HStack(spacing: 4) {
-                        Text(status.label)
-                            .font(.system(size: 11, weight: .bold))
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(status.isOpen ? Color.green : Color.gray.opacity(0.7))
-                    .cornerRadius(8)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     .padding(12)
                 }
-                .frame(height: 210)
-                .cornerRadius(16)
+                .frame(height: 190)
                 .clipped()
 
                 // ── INFO ─────────────────────────────────────────────────
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(merchant?.name ?? "")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.appTextPrimary)
-                                .lineLimit(1)
-                            if let cuisines = merchant?.cuisineTypes, let first = cuisines.first {
-                                Text(first)
-                                    .font(.caption)
-                                    .foregroundColor(.appTextSecondary)
-                            }
-                        }
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .center, spacing: 8) {
+                        Text(merchant?.name ?? "")
+                            .font(.custom("Sora-Bold", size: 17))
+                            .foregroundColor(.appTextPrimary)
+                            .lineLimit(1)
                         Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.custom("Sora-SemiBold", size: 13))
+                            .foregroundColor(.appTextSecondary)
                     }
 
-                    Text("Ver oferta →")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.appPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(Color.appPrimary.opacity(0.12))
-                        .cornerRadius(10)
+                    // Chip row: status · distance · cuisine (wraps if needed, no scroll)
+                    let status = scheduleStatus()
+                    let statusChip = InlineChip(
+                        icon: "clock.fill",
+                        label: status.label,
+                        foreground: status.isOpen ? .white : .appTextSecondary,
+                        background: status.isOpen ? Color.green : Color.appInputBackground
+                    )
+                    let distanceChip = calculateDistance().map { distance in
+                        InlineChip(
+                            icon: "location.fill",
+                            label: distance,
+                            foreground: .appTextSecondary,
+                            background: Color.appInputBackground
+                        )
+                    }
+                    let cuisineChip: InlineChip? = (merchant?.cuisineTypes?.first).map { cuisine in
+                        InlineChip(
+                            icon: "fork.knife",
+                            label: cuisine,
+                            foreground: .appTextSecondary,
+                            background: Color.appInputBackground
+                        )
+                    }
+                    ViewThatFits(in: .horizontal) {
+                        // Try single row first
+                        HStack(spacing: 6) {
+                            statusChip
+                            if let d = distanceChip { d }
+                            if let c = cuisineChip { c }
+                        }
+                        // Falls back to two rows
+                        VStack(alignment: .leading, spacing: 6) {
+                            statusChip
+                            HStack(spacing: 6) {
+                                if let d = distanceChip { d }
+                                if let c = cuisineChip { c }
+                            }
+                        }
+                    }
                 }
                 .padding(14)
             }
@@ -608,11 +685,8 @@ struct MenuCard: View {
     }
 
     private func offerTypeColor(_ type: String) -> Color {
-        switch type {
-        case "Menú del día": return Color.appPrimary
-        case "Plato del día": return Color.blue
-        default: return Color.purple
-        }
+        // Color unificado rojo anaranjado para todas las pastillas de tipo de oferta.
+        Color(red: 0.91, green: 0.365, blue: 0.247)
     }
 
     private struct ScheduleInfo {
@@ -622,7 +696,7 @@ struct MenuCard: View {
 
     private func scheduleStatus() -> ScheduleInfo {
         guard let schedule = merchant?.schedule, !schedule.isEmpty else {
-            return ScheduleInfo(isOpen: false, label: "Sin horario")
+            return ScheduleInfo(isOpen: false, label: localization.t("feed_no_schedule"))
         }
         let weekday = Calendar.current.component(.weekday, from: Date())
         let keys = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
@@ -633,9 +707,9 @@ struct MenuCard: View {
 
         if let entry = schedule.first(where: { $0.day == todayKey }) {
             if now >= entry.open && now <= entry.close {
-                return ScheduleInfo(isOpen: true, label: "Abierto · Cierra \(formatHHmm(entry.close))")
+                return ScheduleInfo(isOpen: true, label: "\(localization.t("feed_open_closes")) \(formatHHmm(entry.close))")
             } else if now < entry.open {
-                return ScheduleInfo(isOpen: false, label: "Abre a las \(formatHHmm(entry.open))")
+                return ScheduleInfo(isOpen: false, label: "\(localization.t("feed_opens_at")) \(formatHHmm(entry.open))")
             }
         }
         // Closed today or past closing — find next opening
@@ -643,14 +717,19 @@ struct MenuCard: View {
             let nextIdx = (weekday - 1 + offset) % 7
             let nextDay = keys[nextIdx]
             if let entry = schedule.first(where: { $0.day == nextDay }) {
-                let dayLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
+                let dayLabels = [
+                    localization.t("feed_day_sun"), localization.t("feed_day_mon"),
+                    localization.t("feed_day_tue"), localization.t("feed_day_wed"),
+                    localization.t("feed_day_thu"), localization.t("feed_day_fri"),
+                    localization.t("feed_day_sat")
+                ]
                 if offset == 1 {
-                    return ScheduleInfo(isOpen: false, label: "Abre mañana \(formatHHmm(entry.open))")
+                    return ScheduleInfo(isOpen: false, label: "\(localization.t("feed_opens_tomorrow")) \(formatHHmm(entry.open))")
                 }
-                return ScheduleInfo(isOpen: false, label: "Abre \(dayLabels[nextIdx]) \(formatHHmm(entry.open))")
+                return ScheduleInfo(isOpen: false, label: "\(localization.t("feed_opens_day")) \(dayLabels[nextIdx]) \(formatHHmm(entry.open))")
             }
         }
-        return ScheduleInfo(isOpen: false, label: "Cerrado")
+        return ScheduleInfo(isOpen: false, label: localization.t("feed_closed"))
     }
 
     /// Normaliza el string de horario a "HH:mm" (24h) independientemente del
