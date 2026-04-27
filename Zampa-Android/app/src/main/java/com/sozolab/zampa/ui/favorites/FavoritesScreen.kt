@@ -20,8 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sozolab.zampa.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.sozolab.zampa.data.model.Merchant
@@ -31,6 +33,7 @@ import com.sozolab.zampa.data.model.Menu
 @Composable
 fun FavoritesScreen(
     onNavigateToDetail: (String) -> Unit,
+    onNavigateToMerchant: (String) -> Unit = {},
     viewModel: FavoritesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -42,7 +45,7 @@ fun FavoritesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis Favoritos", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.favorites_title), fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
@@ -72,25 +75,44 @@ fun FavoritesScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Button(onClick = { viewModel.loadFavorites() }) {
-                            Text("Reintentar")
+                            Text(stringResource(R.string.common_retry))
                         }
                     }
                 }
                 is FavoritesUiState.Success -> {
-                    if (state.merchants.isEmpty()) {
-                        EmptyFavoritesContent()
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            items(state.merchants) { item ->
-                                MerchantFavoriteRow(
-                                    merchant = item.merchant,
-                                    lastMenu = item.lastMenu,
-                                    onRemove = { viewModel.removeFavorite(item.merchant.id) },
-                                    onClick = { item.lastMenu?.id?.let(onNavigateToDetail) }
-                                )
+                    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                        isRefreshing = false,
+                        onRefresh = { viewModel.loadFavorites() },
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        if (state.merchants.isEmpty()) {
+                            EmptyFavoritesContent()
+                        } else {
+                            LazyColumn(
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                item {
+                                    Text(
+                                        stringResource(R.string.favorites_subtitle),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                items(state.merchants) { item ->
+                                    MerchantFavoriteRow(
+                                        merchant = item.merchant,
+                                        lastMenu = item.lastMenu,
+                                        onRemove = { viewModel.removeFavorite(item.merchant.id) },
+                                        onClick = {
+                                            if (item.lastMenu != null) {
+                                                item.lastMenu.id?.let(onNavigateToDetail)
+                                            } else {
+                                                onNavigateToMerchant(item.merchant.id)
+                                            }
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -114,10 +136,10 @@ fun EmptyFavoritesContent() {
             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
         )
         Spacer(modifier = Modifier.height(24.dp))
-        Text("No tienes favoritos aún", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.favorites_empty), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            "Guarda tus restaurantes favoritos para recibir notificaciones cuando publiquen sus menús diarios.",
+            stringResource(R.string.favorites_empty_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -176,13 +198,13 @@ fun MerchantFavoriteRow(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 if (lastMenu != null) {
-                    Text("Menú hoy: ${lastMenu.title}", 
-                        style = MaterialTheme.typography.bodySmall, 
+                    Text("${stringResource(R.string.favorites_menu_today)} ${lastMenu.title}",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1)
                 } else {
-                    Text("Sin menú hoy", 
-                        style = MaterialTheme.typography.bodySmall, 
+                    Text(stringResource(R.string.feed_no_menu_today),
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                 }
             }
@@ -193,7 +215,7 @@ fun MerchantFavoriteRow(
                     .size(40.dp)
                     .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f), CircleShape)
             ) {
-                Icon(Icons.Default.Favorite, contentDescription = "Eliminar de favoritos", tint = Color.Red)
+                Icon(Icons.Default.Favorite, contentDescription = stringResource(R.string.favorites_remove), tint = Color.Red)
             }
         }
     }

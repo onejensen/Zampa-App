@@ -169,7 +169,8 @@ fun MainScreen(
                 }
                 Tab.FAVORITES -> {
                     com.sozolab.zampa.ui.favorites.FavoritesScreen(
-                        onNavigateToDetail = onNavigateToDetail
+                        onNavigateToDetail = onNavigateToDetail,
+                        onNavigateToMerchant = onNavigateToMerchant
                     )
                 }
                 Tab.DASHBOARD -> {

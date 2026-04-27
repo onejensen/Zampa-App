@@ -8,6 +8,8 @@ private struct FavoriteItem: Identifiable {
     var id: String { merchant.id }
 }
 
+private struct IdentifiableId: Identifiable { let id: String }
+
 // MARK: - FavoritesView
 
 struct FavoritesView: View {
@@ -16,6 +18,7 @@ struct FavoritesView: View {
     @State private var items: [FavoriteItem] = []
     @State private var isLoading = true
     @State private var selectedMenu: Menu? = nil
+    @State private var selectedMerchantId: String? = nil
 
     var body: some View {
         NavigationView {
@@ -43,6 +46,8 @@ struct FavoritesView: View {
                                 } onTap: {
                                     if let menu = item.activeMenu {
                                         selectedMenu = menu
+                                    } else {
+                                        selectedMerchantId = item.merchant.id
                                     }
                                 }
                             }
@@ -56,6 +61,14 @@ struct FavoritesView: View {
             .sheet(item: $selectedMenu) { menu in
                 NavigationView {
                     MenuDetailView(menu: menu, presentedAsSheet: true)
+                }
+            }
+            .sheet(item: Binding(
+                get: { selectedMerchantId.map { IdentifiableId(id: $0) } },
+                set: { selectedMerchantId = $0?.id }
+            )) { wrapper in
+                NavigationView {
+                    MerchantProfileView(merchantId: wrapper.id)
                 }
             }
         }
