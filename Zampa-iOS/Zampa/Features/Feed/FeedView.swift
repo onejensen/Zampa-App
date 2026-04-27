@@ -766,4 +766,5 @@ struct MenuCard: View {
 #Preview {
     FeedView()
         .environmentObject(AppState())
+        .environmentObject(TourManager())
 }

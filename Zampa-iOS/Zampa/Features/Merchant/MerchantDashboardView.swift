@@ -423,4 +423,5 @@ struct MerchantMenuRow: View {
 #Preview {
     MerchantDashboardView()
         .environmentObject(AppState())
+        .environmentObject(TourManager())
 }
