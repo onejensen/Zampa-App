@@ -1,5 +1,6 @@
 package com.sozolab.zampa.ui.feed
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -15,17 +16,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.text.font.FontWeight
+import com.sozolab.zampa.ui.tour.TourBounds
+import com.sozolab.zampa.ui.tour.TourTarget
+import com.sozolab.zampa.ui.tour.TourViewModel
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sozolab.zampa.R
 import coil.compose.AsyncImage
 import com.sozolab.zampa.data.FirebaseService
 import com.sozolab.zampa.data.model.Menu
@@ -36,15 +48,18 @@ import java.util.Date
 import java.util.Locale
 
 enum class SortOption { DISTANCE, PRICE }
+enum class FeedViewMode { LIST, MAP }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FeedScreen(
     onNavigateToDetail: (String) -> Unit,
+    onNavigateToMerchant: (String) -> Unit = {},
     onNavigateToProfile: () -> Unit,
     onNavigateToLocation: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: FeedViewModel = hiltViewModel()
+    viewModel: FeedViewModel = hiltViewModel(),
+    tourViewModel: TourViewModel? = null
 ) {
     val authViewModel: com.sozolab.zampa.ui.auth.AuthViewModel = hiltViewModel()
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -66,15 +81,28 @@ fun FeedScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    var sortOption by remember { mutableStateOf(SortOption.DISTANCE) }
+    // `rememberSaveable` para preservar la vista (Lista/Mapa) y el orden elegido
+    // cuando el user navega al detalle de una oferta y vuelve. Enum → Serializable
+    // autom. Si usara `remember`, volver del detail resetea al default LIST.
+    var sortOption by rememberSaveable { mutableStateOf(SortOption.DISTANCE) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var activeFilters by remember { mutableStateOf(ActiveFilters()) }
-    var selectedCuisine by remember { mutableStateOf<String?>(null) }
+    var selectedCuisine by rememberSaveable { mutableStateOf<String?>(null) }
+    var viewMode by rememberSaveable { mutableStateOf(FeedViewMode.LIST) }
 
     val listState = rememberLazyListState()
 
-    val sortedMenus = remember(menus, sortOption, selectedCuisine, activeFilters.onlyOpen, merchantMap, userLocation) {
+    val sortedMenus = remember(menus, sortOption, selectedCuisine, activeFilters.onlyOpen, activeFilters.offerType, merchantMap, userLocation) {
         var result = menus
+        activeFilters.offerType?.let { type ->
+            result = result.filter { menu ->
+                if (type == OfferTypes.OFERTA_PERMANENTE) {
+                    menu.isPermanent || menu.offerType == OfferTypes.OFERTA_PERMANENTE
+                } else {
+                    menu.offerType == type
+                }
+            }
+        }
         if (sortOption == SortOption.PRICE) {
             result = result.sortedBy { it.priceTotal }
         } else if (sortOption == SortOption.DISTANCE && userLocation != null) {
@@ -95,13 +123,18 @@ fun FeedScreen(
         result
     }
 
-    val greeting = remember {
+    val greetingHourBracket = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         when {
-            hour < 12 -> "BUENOS DÍAS"
-            hour < 20 -> "BUENAS TARDES"
-            else -> "BUENAS NOCHES"
+            hour < 12 -> 0 // morning
+            hour < 20 -> 1 // afternoon
+            else -> 2      // evening
         }
+    }
+    val greeting = when (greetingHourBracket) {
+        0 -> stringResource(R.string.feed_good_morning)
+        1 -> stringResource(R.string.feed_good_afternoon)
+        else -> stringResource(R.string.feed_good_evening)
     }
 
     Column(
@@ -127,19 +160,16 @@ fun FeedScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    if (greeting == "BUENAS NOCHES") "¿Dónde cenamos hoy?" else "¿Qué comemos hoy?",
+                    if (greetingHourBracket == 2) stringResource(R.string.feed_dinner_question) else stringResource(R.string.feed_lunch_question),
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground
                 )
             }
-            IconButton(onClick = onNavigateToProfile) {
-                Icon(
-                    Icons.Default.AccountCircle,
-                    contentDescription = "Perfil",
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
+            Image(
+                painter = painterResource(R.drawable.logo_zampa),
+                contentDescription = "Zampa",
+                modifier = Modifier.size(32.dp)
+            )
         }
 
         // ── SECTION HEADER ───────────────────────────────────────────────
@@ -151,13 +181,13 @@ fun FeedScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                if (sortOption == SortOption.PRICE) "Ofertas por precio" else "Ofertas cerca de ti",
+                if (sortOption == SortOption.PRICE) stringResource(R.string.feed_by_price) else stringResource(R.string.feed_nearby),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.weight(1f)
             )
             if (menus.isNotEmpty()) {
                 Text(
-                    "${sortedMenus.size} encontrados",
+                    "${sortedMenus.size} ${stringResource(R.string.feed_found)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -168,32 +198,78 @@ fun FeedScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
                 .padding(bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            SortPill(
-                title = "Distancia",
-                icon = Icons.Default.LocationOn,
-                isSelected = sortOption == SortOption.DISTANCE,
-                onClick = { sortOption = SortOption.DISTANCE }
-            )
-            SortPill(
-                title = "Precio",
-                icon = Icons.Default.AttachMoney,
-                isSelected = sortOption == SortOption.PRICE,
-                onClick = { sortOption = SortOption.PRICE }
-            )
-            Spacer(Modifier.weight(1f))
-            Box {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Sort pills solo tienen sentido en vista lista; el mapa ya muestra
+                // posición/distancia visualmente y no admite "orden".
+                if (viewMode == FeedViewMode.LIST) {
+                    SortPill(
+                        title = stringResource(R.string.feed_distance),
+                        icon = Icons.Default.LocationOn,
+                        isSelected = sortOption == SortOption.DISTANCE,
+                        onClick = { sortOption = SortOption.DISTANCE }
+                    )
+                    SortPill(
+                        title = stringResource(R.string.feed_price),
+                        icon = Icons.Default.AttachMoney,
+                        isSelected = sortOption == SortOption.PRICE,
+                        onClick = { sortOption = SortOption.PRICE }
+                    )
+                }
+            }
+            IconButton(
+                onClick = {
+                    viewMode = if (viewMode == FeedViewMode.LIST) FeedViewMode.MAP else FeedViewMode.LIST
+                },
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(
+                        if (viewMode == FeedViewMode.MAP) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        RoundedCornerShape(10.dp)
+                    )
+                    .onGloballyPositioned { coords ->
+                        val pos = coords.positionInWindow()
+                        tourViewModel?.registerBounds(
+                            TourTarget.MAP_TOGGLE,
+                            TourBounds(Offset(pos.x, pos.y), Size(coords.size.width.toFloat(), coords.size.height.toFloat()))
+                        )
+                    }
+            ) {
+                Icon(
+                    if (viewMode == FeedViewMode.LIST) Icons.Default.Map else Icons.Default.ViewList,
+                    contentDescription = stringResource(
+                        if (viewMode == FeedViewMode.LIST) R.string.feed_view_map else R.string.feed_view_list
+                    ),
+                    tint = if (viewMode == FeedViewMode.MAP) Color.White else MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .padding(end = 20.dp)
+                    .onGloballyPositioned { coords ->
+                        val pos = coords.positionInWindow()
+                        tourViewModel?.registerBounds(
+                            TourTarget.FILTER_BUTTON,
+                            TourBounds(Offset(pos.x, pos.y), Size(coords.size.width.toFloat(), coords.size.height.toFloat()))
+                        )
+                    }
+            ) {
                 IconButton(
                     onClick = { showFilterSheet = true },
                     modifier = Modifier
                         .size(44.dp)
                         .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp))
                 ) {
-                    Icon(Icons.Default.FilterList, contentDescription = "Filtros", tint = MaterialTheme.colorScheme.onSurface)
+                    Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.feed_filters), tint = MaterialTheme.colorScheme.onSurface)
                 }
                 if (activeFilters.isActive) {
                     Badge(
@@ -223,7 +299,7 @@ fun FeedScreen(
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Sin conexión",
+                    stringResource(R.string.feed_no_connection),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -237,7 +313,7 @@ fun FeedScreen(
                 )
                 Spacer(Modifier.height(16.dp))
                 Button(onClick = { viewModel.loadMenus() }) {
-                    Text("Reintentar")
+                    Text(stringResource(R.string.common_retry))
                 }
             }
         } else if (sortedMenus.isEmpty()) {
@@ -254,7 +330,7 @@ fun FeedScreen(
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "No encontramos menús con estos filtros",
+                    stringResource(R.string.feed_no_results),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -264,32 +340,56 @@ fun FeedScreen(
                         activeFilters = ActiveFilters()
                         selectedCuisine = null
                         viewModel.applyFilters(null, null, null, false)
-                    }) { Text("Limpiar filtros") }
+                    }) { Text(stringResource(R.string.feed_clear_filters)) }
                 }
             }
+        } else if (viewMode == FeedViewMode.MAP) {
+            FeedMapView(
+                menus = sortedMenus,
+                merchantMap = merchantMap,
+                userLocation = userLocation,
+                onNavigateToDetail = onNavigateToDetail,
+                onNavigateToMerchant = onNavigateToMerchant,
+                modifier = Modifier.fillMaxSize(),
+            )
         } else {
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
+            androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                isRefreshing = isLoading,
+                onRefresh = { viewModel.loadMenus() },
+                modifier = Modifier.fillMaxSize(),
             ) {
-                items(sortedMenus) { menu ->
-                    MenuCard(
-                        menu = menu,
-                        onNavigateToDetail = onNavigateToDetail,
-                        userLocation = userLocation
-                    )
-                }
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(sortedMenus) { menu ->
+                        MenuCard(
+                            menu = menu,
+                            onNavigateToDetail = onNavigateToDetail,
+                            userLocation = userLocation,
+                            modifier = if (menu == sortedMenus.firstOrNull())
+                                Modifier.onGloballyPositioned { coords ->
+                                    val pos = coords.positionInWindow()
+                                    tourViewModel?.registerBounds(
+                                        TourTarget.FEED_CARD,
+                                        TourBounds(Offset(pos.x, pos.y), Size(coords.size.width.toFloat(), coords.size.height.toFloat()))
+                                    )
+                                }
+                            else Modifier
+                        )
+                    }
 
-                if (viewModel.canLoadMore) {
-                    item {
-                        LaunchedEffect(Unit) { viewModel.loadMore() }
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    if (viewModel.canLoadMore) {
+                        item {
+                            LaunchedEffect(Unit) { viewModel.loadMore() }
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
                         }
                     }
                 }
@@ -301,8 +401,8 @@ fun FeedScreen(
         FilterSheet(
             initialFilters = activeFilters,
             onDismiss = { showFilterSheet = false },
-            onApply = { cuisine, price, distanceKm, favOnly, openOnly ->
-                activeFilters = ActiveFilters(cuisine, price, distanceKm, favOnly, openOnly)
+            onApply = { cuisine, price, distanceKm, favOnly, openOnly, offerType ->
+                activeFilters = ActiveFilters(cuisine, price, distanceKm, favOnly, openOnly, offerType)
                 selectedCuisine = cuisine
                 viewModel.applyFilters(cuisine, price, distanceKm, favOnly)
                 showFilterSheet = false
@@ -351,12 +451,14 @@ fun SortPill(
 
 // MARK: - Menu Card
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MenuCard(
     menu: Menu,
     onNavigateToDetail: (String) -> Unit,
     userLocation: android.location.Location? = null,
-    onMerchantLoaded: (String, Merchant) -> Unit = { _, _ -> }
+    onMerchantLoaded: (String, Merchant) -> Unit = { _, _ -> },
+    modifier: Modifier = Modifier
 ) {
     var merchant by remember { mutableStateOf<Merchant?>(null) }
 
@@ -383,12 +485,27 @@ fun MenuCard(
 
     data class ScheduleInfo(val isOpen: Boolean, val label: String)
 
-    val scheduleInfo = remember(merchant) {
+    val strNoSchedule = stringResource(R.string.feed_no_schedule)
+    val strOpenCloses = stringResource(R.string.feed_open_closes)
+    val strOpensAt = stringResource(R.string.feed_opens_at)
+    val strOpensTomorrow = stringResource(R.string.feed_opens_tomorrow)
+    val strOpensDay = stringResource(R.string.feed_opens_day)
+    val strClosed = stringResource(R.string.feed_closed)
+    val dayLabels = listOf(
+        stringResource(R.string.feed_day_sun),
+        stringResource(R.string.feed_day_mon),
+        stringResource(R.string.feed_day_tue),
+        stringResource(R.string.feed_day_wed),
+        stringResource(R.string.feed_day_thu),
+        stringResource(R.string.feed_day_fri),
+        stringResource(R.string.feed_day_sat)
+    )
+
+    val scheduleInfo = remember(merchant, strNoSchedule, strOpenCloses, strOpensAt, strOpensTomorrow, strOpensDay, strClosed) {
         val schedule = merchant?.schedule
-        if (schedule.isNullOrEmpty()) return@remember ScheduleInfo(false, "Sin horario")
+        if (schedule.isNullOrEmpty()) return@remember ScheduleInfo(false, strNoSchedule)
         val weekday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
         val keys = listOf("sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday")
-        val dayLabels = listOf("Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb")
         val todayKey = keys[weekday - 1]
         val fmt = SimpleDateFormat("HH:mm", Locale.US)
         val now = fmt.format(Date())
@@ -396,9 +513,9 @@ fun MenuCard(
         val todayEntry = schedule.firstOrNull { it.day == todayKey }
         if (todayEntry != null) {
             if (now >= todayEntry.open && now <= todayEntry.close) {
-                return@remember ScheduleInfo(true, "Abierto · Cierra ${formatHHmm(todayEntry.close)}")
+                return@remember ScheduleInfo(true, "$strOpenCloses ${formatHHmm(todayEntry.close)}")
             } else if (now < todayEntry.open) {
-                return@remember ScheduleInfo(false, "Abre a las ${formatHHmm(todayEntry.open)}")
+                return@remember ScheduleInfo(false, "$strOpensAt ${formatHHmm(todayEntry.open)}")
             }
         }
         // Closed today or past closing — find next opening
@@ -408,18 +525,18 @@ fun MenuCard(
             val entry = schedule.firstOrNull { it.day == nextDay }
             if (entry != null) {
                 return@remember if (offset == 1) {
-                    ScheduleInfo(false, "Abre mañana ${formatHHmm(entry.open)}")
+                    ScheduleInfo(false, "$strOpensTomorrow ${formatHHmm(entry.open)}")
                 } else {
-                    ScheduleInfo(false, "Abre ${dayLabels[nextIdx]} ${formatHHmm(entry.open)}")
+                    ScheduleInfo(false, "$strOpensDay ${dayLabels[nextIdx]} ${formatHHmm(entry.open)}")
                 }
             }
         }
-        ScheduleInfo(false, "Cerrado")
+        ScheduleInfo(false, strClosed)
     }
 
     Card(
         onClick = { onNavigateToDetail(menu.id) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -429,7 +546,7 @@ fun MenuCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(210.dp)
+                    .height(190.dp)
             ) {
                 AsyncImage(
                     model = menu.photoUrls.firstOrNull(),
@@ -438,48 +555,7 @@ fun MenuCard(
                     contentScale = ContentScale.Crop
                 )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)),
-                                startY = 100f
-                            )
-                        )
-                )
-
-                // TOP-LEFT: Destacado badge
-                if (menu.isMerchantPro == true || merchant?.planTier == "pro") {
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(10.dp),
-                        color = Color(0xFFFF6B35),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Star,
-                                contentDescription = null,
-                                modifier = Modifier.size(10.dp),
-                                tint = Color.White
-                            )
-                            Text(
-                                "Destacado",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-
-                // TOP-RIGHT: Offer type + Price badge
+                // TOP-RIGHT: offer type + price chip
                 Column(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -487,116 +563,122 @@ fun MenuCard(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    val offerType = menu.offerType
-                    if (!offerType.isNullOrEmpty()) {
+                    menu.offerType?.takeIf { it.isNotEmpty() }?.let { offerType ->
                         Surface(
-                            color = when (offerType) {
-                                "Menú del día" -> Color(0xFFFF6B35)
-                                "Plato del día" -> Color(0xFF3B82F6)
-                                else -> Color(0xFF9333EA)
-                            },
-                            shape = RoundedCornerShape(6.dp)
+                            // Color unificado para todas las pastillas de tipo de oferta.
+                            color = Color(0xFFE85D3F),
+                            shape = RoundedCornerShape(6.dp),
+                            shadowElevation = 3.dp
                         ) {
                             Text(
-                                offerType,
+                                offerTypeLabel(offerType),
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = Color.White,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }
                     Surface(
                         color = Color.White,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        shadowElevation = 4.dp
                     ) {
                         Text(
                             "${"%.2f".format(menu.priceTotal)}€",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                            color = Color.Black,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color(0xFF1A1A2E),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
                         )
                     }
-                }
-
-                // BOTTOM-LEFT: Distance chip
-                distanceText?.let { dist ->
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(10.dp),
-                        color = Color.Black.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.LocationOn,
-                                contentDescription = null,
-                                modifier = Modifier.size(10.dp),
-                                tint = Color.White
-                            )
-                            Text(dist, style = MaterialTheme.typography.labelSmall, color = Color.White)
-                        }
-                    }
-                }
-
-                // BOTTOM-RIGHT: Open status chip
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(10.dp),
-                    color = if (scheduleInfo.isOpen) Color(0xFF22C55E) else Color(0xFF6B7280).copy(alpha = 0.7f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        scheduleInfo.label,
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
                 }
             }
 
             // ── INFO ─────────────────────────────────────────────────────
             Column(
                 modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            merchant?.name ?: "",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            maxLines = 1
-                        )
-                        merchant?.cuisineTypes?.firstOrNull()?.let { cuisine ->
-                            Text(
-                                cuisine,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(10.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        "Ver oferta →",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(vertical = 10.dp)
-                            .fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        merchant?.name ?: "",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
+
+                // Chip row: status · distance · cuisine (wraps, never hidden)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    InlineChip(
+                        icon = Icons.Default.Schedule,
+                        label = scheduleInfo.label,
+                        foreground = if (scheduleInfo.isOpen) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        background = if (scheduleInfo.isOpen) Color(0xFF22C55E) else MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    distanceText?.let { dist ->
+                        InlineChip(
+                            icon = Icons.Default.LocationOn,
+                            label = dist,
+                            foreground = MaterialTheme.colorScheme.onSurfaceVariant,
+                            background = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    }
+                    merchant?.cuisineTypes?.firstOrNull()?.let { cuisine ->
+                        InlineChip(
+                            icon = Icons.Default.Restaurant,
+                            label = cuisine,
+                            foreground = MaterialTheme.colorScheme.onSurfaceVariant,
+                            background = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    }
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun InlineChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector?,
+    label: String,
+    foreground: Color,
+    background: Color
+) {
+    Surface(
+        color = background,
+        shape = RoundedCornerShape(6.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            if (icon != null) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(11.dp),
+                    tint = foreground
+                )
+            }
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = foreground,
+                maxLines = 1
+            )
         }
     }
 }
@@ -608,9 +690,32 @@ data class ActiveFilters(
     val maxPrice: Double? = null,
     val maxDistanceKm: Double? = null,
     val onlyFavorites: Boolean = false,
-    val onlyOpen: Boolean = false
+    val onlyOpen: Boolean = false,
+    val offerType: String? = null
 ) {
-    val isActive get() = cuisine != null || (maxPrice != null && maxPrice < 100) || maxDistanceKm != null || onlyFavorites || onlyOpen
+    val isActive get() = cuisine != null || (maxPrice != null && maxPrice < 100) || maxDistanceKm != null || onlyFavorites || onlyOpen || offerType != null
+}
+
+/** Valores canónicos de offerType tal como se guardan en Firestore. */
+object OfferTypes {
+    const val MENU_DEL_DIA = "Menú del día"
+    const val PLATO_DEL_DIA = "Plato del día"
+    const val OFERTA_DEL_DIA = "Oferta del día"
+    const val OFERTA_PERMANENTE = "Oferta permanente"
+    val ALL = listOf(MENU_DEL_DIA, PLATO_DEL_DIA, OFERTA_DEL_DIA, OFERTA_PERMANENTE)
+}
+
+/**
+ * Devuelve la etiqueta traducida para un valor canónico de offerType.
+ * Si el valor es desconocido (datos legacy en otro idioma), lo devuelve tal cual.
+ */
+@Composable
+fun offerTypeLabel(value: String): String = when (value) {
+    OfferTypes.MENU_DEL_DIA -> stringResource(R.string.offer_type_menu)
+    OfferTypes.PLATO_DEL_DIA -> stringResource(R.string.offer_type_plato)
+    OfferTypes.OFERTA_DEL_DIA -> stringResource(R.string.offer_type_oferta)
+    OfferTypes.OFERTA_PERMANENTE -> stringResource(R.string.offer_type_permanente)
+    else -> value
 }
 
 // MARK: - Filter Sheet
@@ -620,7 +725,7 @@ data class ActiveFilters(
 fun FilterSheet(
     initialFilters: ActiveFilters,
     onDismiss: () -> Unit,
-    onApply: (String?, Double?, Double?, Boolean, Boolean) -> Unit,
+    onApply: (String?, Double?, Double?, Boolean, Boolean, String?) -> Unit,
     currencyPreference: String? = null,
     formatConverted: (Double, String) -> String? = { _, _ -> null },
 ) {
@@ -629,15 +734,16 @@ fun FilterSheet(
     var maxDistanceKm by remember { mutableStateOf(initialFilters.maxDistanceKm) }
     var onlyFavorites by remember { mutableStateOf(initialFilters.onlyFavorites) }
     var onlyOpen by remember { mutableStateOf(initialFilters.onlyOpen) }
+    var offerType by remember { mutableStateOf(initialFilters.offerType) }
     var cuisines by remember { mutableStateOf<List<String>>(emptyList()) }
 
     val distanceOptions: List<Pair<String, Double?>> = listOf(
-        "Cualquiera" to null,
-        "1 km" to 1.0,
-        "2 km" to 2.0,
-        "5 km" to 5.0,
-        "10 km" to 10.0,
-        "25 km" to 25.0,
+        stringResource(R.string.filter_any) to null,
+        stringResource(R.string.filter_1km) to 1.0,
+        stringResource(R.string.filter_2km) to 2.0,
+        stringResource(R.string.filter_5km) to 5.0,
+        stringResource(R.string.filter_10km) to 10.0,
+        stringResource(R.string.filter_25km) to 25.0,
     )
 
     LaunchedEffect(Unit) {
@@ -655,18 +761,22 @@ fun FilterSheet(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Filtrar", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                IconButton(onClick = onDismiss, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
+                }
+                Text(stringResource(R.string.filter_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 4.dp))
                 TextButton(onClick = {
                     selectedCuisine = null
                     maxPrice = 30f
                     maxDistanceKm = null
                     onlyFavorites = false
                     onlyOpen = false
-                }) { Text("Limpiar") }
+                    offerType = null
+                }) { Text(stringResource(R.string.filter_clear)) }
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Estado", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.filter_status), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -676,35 +786,54 @@ fun FilterSheet(
                 ) {
                     Icon(Icons.Default.AccessTime, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(12.dp))
-                    Text("Solo abiertos ahora", modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.filter_open_now), modifier = Modifier.weight(1f))
                     Switch(checked = onlyOpen, onCheckedChange = { onlyOpen = it })
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Mis favoritos", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Favorite, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text("Solo favoritos", modifier = Modifier.weight(1f))
-                    Switch(checked = onlyFavorites, onCheckedChange = { onlyFavorites = it })
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.filter_max_distance), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    distanceOptions.forEach { (label, value) ->
+                        FilterChip(
+                            selected = maxDistanceKm == value,
+                            onClick = { maxDistanceKm = value },
+                            label = { Text(label, maxLines = 1, softWrap = false) },
+                            colors = com.sozolab.zampa.ui.theme.brandFilterChipColors()
+                        )
+                    }
                 }
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Tipo de cocina", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.filter_offer_type), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                val offerTypeLabels = listOf(
+                    OfferTypes.MENU_DEL_DIA to stringResource(R.string.offer_type_menu),
+                    OfferTypes.PLATO_DEL_DIA to stringResource(R.string.offer_type_plato),
+                    OfferTypes.OFERTA_DEL_DIA to stringResource(R.string.offer_type_oferta),
+                    OfferTypes.OFERTA_PERMANENTE to stringResource(R.string.offer_type_permanente),
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    offerTypeLabels.forEach { (value, label) ->
+                        FilterChip(
+                            selected = offerType == value,
+                            onClick = { offerType = if (offerType == value) null else value },
+                            label = { Text(label, maxLines = 1, softWrap = false) },
+                            colors = com.sozolab.zampa.ui.theme.brandFilterChipColors()
+                        )
+                    }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.filter_cuisine_type), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cuisines.forEach { cuisine ->
                         FilterChip(
                             selected = selectedCuisine == cuisine,
                             onClick = { selectedCuisine = if (selectedCuisine == cuisine) null else cuisine },
-                            label = { Text(cuisine, maxLines = 1, softWrap = false) }
+                            label = { Text(cuisine, maxLines = 1, softWrap = false) },
+                            colors = com.sozolab.zampa.ui.theme.brandFilterChipColors()
                         )
                     }
                 }
@@ -712,9 +841,9 @@ fun FilterSheet(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.Top) {
-                    Text("Precio máximo", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.filter_max_price), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("Hasta ${maxPrice.toInt()} €", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Text("${stringResource(R.string.filter_up_to)} ${maxPrice.toInt()} €", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         val prefCode = currencyPreference ?: "EUR"
                         if (prefCode != "EUR") {
                             val converted = remember(maxPrice.toInt(), prefCode) {
@@ -737,31 +866,18 @@ fun FilterSheet(
                     steps = 18 // 19 posiciones de 5 en 5: 5, 10, 15, ... 100
                 )
                 Row {
-                    Text("5€", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.filter_min_price_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.weight(1f))
-                    Text("100€", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Distancia máxima", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    distanceOptions.forEach { (label, value) ->
-                        FilterChip(
-                            selected = maxDistanceKm == value,
-                            onClick = { maxDistanceKm = value },
-                            label = { Text(label, maxLines = 1, softWrap = false) }
-                        )
-                    }
+                    Text(stringResource(R.string.filter_max_price_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
             Button(
-                onClick = { onApply(selectedCuisine, maxPrice.toDouble(), maxDistanceKm, onlyFavorites, onlyOpen) },
+                onClick = { onApply(selectedCuisine, maxPrice.toDouble(), maxDistanceKm, onlyFavorites, onlyOpen, offerType) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Mostrar resultados")
+                Text(stringResource(R.string.filter_show_results))
             }
             Spacer(Modifier.height(24.dp))
         }
