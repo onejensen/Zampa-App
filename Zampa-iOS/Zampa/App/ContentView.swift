@@ -20,7 +20,7 @@ struct ContentView: View {
                             .scaledToFit()
                             .frame(width: 120, height: 120)
                         Text("Zampa")
-                            .font(.system(size: 36, weight: .bold))
+                            .font(.custom("Sora-Bold", size: 36))
                             .foregroundColor(.white)
                         ProgressView()
                             .tint(.white)

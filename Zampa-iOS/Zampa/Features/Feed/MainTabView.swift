@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var selectedTab: Int = 0
     @State private var deepLinkMenuId: String? = nil
 
@@ -12,22 +13,22 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             FeedView(onNavigateToProfile: { selectedTab = profileTabIndex })
-                .tabItem { Label("Feed", systemImage: "house.fill") }
+                .tabItem { Label(localization.t("tab_feed"), systemImage: "fork.knife") }
                 .tag(0)
 
             FavoritesView()
-                .tabItem { Label("Favoritos", systemImage: "heart.fill") }
+                .tabItem { Label(localization.t("tab_favorites"), systemImage: "heart.fill") }
                 .tag(1)
 
             if appState.currentUser?.role == .comercio {
                 MerchantDashboardView()
-                    .tabItem { Label("Mis Menús", systemImage: "plus.square.fill") }
+                    .tabItem { Label(localization.t("tab_my_menus"), systemImage: "plus.square.fill") }
                     .tag(2)
             }
 
             ProfileView()
                 .tabItem {
-                    Label("Perfil", systemImage: "person.fill")
+                    Label(localization.t("tab_profile"), systemImage: "person.fill")
                 }
                 .tag(profileTabIndex)
         }
