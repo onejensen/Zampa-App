@@ -31,7 +31,6 @@ import dev.chrisbanes.haze.materials.HazeMaterials
 import com.sozolab.zampa.ui.auth.AuthViewModel
 import com.sozolab.zampa.ui.feed.FeedScreen
 import com.sozolab.zampa.ui.merchant.DashboardScreen
-import com.sozolab.zampa.ui.onboarding.AppOnboardingScreen
 import com.sozolab.zampa.data.model.User
 import com.sozolab.zampa.ui.tour.TourBounds
 import com.sozolab.zampa.ui.tour.TourOverlay
@@ -77,21 +76,8 @@ fun MainScreen(
     val needsSetup by mainViewModel.needsSetup.collectAsState()
     val needsLocationPrompt by mainViewModel.needsLocationPrompt.collectAsState()
     val isMerchant = currentUser?.role == User.UserRole.COMERCIO
-    // Flag local: una vez que el usuario termina el onboarding en esta sesión
-    // hacemos swap a las tabs sin esperar a que SharedPreferences se relea.
-    var onboardingFinishedThisSession by remember { mutableStateOf(false) }
     var tourStartedThisSession by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(Tab.FEED) }
-
-    // Decisión síncrona: sólo mostramos onboarding si (1) ya conocemos el uid,
-    // (2) no se acaba de terminar en esta sesión y (3) SharedPreferences no
-    // tiene persistida la marca. Evaluar esto aquí (en lugar de via
-    // LaunchedEffect) evita que el feed parpadee antes de que el efecto se
-    // dispare.
-    val uidForOnboarding = currentUser?.id
-    val showOnboarding = uidForOnboarding != null
-        && !onboardingFinishedThisSession
-        && !prefs.getBoolean("hasSeenOnboarding_$uidForOnboarding", false)
 
     LaunchedEffect(Unit) {
         mainViewModel.checkLocationPermission(context)
@@ -111,33 +97,16 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(currentUser, showOnboarding) {
-        if (currentUser != null && !showOnboarding && !tourStartedThisSession) {
+    LaunchedEffect(currentUser) {
+        if (currentUser != null && !tourStartedThisSession) {
             val uid = currentUser!!.id
             if (!prefs.getBoolean("hasSeenTour_$uid", false)) {
                 tourStartedThisSession = true
-                // Para merchants, cambiamos al tab Dashboard antes del delay para que
-                // DashboardScreen se renderice y registre sus bounds antes de start().
-                if (isMerchant) {
-                    selectedTab = Tab.DASHBOARD
-                }
+                if (isMerchant) selectedTab = Tab.DASHBOARD
                 kotlinx.coroutines.delay(1500)
                 tourViewModel.start(isMerchant = isMerchant)
             }
         }
-    }
-
-    if (showOnboarding) {
-        AppOnboardingScreen(
-            isMerchant = isMerchant,
-            onFinish = {
-                uidForOnboarding?.let {
-                    prefs.edit().putBoolean("hasSeenOnboarding_$it", true).apply()
-                }
-                onboardingFinishedThisSession = true
-            }
-        )
-        return
     }
 
     val tabs = if (isMerchant) listOf(Tab.FEED, Tab.FAVORITES, Tab.DASHBOARD, Tab.PROFILE)
