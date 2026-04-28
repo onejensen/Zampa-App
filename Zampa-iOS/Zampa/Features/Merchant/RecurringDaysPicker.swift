@@ -60,8 +60,7 @@ struct RecurringDaysPicker: View {
                     } label: {
                         Text(label)
                             .font(.custom("Sora-Bold", size: 13))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 38)
+                            .frame(width: 38, height: 38)
                             .foregroundColor(isSelected ? .white : isOccupied ? Color.appTextSecondary.opacity(0.4) : .appTextPrimary)
                             .background(
                                 Circle().fill(
@@ -78,6 +77,7 @@ struct RecurringDaysPicker: View {
                                     lineWidth: 1.5
                                 )
                             )
+                            .frame(maxWidth: .infinity)
                     }
                     .disabled(isOccupied)
                     .buttonStyle(.borderless)
