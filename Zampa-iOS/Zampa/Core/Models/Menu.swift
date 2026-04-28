@@ -178,7 +178,7 @@ struct Menu: Codable, Identifiable, Equatable {
     /// Permanents without recurringDays (legacy) are treated as occupying all 7 days.
     static func occupiedDays(from permanents: [Menu]) -> Set<Int> {
         var occupied = Set<Int>()
-        for menu in permanents {
+        for menu in permanents where menu.isPermanent {
             if let days = menu.recurringDays, !days.isEmpty {
                 days.forEach { occupied.insert($0) }
             } else {
