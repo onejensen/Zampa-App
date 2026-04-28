@@ -1003,8 +1003,18 @@ class FirebaseService {
             currency: data["currency"] as? String ?? "EUR",
             photoUrls: data["photoUrls"] as? [String] ?? [],
             tags: data["tags"] as? [String],
-            createdAt: data["createdAt"] as? String ?? "",
-            updatedAt: data["updatedAt"] as? String ?? "",
+            createdAt: {
+                if let ts = data["createdAt"] as? Timestamp {
+                    return ISO8601DateFormatter().string(from: ts.dateValue())
+                }
+                return data["createdAt"] as? String ?? ""
+            }(),
+            updatedAt: {
+                if let ts = data["updatedAt"] as? Timestamp {
+                    return ISO8601DateFormatter().string(from: ts.dateValue())
+                }
+                return data["updatedAt"] as? String ?? ""
+            }(),
             isActive: data["isActive"] as? Bool ?? true,
             isMerchantPro: data["isMerchantPro"] as? Bool ?? false,
             dietaryInfo: dietaryInfo,

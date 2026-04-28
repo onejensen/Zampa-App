@@ -197,8 +197,16 @@ class FirebaseService @Inject constructor() {
                 currency = d["currency"] as? String ?: "EUR",
                 photoUrls = (d["photoUrls"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                 tags = (d["tags"] as? List<*>)?.filterIsInstance<String>(),
-                createdAt = d["createdAt"] as? String ?: "",
-                updatedAt = d["updatedAt"] as? String ?: "",
+                createdAt = (d["createdAt"] as? com.google.firebase.Timestamp)?.let {
+                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
+                        .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+                        .format(it.toDate())
+                } ?: (d["createdAt"] as? String ?: ""),
+                updatedAt = (d["updatedAt"] as? com.google.firebase.Timestamp)?.let {
+                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
+                        .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+                        .format(it.toDate())
+                } ?: (d["updatedAt"] as? String ?: ""),
                 isActive = d["isActive"] as? Boolean ?: true,
                 isMerchantPro = d["isMerchantPro"] as? Boolean ?: false,
                 dietaryInfo = (d["dietaryInfo"] as? Map<*, *>)
@@ -237,7 +245,11 @@ class FirebaseService @Inject constructor() {
                 currency = d["currency"] as? String ?: "EUR",
                 photoUrls = (d["photoUrls"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                 tags = (d["tags"] as? List<*>)?.filterIsInstance<String>(),
-                createdAt = d["createdAt"] as? String ?: "",
+                createdAt = (d["createdAt"] as? com.google.firebase.Timestamp)?.let {
+                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
+                        .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+                        .format(it.toDate())
+                } ?: (d["createdAt"] as? String ?: ""),
                 isActive = d["isActive"] as? Boolean ?: true,
                 isMerchantPro = d["isMerchantPro"] as? Boolean ?: false,
                 dietaryInfo = (d["dietaryInfo"] as? Map<*, *>)
