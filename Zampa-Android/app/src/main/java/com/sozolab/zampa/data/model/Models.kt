@@ -158,6 +158,8 @@ data class Menu(
     val serviceTime: String = "both",
     /** Oferta permanente (no expira a las 24h) */
     val isPermanent: Boolean = false,
+    /** Días de la semana en que esta oferta permanente es visible (0=lun…6=dom). Null = todos los días (legado). */
+    val recurringDays: List<Int>? = null,
 ) {
     val isToday: Boolean
         get() {
@@ -181,6 +183,31 @@ data class Menu(
             "dinner" -> "Noche"
             else -> "Mediodía y noche"
         }
+
+    /** Returns true if this offer should appear in the feed on the given weekday index (0=Mon…6=Sun). */
+    fun isVisibleOnDay(weekday: Int): Boolean {
+        if (!isPermanent) return true
+        val days = recurringDays ?: return true
+        if (days.isEmpty()) return true
+        return weekday in days
+    }
+
+    companion object {
+        /** Returns the set of weekday indices (0=Mon…6=Sun) already occupied by the given permanent offers. */
+        fun occupiedDays(permanents: List<Menu>): Set<Int> {
+            val occupied = mutableSetOf<Int>()
+            for (menu in permanents) {
+                if (!menu.isPermanent) continue
+                val days = menu.recurringDays
+                if (days == null || days.isEmpty()) {
+                    occupied.addAll(0..6)
+                } else {
+                    occupied.addAll(days)
+                }
+            }
+            return occupied
+        }
+    }
 }
 
 /** Favorito (colección `favorites` en Firestore) */
