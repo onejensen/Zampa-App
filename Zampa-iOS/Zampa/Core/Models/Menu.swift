@@ -87,6 +87,8 @@ struct Menu: Codable, Identifiable, Equatable {
     let serviceTime: String
     /// Oferta permanente (no expira a las 24h)
     let isPermanent: Bool
+    /// Días de la semana en que esta oferta permanente es visible (0=lun…6=dom). Nil = todos los días (legado).
+    let recurringDays: [Int]?
 
     init(
         id: String,
@@ -108,7 +110,8 @@ struct Menu: Codable, Identifiable, Equatable {
         includesDessert: Bool = false,
         includesCoffee: Bool = false,
         serviceTime: String = "both",
-        isPermanent: Bool = false
+        isPermanent: Bool = false,
+        recurringDays: [Int]? = nil
     ) {
         self.id = id
         self.businessId = businessId
@@ -130,6 +133,7 @@ struct Menu: Codable, Identifiable, Equatable {
         self.includesCoffee = includesCoffee
         self.serviceTime = serviceTime
         self.isPermanent = isPermanent
+        self.recurringDays = recurringDays
     }
 
     /// Precio formateado con el símbolo de la moneda del restaurante (ej: "10,50 €", "$10.50", "£9.99")
@@ -160,5 +164,27 @@ struct Menu: Codable, Identifiable, Equatable {
         case "dinner": return "Noche"
         default: return "Mediodía y noche"
         }
+    }
+
+    /// Returns true if this offer should appear in the feed on the given weekday index.
+    /// weekday: 0=Monday…6=Sunday. Non-permanent offers always return true.
+    func isVisibleOnDay(_ weekday: Int) -> Bool {
+        guard isPermanent else { return true }
+        guard let days = recurringDays, !days.isEmpty else { return true }
+        return days.contains(weekday)
+    }
+
+    /// Returns the set of weekday indices (0=Mon…6=Sun) already occupied by the given permanent offers.
+    /// Permanents without recurringDays (legacy) are treated as occupying all 7 days.
+    static func occupiedDays(from permanents: [Menu]) -> Set<Int> {
+        var occupied = Set<Int>()
+        for menu in permanents {
+            if let days = menu.recurringDays, !days.isEmpty {
+                days.forEach { occupied.insert($0) }
+            } else {
+                (0...6).forEach { occupied.insert($0) }
+            }
+        }
+        return occupied
     }
 }

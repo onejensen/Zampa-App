@@ -12,6 +12,7 @@
 		94AAFBF82369B8EFA7D2B4AE /* Sora-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B69A8426DDFDE5292D3D9A60 /* Sora-Medium.ttf */; };
 		4F2B58F7EEE488982F649040 /* Sora-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 711C918F4FBF2ACF97FCA9DE /* Sora-SemiBold.ttf */; };
 		D770884C1A18EFA67BABD489 /* Sora-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A0BDEE2082308D8FAEBD9340 /* Sora-Bold.ttf */; };
+		RD001122334455667788AB00 /* RecurringDaysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RD001122334455667788AAFF /* RecurringDaysTests.swift */; };
 		0BCBBC31746B68B3B26F3763 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14A1CD5E7CA2BF9DDE784A5 /* ContentView.swift */; };
 		0CFA9241E29FF3D66D4B602F /* Date+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 647033203678E13F66B86C41 /* Date+Extensions.swift */; };
 		15F658BABA576C1E059FD5CC /* Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637FC5E990346DFB93825E94 /* Menu.swift */; };
@@ -110,6 +111,7 @@
 		3E5C96C5FAB5A1980D4DE837 /* CreateMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateMenuView.swift; sourceTree = "<group>"; };
 		49419EE8704BA5DBC58401D3 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		4F8647C556DAC3A53211039C /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+		RD001122334455667788AAFF /* RecurringDaysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringDaysTests.swift; sourceTree = "<group>"; };
 		637FC5E990346DFB93825E94 /* Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Menu.swift; sourceTree = "<group>"; };
 		647033203678E13F66B86C41 /* Date+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extensions.swift"; sourceTree = "<group>"; };
 		72E6896DBFEB00D36E430197 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
@@ -315,6 +317,7 @@
 			isa = PBXGroup;
 			children = (
 				4F8647C556DAC3A53211039C /* .gitkeep */,
+				RD001122334455667788AAFF /* RecurringDaysTests.swift */,
 			);
 			path = EatOutTests;
 			sourceTree = "<group>";
@@ -599,6 +602,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				RD001122334455667788AB00 /* RecurringDaysTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -678,6 +682,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -724,6 +729,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -743,6 +749,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -855,6 +862,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
