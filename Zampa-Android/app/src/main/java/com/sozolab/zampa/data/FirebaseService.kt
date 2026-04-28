@@ -210,10 +210,14 @@ class FirebaseService @Inject constructor() {
                 includesCoffee = d["includesCoffee"] as? Boolean ?: false,
                 serviceTime = d["serviceTime"] as? String ?: "both",
                 isPermanent = d["isPermanent"] as? Boolean ?: false,
+                recurringDays = (d["recurringDays"] as? List<*>)?.mapNotNull { (it as? Long)?.toInt() },
             )
         }
         // Filtrar menús expirados (>24h) excepto permanentes
-        val activeMenus = menus.filter { it.isToday }
+        // Today's weekday in 0=Mon…6=Sun convention
+        val calWeekday = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)
+        val todayWeekday = if (calWeekday == java.util.Calendar.SUNDAY) 6 else calWeekday - 2
+        val activeMenus = menus.filter { it.isToday && it.isVisibleOnDay(todayWeekday) }
         return MenuPage(activeMenus, snapshot.documents.lastOrNull())
     }
 
@@ -245,11 +249,17 @@ class FirebaseService @Inject constructor() {
                 includesCoffee = d["includesCoffee"] as? Boolean ?: false,
                 serviceTime = d["serviceTime"] as? String ?: "both",
                 isPermanent = d["isPermanent"] as? Boolean ?: false,
+                recurringDays = (d["recurringDays"] as? List<*>)?.mapNotNull { (it as? Long)?.toInt() },
             )
         }
     }
 
-    suspend fun createMenu(title: String, description: String, price: Double, currency: String = "EUR", photoData: ByteArray, tags: List<String>? = null, dietaryInfo: DietaryInfo = DietaryInfo(), offerType: String? = null, includesDrink: Boolean = false, includesDessert: Boolean = false, includesCoffee: Boolean = false, serviceTime: String = "both", isPermanent: Boolean = false): Menu {
+    suspend fun createMenu(title: String, description: String, price: Double, currency: String = "EUR",
+                           photoData: ByteArray, tags: List<String>? = null, dietaryInfo: DietaryInfo = DietaryInfo(),
+                           offerType: String? = null, includesDrink: Boolean = false,
+                           includesDessert: Boolean = false, includesCoffee: Boolean = false,
+                           serviceTime: String = "both", isPermanent: Boolean = false,
+                           recurringDays: List<Int>? = null): Menu {
         val uid = currentUid ?: throw Exception("No autenticado")
 
         // SECURITY: derivar isMerchantPro del documento del comercio en el servidor.
@@ -293,13 +303,17 @@ class FirebaseService @Inject constructor() {
             "serviceTime" to serviceTime, "isPermanent" to isPermanent
         )
         offerType?.let { menuData["offerType"] = it }
+        if (isPermanent && recurringDays != null && recurringDays.isNotEmpty()) {
+            menuData["recurringDays"] = recurringDays
+        }
         db.collection("dailyOffers").document(id).set(menuData).await()
 
         return Menu(id = id, businessId = uid, title = title, description = description,
             priceTotal = price, currency = currency, photoUrls = listOf(photoUrl), tags = tags,
             createdAt = createdAtStr, isActive = true, isMerchantPro = isPro, dietaryInfo = dietaryInfo,
             offerType = offerType, includesDrink = includesDrink, includesDessert = includesDessert, includesCoffee = includesCoffee,
-            serviceTime = serviceTime, isPermanent = isPermanent)
+            serviceTime = serviceTime, isPermanent = isPermanent,
+            recurringDays = if (isPermanent) recurringDays else null)
     }
 
     suspend fun updateMenu(menuId: String, data: Map<String, Any>) {
