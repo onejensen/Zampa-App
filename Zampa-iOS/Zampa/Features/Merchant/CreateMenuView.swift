@@ -74,6 +74,14 @@ struct CreateMenuView: View {
                         serviceTime: $viewModel.serviceTime
                     )
 
+                    // ── RECURRING DAYS (permanent offers only) ──────────
+                    if viewModel.offerType == OfferTypes.ofertaPermanente {
+                        RecurringDaysPicker(
+                            occupiedDays: viewModel.occupiedDays,
+                            selectedDays: $viewModel.recurringDays
+                        )
+                    }
+
                     // ── TITLE FIELD ─────────────────────────────────────
                     CustomTextField(title: localization.t("create_menu_menu_title"), text: $viewModel.title, icon: "text.alignleft")
 
@@ -157,6 +165,7 @@ struct CreateMenuView: View {
             }
             .navigationTitle(localization.t("create_menu_title"))
             .navigationBarTitleDisplayMode(.inline)
+            .task { await viewModel.loadOccupiedDays() }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(localization.t("common_cancel")) { dismiss() }
@@ -202,6 +211,8 @@ class CreateMenuViewModel: ObservableObject {
     @Published var includesDessert: Bool = false
     @Published var includesCoffee: Bool = false
     @Published var serviceTime: String = "both"
+    @Published var recurringDays: Set<Int> = []
+    @Published var occupiedDays: Set<Int> = []
 
     @Published var availableTags: [String] = []
 
@@ -218,7 +229,11 @@ class CreateMenuViewModel: ObservableObject {
     }
 
     var isValid: Bool {
-        !title.isEmpty && price > 0 && selectedImage != nil
+        guard !title.isEmpty && price > 0 && selectedImage != nil else { return false }
+        if offerType == OfferTypes.ofertaPermanente {
+            return !recurringDays.isEmpty
+        }
+        return true
     }
 
     init() {
@@ -227,6 +242,14 @@ class CreateMenuViewModel: ObservableObject {
                 self.availableTags = types.map { $0.name }
             }
         }
+    }
+
+    @MainActor
+    func loadOccupiedDays() async {
+        guard let uid = FirebaseService.shared.currentFirebaseUser?.uid else { return }
+        let all = (try? await FirebaseService.shared.getMenusByMerchant(merchantId: uid)) ?? []
+        let activePermanents = all.filter { $0.isPermanent && $0.isActive }
+        self.occupiedDays = Menu.occupiedDays(from: activePermanents)
     }
 
     @MainActor
@@ -256,7 +279,8 @@ class CreateMenuViewModel: ObservableObject {
                 includesDessert: includesDessert,
                 includesCoffee: includesCoffee,
                 serviceTime: serviceTime,
-                isPermanent: offerType == OfferTypes.ofertaPermanente
+                isPermanent: offerType == OfferTypes.ofertaPermanente,
+                recurringDays: offerType == OfferTypes.ofertaPermanente ? Array(recurringDays) : nil
             )
 
             isSuccess = true
