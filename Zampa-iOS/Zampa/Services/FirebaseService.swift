@@ -414,7 +414,10 @@ class FirebaseService {
         let snapshot = try await query.getDocuments()
         let menus = snapshot.documents.compactMap { parseMenu(doc: $0) }
         // Filtrar menús expirados (>24h) excepto permanentes
-        let activeMenus = menus.filter { $0.isToday }
+        // Today's weekday in 0=Mon…6=Sun convention
+        let calWeekday = Calendar.current.component(.weekday, from: Date())
+        let todayWeekday = calWeekday == 1 ? 6 : calWeekday - 2
+        let activeMenus = menus.filter { $0.isToday && $0.isVisibleOnDay(todayWeekday) }
         return (activeMenus, snapshot.documents.last)
     }
     
@@ -446,7 +449,15 @@ class FirebaseService {
         let isActive = data["isActive"] as? Bool ?? true
         let isMerchantPro = data["isMerchantPro"] as? Bool ?? false
         let dietaryInfo = DietaryInfo.from(data["dietaryInfo"] as? [String: Any] ?? [:])
-        return Menu(id: id, businessId: businessId, date: date, title: title, description: description, priceTotal: priceTotal, currency: currency, photoUrls: photoUrls, tags: tags, createdAt: createdAt, updatedAt: updatedAt, isActive: isActive, isMerchantPro: isMerchantPro, dietaryInfo: dietaryInfo, offerType: data["offerType"] as? String, includesDrink: data["includesDrink"] as? Bool ?? false, includesDessert: data["includesDessert"] as? Bool ?? false, includesCoffee: data["includesCoffee"] as? Bool ?? false, serviceTime: data["serviceTime"] as? String ?? "both", isPermanent: data["isPermanent"] as? Bool ?? false)
+        let recurringDays: [Int]? = {
+            guard let arr = data["recurringDays"] as? [Any] else { return nil }
+            return arr.compactMap {
+                if let n = $0 as? Int { return n }
+                if let n = $0 as? Int64 { return Int(n) }
+                return nil
+            }
+        }()
+        return Menu(id: id, businessId: businessId, date: date, title: title, description: description, priceTotal: priceTotal, currency: currency, photoUrls: photoUrls, tags: tags, createdAt: createdAt, updatedAt: updatedAt, isActive: isActive, isMerchantPro: isMerchantPro, dietaryInfo: dietaryInfo, offerType: data["offerType"] as? String, includesDrink: data["includesDrink"] as? Bool ?? false, includesDessert: data["includesDessert"] as? Bool ?? false, includesCoffee: data["includesCoffee"] as? Bool ?? false, serviceTime: data["serviceTime"] as? String ?? "both", isPermanent: data["isPermanent"] as? Bool ?? false, recurringDays: recurringDays)
     }
     
     /// Obtiene ofertas de un comercio específico
@@ -460,7 +471,7 @@ class FirebaseService {
     }
     
     /// Crea una nueva oferta diaria
-    func createMenu(title: String, description: String, price: Double, currency: String = "EUR", photoData: Data, tags: [String]? = nil, dietaryInfo: DietaryInfo = DietaryInfo(), offerType: String? = nil, includesDrink: Bool = false, includesDessert: Bool = false, includesCoffee: Bool = false, serviceTime: String = "both", isPermanent: Bool = false) async throws -> Menu {
+    func createMenu(title: String, description: String, price: Double, currency: String = "EUR", photoData: Data, tags: [String]? = nil, dietaryInfo: DietaryInfo = DietaryInfo(), offerType: String? = nil, includesDrink: Bool = false, includesDessert: Bool = false, includesCoffee: Bool = false, serviceTime: String = "both", isPermanent: Bool = false, recurringDays: [Int]? = nil) async throws -> Menu {
         guard let businessId = currentFirebaseUser?.uid else {
             throw FirebaseServiceError.notAuthenticated
         }
@@ -501,7 +512,7 @@ class FirebaseService {
         let formatter = ISO8601DateFormatter()
         let createdAtStr = formatter.string(from: now)
 
-        let menuData: [String: Any] = [
+        var menuData: [String: Any] = [
             "id": id,
             "businessId": businessId,
             "date": formatter.string(from: now),
@@ -523,6 +534,10 @@ class FirebaseService {
             "serviceTime": serviceTime,
             "isPermanent": isPermanent
         ]
+
+        if isPermanent, let days = recurringDays, !days.isEmpty {
+            menuData["recurringDays"] = days
+        }
 
         try await db.collection("dailyOffers").document(id).setData(menuData)
 
@@ -546,10 +561,11 @@ class FirebaseService {
             includesDessert: includesDessert,
             includesCoffee: includesCoffee,
             serviceTime: serviceTime,
-            isPermanent: isPermanent
+            isPermanent: isPermanent,
+            recurringDays: isPermanent ? recurringDays : nil
         )
     }
-    
+
     /// Actualiza una oferta existente
     func updateMenu(menuId: String, data: [String: Any]) async throws {
         var updatedData = data
@@ -969,6 +985,14 @@ class FirebaseService {
         }
         
         let dietaryInfo = DietaryInfo.from(data["dietaryInfo"] as? [String: Any] ?? [:])
+        let recurringDays: [Int]? = {
+            guard let arr = data["recurringDays"] as? [Any] else { return nil }
+            return arr.compactMap {
+                if let n = $0 as? Int { return n }
+                if let n = $0 as? Int64 { return Int(n) }
+                return nil
+            }
+        }()
         return Menu(
             id: doc.documentID,
             businessId: businessId,
@@ -989,7 +1013,8 @@ class FirebaseService {
             includesDessert: data["includesDessert"] as? Bool ?? false,
             includesCoffee: data["includesCoffee"] as? Bool ?? false,
             serviceTime: data["serviceTime"] as? String ?? "both",
-            isPermanent: data["isPermanent"] as? Bool ?? false
+            isPermanent: data["isPermanent"] as? Bool ?? false,
+            recurringDays: recurringDays
         )
     }
 

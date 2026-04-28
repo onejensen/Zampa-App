@@ -45,7 +45,8 @@ class MenuService {
         includesDessert: Bool = false,
         includesCoffee: Bool = false,
         serviceTime: String = "both",
-        isPermanent: Bool = false
+        isPermanent: Bool = false,
+        recurringDays: [Int]? = nil
     ) async throws -> Menu {
         return try await firebase.createMenu(
             title: title,
@@ -60,7 +61,8 @@ class MenuService {
             includesDessert: includesDessert,
             includesCoffee: includesCoffee,
             serviceTime: serviceTime,
-            isPermanent: isPermanent
+            isPermanent: isPermanent,
+            recurringDays: recurringDays
         )
     }
     
