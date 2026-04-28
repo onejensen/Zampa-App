@@ -575,9 +575,12 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
     var inclDessert by remember { mutableStateOf(menu.includesDessert) }
     var inclCoffee by remember { mutableStateOf(menu.includesCoffee) }
     var serviceTime by remember { mutableStateOf(menu.serviceTime) }
+    val isPermanentMenu = menu.isPermanent
+    val selectedDays = remember { mutableStateOf(menu.recurringDays?.toSet() ?: emptySet()) }
+    val occupiedDays by viewModel.occupiedDays.collectAsState()
 
     val isLoading by viewModel.isLoading.collectAsState()
-    val success by viewModel.createSuccess.collectAsState()
+    val updateSuccess by viewModel.updateSuccess.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
@@ -586,9 +589,9 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
         }
     }
 
-    LaunchedEffect(success) {
-        if (success) {
-            viewModel.resetCreateSuccess()
+    LaunchedEffect(updateSuccess) {
+        if (updateSuccess) {
+            viewModel.resetUpdateSuccess()
             onDismiss()
         }
     }
@@ -597,6 +600,7 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
         availableTags = try {
             com.sozolab.zampa.data.FirebaseService().fetchCuisineTypes().map { it.name }
         } catch (_: Exception) { emptyList() }
+        viewModel.loadOccupiedDays(excludingMenuId = menu.id)
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -653,6 +657,16 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
             )
             Spacer(Modifier.height(12.dp))
 
+            // Recurring days picker — only for permanent menus
+            if (isPermanentMenu) {
+                Spacer(Modifier.height(12.dp))
+                RecurringDaysPicker(
+                    occupiedDays = occupiedDays,
+                    selectedDays = selectedDays.value,
+                    onSelectionChange = { selectedDays.value = it }
+                )
+            }
+
             DietaryInfoEditor(
                 isVegetarian = dietIsVegetarian, onVegetarianChange = { dietIsVegetarian = it },
                 isVegan = dietIsVegan, onVeganChange = { dietIsVegan = it },
@@ -693,9 +707,14 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
             val dietary = DietaryInfo(dietIsVegetarian, dietIsVegan, dietHasMeat, dietHasFish, dietHasGluten, dietHasLactose, dietHasNuts, dietHasEgg)
             Button(
                 onClick = {
-                    viewModel.updateMenu(menu.id, title, description, price, selectedTags.toList(), imageData, dietary, offerType, inclDrink, inclDessert, inclCoffee)
+                    viewModel.updateMenu(
+                        menu.id, title, description, price, selectedTags.toList(), imageData,
+                        dietary, offerType, inclDrink, inclDessert, inclCoffee,
+                        recurringDays = if (isPermanentMenu) selectedDays.value.sorted() else null
+                    )
                 },
-                enabled = !isLoading && title.isNotBlank() && price > 0,
+                enabled = !isLoading && title.isNotBlank() && price > 0
+                    && (!isPermanentMenu || selectedDays.value.isNotEmpty()),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
