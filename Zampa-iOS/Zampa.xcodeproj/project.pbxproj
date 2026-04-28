@@ -18,6 +18,7 @@
 		15F658BABA576C1E059FD5CC /* Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637FC5E990346DFB93825E94 /* Menu.swift */; };
 		262A4ACA53649E84FB5A18A3 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49419EE8704BA5DBC58401D3 /* Config.swift */; };
 		2A611DEA7849BDD926278B37 /* CreateMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5C96C5FAB5A1980D4DE837 /* CreateMenuView.swift */; };
+		EC1A2B3C4D5E6F7A8B9C0D1E /* RecurringDaysPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC1A2B3C4D5E6F7A8B9C0D1F /* RecurringDaysPicker.swift */; };
 		35447D51B08A4EE2CD387049 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA021CD0DDD42274F2C6BA0 /* MainTabView.swift */; };
 		3FBBB79AAFC40DB97590F318 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 001BFCF9DC40AA4ACA640E8B /* KeychainManager.swift */; };
 		4400690604927C596EE6C973 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9452722A88897E68404995E /* AppState.swift */; };
@@ -109,6 +110,7 @@
 		0AD83BCDEFBF76FB8AA4CFF8 /* FirebaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
 		26538C68CC32729958BE2650 /* Zampa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zampa.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3E5C96C5FAB5A1980D4DE837 /* CreateMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateMenuView.swift; sourceTree = "<group>"; };
+		EC1A2B3C4D5E6F7A8B9C0D1F /* RecurringDaysPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringDaysPicker.swift; sourceTree = "<group>"; };
 		49419EE8704BA5DBC58401D3 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		4F8647C556DAC3A53211039C /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 		RD001122334455667788AAFF /* RecurringDaysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringDaysTests.swift; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 				3E5C96C5FAB5A1980D4DE837 /* CreateMenuView.swift */,
 				A0B3548FFBA815F7905DBBA2 /* MerchantDashboardView.swift */,
 				D1A2B3C4D5E6F7A8B9C0D1E4 /* MerchantProfileSetupView.swift */,
+				EC1A2B3C4D5E6F7A8B9C0D1F /* RecurringDaysPicker.swift */,
 				AA1122334455667788990012 /* StatsView.swift */,
 				AA1122334455667788990014 /* SubscriptionView.swift */,
 				DF52E86CE5265A6F404BD3F2 /* EditMenuView.swift */,
@@ -658,6 +661,7 @@
 				BB2233445566778899001103 /* CuisineType.swift in Sources */,
 				BB2233445566778899001105 /* AppNotification.swift in Sources */,
 				6180807EBBD3A99B1013A59A /* EditMenuView.swift in Sources */,
+				EC1A2B3C4D5E6F7A8B9C0D1E /* RecurringDaysPicker.swift in Sources */,
 				DD1122334455667788990011 /* CachedAsyncImage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
