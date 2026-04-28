@@ -14,6 +14,7 @@ struct EditMenuView: View {
                 infoSection
                 tagsSection
                 offerTypeSection
+                recurringDaysSection
                 dietarySection
                 photoSection
                 saveSection
@@ -111,6 +112,20 @@ struct EditMenuView: View {
         }
     }
 
+    @ViewBuilder
+    private var recurringDaysSection: some View {
+        if viewModel.isPermanentMenu {
+            Section(header: Text(LocalizationManager.shared.t("create_menu_recurring_days_title"))) {
+                RecurringDaysPicker(
+                    occupiedDays: viewModel.occupiedDays,
+                    selectedDays: $viewModel.recurringDays
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+        }
+    }
+
     private var dietarySection: some View {
         Section(header: Text("Información dietética")) {
             DietaryInfoEditor(dietaryInfo: $viewModel.dietaryInfo)
@@ -200,6 +215,10 @@ class EditMenuViewModel: ObservableObject {
     @Published var includesDessert: Bool = false
     @Published var includesCoffee: Bool = false
     @Published var serviceTime: String = "both"
+    @Published var recurringDays: Set<Int> = []
+    @Published var occupiedDays: Set<Int> = []
+    private(set) var isPermanentMenu: Bool = false
+    private var editingMenuId: String = ""
 
     @Published var availableTags: [String] = []
     
@@ -210,7 +229,9 @@ class EditMenuViewModel: ObservableObject {
     @Published var errorMessage: String = ""
     
     var isValid: Bool {
-        !title.isEmpty && price > 0
+        guard !title.isEmpty && price > 0 else { return false }
+        if isPermanentMenu { return !recurringDays.isEmpty }
+        return true
     }
     
     func setup(with menu: Menu) {
@@ -224,12 +245,28 @@ class EditMenuViewModel: ObservableObject {
         self.includesDessert = menu.includesDessert
         self.includesCoffee = menu.includesCoffee
         self.serviceTime = menu.serviceTime
-        
+        self.isPermanentMenu = menu.isPermanent
+        self.editingMenuId = menu.id
+        if menu.isPermanent {
+            self.recurringDays = Set(menu.recurringDays ?? [])
+        }
+        if menu.isPermanent {
+            Task { await loadOccupiedDays() }
+        }
+
         Task {
             if let types = try? await FirebaseService.shared.fetchCuisineTypes() {
                 self.availableTags = types.map { $0.name }
             }
         }
+    }
+
+    @MainActor
+    func loadOccupiedDays() async {
+        guard let uid = FirebaseService.shared.currentFirebaseUser?.uid else { return }
+        let all = (try? await FirebaseService.shared.getMenusByMerchant(merchantId: uid)) ?? []
+        let activePermanents = all.filter { $0.isPermanent && $0.isActive && $0.id != editingMenuId }
+        self.occupiedDays = Menu.occupiedDays(from: activePermanents)
     }
     
     func loadImage(from item: PhotosPickerItem) async {
@@ -260,7 +297,11 @@ class EditMenuViewModel: ObservableObject {
                 "includesCoffee": includesCoffee,
                 "serviceTime": serviceTime
             ]
-            
+
+            if isPermanentMenu {
+                updateData["recurringDays"] = Array(recurringDays)
+            }
+
             // If the user selected a new image, we have to upload it
             if let newImage = selectedImage, let imageData = newImage.jpegData(compressionQuality: 0.8) {
                 let imagePath = "dailyOffers/\(UUID().uuidString).jpg"
