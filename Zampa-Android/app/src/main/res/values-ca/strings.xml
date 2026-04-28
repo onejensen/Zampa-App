@@ -248,6 +248,9 @@
     <string name="create_menu_oferta_del_dia">Oferta del dia</string>
     <string name="create_menu_permanent">Oferta permanent</string>
     <string name="create_menu_permanent_hint">«Oferta permanent» requereix Pla Pro — no caduca a les 24h</string>
+    <string name="create_menu_recurring_days_title">Quins dies està disponible?</string>
+    <string name="create_menu_recurring_days_slots_free">%d de 7 dies lliures</string>
+    <string name="create_menu_recurring_days_all_occupied">Tots els dies estan ocupats. Edita o elimina una oferta permanent per alliberar dies.</string>
     <string name="create_menu_schedule">Horari de l\'oferta</string>
     <string name="create_menu_midday">Migdia</string>
     <string name="create_menu_night">Nit</string>

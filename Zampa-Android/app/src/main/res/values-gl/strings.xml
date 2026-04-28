@@ -248,6 +248,9 @@
     <string name="create_menu_oferta_del_dia">Oferta do día</string>
     <string name="create_menu_permanent">Oferta permanente</string>
     <string name="create_menu_permanent_hint">«Oferta permanente» require Plan Pro — non caduca ás 24h</string>
+    <string name="create_menu_recurring_days_title">Que días está dispoñible?</string>
+    <string name="create_menu_recurring_days_slots_free">%d de 7 días libres</string>
+    <string name="create_menu_recurring_days_all_occupied">Todos os días están ocupados. Edita ou elimina unha oferta permanente para liberar días.</string>
     <string name="create_menu_schedule">Horario da oferta</string>
     <string name="create_menu_midday">Mediodía</string>
     <string name="create_menu_night">Noite</string>

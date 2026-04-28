@@ -248,6 +248,9 @@
     <string name="create_menu_oferta_del_dia">Tagesangebot</string>
     <string name="create_menu_permanent">Dauerangebot</string>
     <string name="create_menu_permanent_hint">«Dauerangebot» erfordert den Pro-Plan — läuft nicht nach 24 Stunden ab</string>
+    <string name="create_menu_recurring_days_title">An welchen Tagen ist es verfügbar?</string>
+    <string name="create_menu_recurring_days_slots_free">%d von 7 Tagen frei</string>
+    <string name="create_menu_recurring_days_all_occupied">Alle Tage sind belegt. Bearbeite oder lösche ein Dauerangebot, um Tage freizugeben.</string>
     <string name="create_menu_schedule">Angebotszeiten</string>
     <string name="create_menu_midday">Mittags</string>
     <string name="create_menu_night">Abends</string>

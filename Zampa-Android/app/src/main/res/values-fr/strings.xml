@@ -248,6 +248,9 @@
     <string name="create_menu_oferta_del_dia">Offre du jour</string>
     <string name="create_menu_permanent">Offre permanente</string>
     <string name="create_menu_permanent_hint">« Offre permanente » nécessite le Plan Pro — n\'expire pas au bout de 24h</string>
+    <string name="create_menu_recurring_days_title">Quels jours est-il disponible ?</string>
+    <string name="create_menu_recurring_days_slots_free">%d jours libres sur 7</string>
+    <string name="create_menu_recurring_days_all_occupied">Tous les jours sont occupés. Modifiez ou supprimez une offre permanente pour libérer des jours.</string>
     <string name="create_menu_schedule">Horaire de l\'offre</string>
     <string name="create_menu_midday">Midi</string>
     <string name="create_menu_night">Soir</string>

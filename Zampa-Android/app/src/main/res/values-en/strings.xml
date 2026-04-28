@@ -248,6 +248,9 @@
     <string name="create_menu_oferta_del_dia">Deal of the day</string>
     <string name="create_menu_permanent">Permanent offer</string>
     <string name="create_menu_permanent_hint">\'Permanent offer\' requires Pro Plan — does not expire after 24h</string>
+    <string name="create_menu_recurring_days_title">Which days is it available?</string>
+    <string name="create_menu_recurring_days_slots_free">%d of 7 days free</string>
+    <string name="create_menu_recurring_days_all_occupied">All days are occupied. Edit or delete a permanent offer to free up days.</string>
     <string name="create_menu_schedule">Offer schedule</string>
     <string name="create_menu_midday">Midday</string>
     <string name="create_menu_night">Evening</string>
