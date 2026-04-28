@@ -164,12 +164,6 @@ struct ProfileView: View {
                 .frame(maxWidth: 180)
             }
             .listRowBackground(Color.appSurface)
-            Button {
-                if let uid = appState.currentUser?.id {
-                }
-            } label: {
-            }
-            .listRowBackground(Color.appSurface)
         }
     }
 
