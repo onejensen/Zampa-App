@@ -217,7 +217,7 @@ class EditMenuViewModel: ObservableObject {
     @Published var serviceTime: String = "both"
     @Published var recurringDays: Set<Int> = []
     @Published var occupiedDays: Set<Int> = []
-    private(set) var isPermanentMenu: Bool = false
+    @Published private(set) var isPermanentMenu: Bool = false
     private var editingMenuId: String = ""
 
     @Published var availableTags: [String] = []
@@ -249,8 +249,6 @@ class EditMenuViewModel: ObservableObject {
         self.editingMenuId = menu.id
         if menu.isPermanent {
             self.recurringDays = Set(menu.recurringDays ?? [])
-        }
-        if menu.isPermanent {
             Task { await loadOccupiedDays() }
         }
 
