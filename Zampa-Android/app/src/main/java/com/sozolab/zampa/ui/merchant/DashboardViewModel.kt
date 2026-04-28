@@ -10,6 +10,7 @@ import com.sozolab.zampa.data.model.Menu
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -51,6 +52,12 @@ class DashboardViewModel @Inject constructor(
 
     private val _promoFreeUntilMs = MutableStateFlow<Long?>(null)
     val promoFreeUntilMs: StateFlow<Long?> = _promoFreeUntilMs
+
+    private val _updateSuccess = MutableStateFlow(false)
+    val updateSuccess: StateFlow<Boolean> = _updateSuccess.asStateFlow()
+
+    private val _occupiedDays = MutableStateFlow<Set<Int>>(emptySet())
+    val occupiedDays: StateFlow<Set<Int>> = _occupiedDays.asStateFlow()
 
     init { loadMenus() }
 
@@ -108,11 +115,18 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    fun createMenu(title: String, description: String, price: Double, photoData: ByteArray, tags: List<String>, dietaryInfo: DietaryInfo = DietaryInfo(), offerType: String? = null, includesDrink: Boolean = false, includesDessert: Boolean = false, includesCoffee: Boolean = false, serviceTime: String = "both", isPermanent: Boolean = false) {
+    fun createMenu(title: String, description: String, price: Double, photoData: ByteArray,
+                   tags: List<String>, dietaryInfo: DietaryInfo = DietaryInfo(),
+                   offerType: String? = null, includesDrink: Boolean = false,
+                   includesDessert: Boolean = false, includesCoffee: Boolean = false,
+                   serviceTime: String = "both", isPermanent: Boolean = false,
+                   recurringDays: List<Int>? = null) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                firebaseService.createMenu(title, description, price, "EUR", photoData, tags, dietaryInfo, offerType, includesDrink, includesDessert, includesCoffee, serviceTime, isPermanent)
+                firebaseService.createMenu(title, description, price, "EUR", photoData, tags,
+                    dietaryInfo, offerType, includesDrink, includesDessert, includesCoffee,
+                    serviceTime, isPermanent, recurringDays)
                 _createSuccess.value = true
                 loadMenus()
             } catch (e: Exception) {
@@ -122,30 +136,29 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    fun updateMenu(menuId: String, title: String, description: String, price: Double, tags: List<String>, photoData: ByteArray?, dietaryInfo: DietaryInfo = DietaryInfo(), offerType: String? = null, includesDrink: Boolean = false, includesDessert: Boolean = false, includesCoffee: Boolean = false) {
+    fun updateMenu(menuId: String, title: String, description: String, price: Double,
+                   tags: List<String>, photoData: ByteArray?, dietaryInfo: DietaryInfo = DietaryInfo(),
+                   offerType: String? = null, includesDrink: Boolean = false,
+                   includesDessert: Boolean = false, includesCoffee: Boolean = false,
+                   recurringDays: List<Int>? = null) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 val updateData = mutableMapOf<String, Any>(
-                    "title" to title,
-                    "description" to description,
-                    "priceTotal" to price,
-                    "tags" to tags,
-                    "dietaryInfo" to dietaryInfo.toMap(),
-                    "includesDrink" to includesDrink,
-                    "includesDessert" to includesDessert,
+                    "title" to title, "description" to description, "priceTotal" to price,
+                    "tags" to tags, "dietaryInfo" to dietaryInfo.toMap(),
+                    "includesDrink" to includesDrink, "includesDessert" to includesDessert,
                     "includesCoffee" to includesCoffee
                 )
                 offerType?.let { updateData["offerType"] = it }
-
+                recurringDays?.let { updateData["recurringDays"] = it }
                 if (photoData != null) {
                     val imagePath = "dailyOffers/${java.util.UUID.randomUUID()}.jpg"
                     val photoUrl = firebaseService.uploadImage(photoData, imagePath)
                     updateData["photoUrls"] = listOf(photoUrl)
                 }
-
                 firebaseService.updateMenu(menuId, updateData)
-                _createSuccess.value = true
+                _updateSuccess.value = true
                 loadMenus()
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
@@ -181,5 +194,15 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun resetCreateSuccess() { _createSuccess.value = false }
+    fun resetUpdateSuccess() { _updateSuccess.value = false }
     fun clearError() { _error.value = null }
+
+    fun loadOccupiedDays(excludingMenuId: String? = null) {
+        viewModelScope.launch {
+            val uid = firebaseService.currentUid ?: return@launch
+            val all = try { firebaseService.getMenusByMerchant(uid) } catch (_: Exception) { emptyList() }
+            val activePermanents = all.filter { it.isPermanent && it.isActive && it.id != excludingMenuId }
+            _occupiedDays.value = Menu.occupiedDays(activePermanents)
+        }
+    }
 }

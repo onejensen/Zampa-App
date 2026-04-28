@@ -771,6 +771,8 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
     var inclDessert by remember { mutableStateOf(false) }
     var inclCoffee by remember { mutableStateOf(false) }
     var serviceTime by remember { mutableStateOf("both") }
+    var selectedDays by remember { mutableStateOf(emptySet<Int>()) }
+    val occupiedDays by viewModel.occupiedDays.collectAsState()
 
     val isLoading by viewModel.isLoading.collectAsState()
     val createSuccess by viewModel.createSuccess.collectAsState()
@@ -838,6 +840,7 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
     }
 
     LaunchedEffect(Unit) {
+        viewModel.loadOccupiedDays()
         availableTags = try {
             com.sozolab.zampa.data.FirebaseService().fetchCuisineTypes().map { it.name }
         } catch (_: Exception) { emptyList() }
@@ -956,6 +959,16 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
             )
             Spacer(Modifier.height(12.dp))
 
+            // Recurring days picker — only for permanent offers
+            if (offerType == "Oferta permanente") {
+                Spacer(Modifier.height(12.dp))
+                RecurringDaysPicker(
+                    occupiedDays = occupiedDays,
+                    selectedDays = selectedDays,
+                    onSelectionChange = { selectedDays = it }
+                )
+            }
+
             DietaryInfoEditor(
                 isVegetarian = dietIsVegetarian, onVegetarianChange = { dietIsVegetarian = it },
                 isVegan = dietIsVegan, onVeganChange = { dietIsVegan = it },
@@ -972,8 +985,18 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
             val tags = if (selectedTags.isEmpty()) listOf(mealType) else selectedTags.toList()
             val dietary = DietaryInfo(dietIsVegetarian, dietIsVegan, dietHasMeat, dietHasFish, dietHasGluten, dietHasLactose, dietHasNuts, dietHasEgg)
             Button(
-                onClick = { imageData?.let { viewModel.createMenu(title, description, price, it, tags, dietary, offerType, inclDrink, inclDessert, inclCoffee, serviceTime, offerType == "Oferta permanente") } },
-                enabled = !isLoading && title.isNotBlank() && price > 0 && imageData != null,
+                onClick = {
+                    imageData?.let {
+                        viewModel.createMenu(
+                            title, description, price, it, tags, dietary,
+                            offerType, inclDrink, inclDessert, inclCoffee, serviceTime,
+                            isPermanent = offerType == "Oferta permanente",
+                            recurringDays = if (offerType == "Oferta permanente") selectedDays.sorted() else null
+                        )
+                    }
+                },
+                enabled = !isLoading && title.isNotBlank() && price > 0 && imageData != null
+                    && (offerType != "Oferta permanente" || selectedDays.isNotEmpty()),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
