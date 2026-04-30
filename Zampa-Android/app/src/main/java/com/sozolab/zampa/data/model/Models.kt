@@ -209,6 +209,19 @@ data class Menu(
         return weekday in days
     }
 
+    /**
+     * True if this candidate offer collides with [other] when the candidate would publish on
+     * a day whose weekday index is [todayWeekday] (0=Mon…6=Sun).
+     * Conflict ⇔ they share at least one calendar day AND at least one serviceTime,
+     * where "both" overlaps with "lunch", "dinner" and "both".
+     * Inactive offers never conflict.
+     */
+    fun conflictsWith(other: Menu, todayWeekday: Int): Boolean {
+        if (!other.isActive || this.id == other.id) return false
+        if (serviceTimesOf(this).intersect(serviceTimesOf(other)).isEmpty()) return false
+        return activeDaysOf(this, todayWeekday).intersect(activeDaysOf(other, todayWeekday)).isNotEmpty()
+    }
+
     companion object {
         /** Returns the set of weekday indices (0=Mon…6=Sun) already occupied by the given permanent offers. */
         fun occupiedDays(permanents: List<Menu>): Set<Int> {
@@ -223,6 +236,22 @@ data class Menu(
                 }
             }
             return occupied
+        }
+
+        /** Returns the active offers in [existing] that conflict with [candidate]. */
+        fun findConflicts(candidate: Menu, existing: List<Menu>, todayWeekday: Int): List<Menu> =
+            existing.filter { candidate.conflictsWith(it, todayWeekday) }
+
+        private fun serviceTimesOf(m: Menu): Set<String> = when (m.serviceTime) {
+            "lunch" -> setOf("lunch")
+            "dinner" -> setOf("dinner")
+            else -> setOf("lunch", "dinner")
+        }
+
+        private fun activeDaysOf(m: Menu, todayWeekday: Int): Set<Int> {
+            if (!m.isPermanent) return setOf(todayWeekday)
+            val d = m.recurringDays
+            return if (d.isNullOrEmpty()) (0..6).toSet() else d.toSet()
         }
     }
 }
