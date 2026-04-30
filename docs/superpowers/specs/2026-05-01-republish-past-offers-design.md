@@ -34,7 +34,9 @@ Two optional fields on the existing collection:
 
 Existing parse code (`parseMenu` iOS / `parseMenu` Android) must read both, defaulting to `null`. Documents that lack the fields keep working unchanged.
 
-### `appConfig/republishLimits` (new doc)
+### `config/republishLimits` (new doc)
+
+Lives in the existing `config/` collection (same place as `config/promo`). Existing rules already handle this collection: read for authenticated users, write only via Cloud Functions / admin.
 
 ```jsonc
 {
@@ -42,8 +44,7 @@ Existing parse code (`parseMenu` iOS / `parseMenu` Android) must read both, defa
 }
 ```
 
-- Read publicly (cached client-side ~1h).
-- Write restricted to admin (rules update).
+- Cached client-side ~1h.
 - Default value (if doc missing): `3`.
 
 ## Conflict detection (pure helper)
@@ -121,7 +122,7 @@ republishMenu(
 
 ### Steps
 
-1. Read `appConfig/republishLimits` (cached); fall back to `perDay = 3`.
+1. Read `config/republishLimits` (cached); fall back to `perDay = 3`.
 2. Count today's republishes for the merchant; throw `republishLimitExceeded` if at limit.
 3. Validate subscription / promo (same checks as `createMenu`).
 4. Photo handling:
@@ -152,10 +153,9 @@ When `isActive` flips from `true` → `false`, allow if either:
 - The merchant owns the doc and is the request author (existing rule), OR
 - The update is part of an overwrite batch (no rule change needed — same author writing both docs).
 
-### `appConfig/{document}`
+### `config/{docId}` — no rule changes needed
 
-- `read` — public.
-- `write` — restricted to admin custom claim (matches the pattern used by other admin-only docs in the project; if no admin pattern exists yet, gate to `false` and edit via Firestore Console).
+The existing rule (`read: if isAuth(); write: if false;` from `firebase/firestore.rules:252-255`) already covers `config/republishLimits`. Admins edit it via Firebase Console.
 
 ## Cloud Function — hard limit
 
@@ -163,7 +163,7 @@ Modify `functions/index.js` → `onMenuPublished`:
 
 1. If `data.republishedFrom != null`:
    - Query `dailyOffers where businessId == data.businessId AND republishedFrom != null AND createdAt >= startOfTodayUTC`.
-   - Read `appConfig/republishLimits.perDay` (fallback 3).
+   - Read `config/republishLimits.perDay` (fallback 3).
    - If `count > perDay`:
      - `update` the just-created doc: `{ isActive: false, deactivatedReason: "republish_limit_exceeded", updatedAt: serverTimestamp }`.
      - Insert an in-app `notifications` doc for the merchant explaining the rejection (localized server-side using the merchant's `languagePreference`).
@@ -243,7 +243,7 @@ This is an outline for the future writing-plans pass; it is not a binding plan.
 7. Localization strings (all locales, both platforms).
 8. Firestore rules update + emulator tests.
 9. Cloud Function hard-limit + emulator test.
-10. `appConfig/republishLimits` seeded in Firestore Console (manual GUI step, document in launch checklist).
+10. `config/republishLimits` seeded in Firestore Console (manual GUI step, document in launch checklist).
 
 ## Open questions
 
