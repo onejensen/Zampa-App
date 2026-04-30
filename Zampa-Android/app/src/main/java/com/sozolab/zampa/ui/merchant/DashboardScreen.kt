@@ -35,6 +35,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.sozolab.zampa.data.model.DietaryInfo
 import com.sozolab.zampa.data.model.Menu
+import androidx.compose.foundation.isSystemInDarkTheme
+import com.sozolab.zampa.ui.theme.ChipBackground
+import com.sozolab.zampa.ui.theme.ChipBackgroundDark
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -274,6 +277,15 @@ fun DashboardScreen(
     }
 }
 
+// Chip colors con contraste sobre el contenedor (InputBackground) en ambos modos.
+// Light: chip muy claro sobre gris claro. Dark: chip más claro que el fondo del form.
+@Composable
+private fun zampaChipColors() = FilterChipDefaults.filterChipColors(
+    containerColor = if (isSystemInDarkTheme()) ChipBackgroundDark else ChipBackground,
+    labelColor = MaterialTheme.colorScheme.onSurface,
+    iconColor = MaterialTheme.colorScheme.onSurface,
+)
+
 // MARK: - Offer Details Section (shared by Create & Edit sheets)
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -301,6 +313,7 @@ fun OfferDetailsSection(
                         selected = isSelected,
                         onClick = { if (!locked) onOfferTypeChange(if (isSelected) null else type) },
                         enabled = !locked,
+                        colors = zampaChipColors(),
                         label = {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 if (locked) Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(12.dp))
@@ -325,6 +338,7 @@ fun OfferDetailsSection(
                     FilterChip(
                         selected = serviceTime == value,
                         onClick = { onServiceTimeChange(value) },
+                        colors = zampaChipColors(),
                         label = { Text(label) }
                     )
                 }
@@ -332,9 +346,9 @@ fun OfferDetailsSection(
 
             Text("Incluye", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                FilterChip(selected = includesDrink,   onClick = { onDrinkChange(!includesDrink) },     label = { Text("Bebida") })
-                FilterChip(selected = includesDessert, onClick = { onDessertChange(!includesDessert) }, label = { Text("Postre") })
-                FilterChip(selected = includesCoffee,  onClick = { onCoffeeChange(!includesCoffee) },   label = { Text("Café") })
+                FilterChip(selected = includesDrink,   onClick = { onDrinkChange(!includesDrink) },     colors = zampaChipColors(), label = { Text("Bebida") })
+                FilterChip(selected = includesDessert, onClick = { onDessertChange(!includesDessert) }, colors = zampaChipColors(), label = { Text("Postre") })
+                FilterChip(selected = includesCoffee,  onClick = { onCoffeeChange(!includesCoffee) },   colors = zampaChipColors(), label = { Text("Café") })
             }
         }
     }
@@ -362,8 +376,8 @@ fun DietaryInfoEditor(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Dieta", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(selected = isVegetarian, onClick = { onVegetarianChange(!isVegetarian) }, label = { Text("Vegetariano") })
-                    FilterChip(selected = isVegan, onClick = { onVeganChange(!isVegan) }, label = { Text("Vegano") })
+                    FilterChip(selected = isVegetarian, onClick = { onVegetarianChange(!isVegetarian) }, colors = zampaChipColors(), label = { Text("Vegetariano") })
+                    FilterChip(selected = isVegan, onClick = { onVeganChange(!isVegan) }, colors = zampaChipColors(), label = { Text("Vegano") })
                 }
             }
 
@@ -371,8 +385,8 @@ fun DietaryInfoEditor(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Proteína principal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(selected = hasMeat, onClick = { onMeatChange(!hasMeat) }, label = { Text("Carne") })
-                    FilterChip(selected = hasFish, onClick = { onFishChange(!hasFish) }, label = { Text("Pescado/Marisco") })
+                    FilterChip(selected = hasMeat, onClick = { onMeatChange(!hasMeat) }, colors = zampaChipColors(), label = { Text("Carne") })
+                    FilterChip(selected = hasFish, onClick = { onFishChange(!hasFish) }, colors = zampaChipColors(), label = { Text("Pescado/Marisco") })
                 }
             }
 
@@ -380,10 +394,10 @@ fun DietaryInfoEditor(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Alérgenos presentes", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(selected = hasGluten,  onClick = { onGlutenChange(!hasGluten) },   label = { Text("Gluten") })
-                    FilterChip(selected = hasLactose, onClick = { onLactoseChange(!hasLactose) }, label = { Text("Lácteos") })
-                    FilterChip(selected = hasNuts,    onClick = { onNutsChange(!hasNuts) },       label = { Text("Frutos secos") })
-                    FilterChip(selected = hasEgg,     onClick = { onEggChange(!hasEgg) },         label = { Text("Huevo") })
+                    FilterChip(selected = hasGluten,  onClick = { onGlutenChange(!hasGluten) },   colors = zampaChipColors(), label = { Text("Gluten") })
+                    FilterChip(selected = hasLactose, onClick = { onLactoseChange(!hasLactose) }, colors = zampaChipColors(), label = { Text("Lácteos") })
+                    FilterChip(selected = hasNuts,    onClick = { onNutsChange(!hasNuts) },       colors = zampaChipColors(), label = { Text("Frutos secos") })
+                    FilterChip(selected = hasEgg,     onClick = { onEggChange(!hasEgg) },         colors = zampaChipColors(), label = { Text("Huevo") })
                 }
             }
         }
@@ -641,6 +655,7 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
                         onClick = {
                             if (tag in selectedTags) selectedTags.remove(tag) else selectedTags.add(tag)
                         },
+                        colors = zampaChipColors(),
                         label = { Text(tag, maxLines = 1, softWrap = false) }
                     )
                 }
@@ -907,33 +922,6 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
             }
             Spacer(Modifier.height(12.dp))
 
-            // Meal type selector
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf("Comida", "Cena").forEach { type ->
-                    val isSelected = mealType == type
-                    Surface(
-                        onClick = { mealType = type },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            type,
-                            modifier = Modifier
-                                .padding(12.dp)
-                                .fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-
             OutlinedTextField(
                 value = title, onValueChange = { title = it }, label = { Text("Título") },
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
@@ -962,6 +950,7 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
                         onClick = {
                             if (tag in selectedTags) selectedTags.remove(tag) else selectedTags.add(tag)
                         },
+                        colors = zampaChipColors(),
                         label = { Text(tag, maxLines = 1, softWrap = false) }
                     )
                 }

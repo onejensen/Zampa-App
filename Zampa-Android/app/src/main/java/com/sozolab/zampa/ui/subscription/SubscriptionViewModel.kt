@@ -1,11 +1,24 @@
 package com.sozolab.zampa.ui.subscription
 
+import android.app.Activity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.billingclient.api.AcknowledgePurchaseParams
+import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.BillingClientStateListener
+import com.android.billingclient.api.BillingFlowParams
+import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.PendingPurchasesParams
+import com.android.billingclient.api.ProductDetails
+import com.android.billingclient.api.Purchase
+import com.android.billingclient.api.PurchasesUpdatedListener
+import com.android.billingclient.api.QueryProductDetailsParams
 import com.sozolab.zampa.data.FirebaseService
 import com.sozolab.zampa.data.model.Merchant
 import com.sozolab.zampa.data.model.SubscriptionStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -13,8 +26,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SubscriptionViewModel @Inject constructor(
-    private val firebaseService: FirebaseService
+    @ApplicationContext private val context: Context,
+    private val firebaseService: FirebaseService,
 ) : ViewModel() {
+
+    companion object {
+        const val PRODUCT_ID = "zampa_pro_monthly"
+    }
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -28,7 +46,21 @@ class SubscriptionViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    init { loadStatus() }
+    private val _productDetails = MutableStateFlow<ProductDetails?>(null)
+    val productDetails: StateFlow<ProductDetails?> = _productDetails
+
+    private val _isPurchasing = MutableStateFlow(false)
+    val isPurchasing: StateFlow<Boolean> = _isPurchasing
+
+    private val _purchaseSuccessful = MutableStateFlow(false)
+    val purchaseSuccessful: StateFlow<Boolean> = _purchaseSuccessful
+
+    private var billingClient: BillingClient? = null
+
+    init {
+        loadStatus()
+        connectBilling()
+    }
 
     private fun loadStatus() {
         val uid = firebaseService.currentUid ?: return
@@ -37,18 +69,140 @@ class SubscriptionViewModel @Inject constructor(
             try {
                 _merchant.value = firebaseService.getMerchantProfile(uid)
                 _promoFreeUntilMs.value = firebaseService.getPromoFreeUntilMs()
-            } catch (_: Exception) {
-                // silent
-            } finally {
+            } catch (_: Exception) { /* silent */ } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    // Pagos in-app pendientes de integrar (RevenueCat + Google Play Billing).
-    // El botón de suscribirse dispara `onSubscribeClick` pero de momento no hace nada:
-    // cuando se integre el SDK, aquí se invoca la compra y tras el webhook Firestore
-    // actualizará `subscriptionStatus`/`subscriptionActiveUntil`.
+    /** Conecta con Play Billing y consulta el producto. Sin actividad — sólo lectura. */
+    private fun connectBilling() {
+        val listener = PurchasesUpdatedListener { result, purchases ->
+            when (result.responseCode) {
+                BillingClient.BillingResponseCode.OK -> purchases?.forEach { handlePurchase(it) }
+                BillingClient.BillingResponseCode.USER_CANCELED -> _isPurchasing.value = false
+                else -> {
+                    _error.value = "Error de Play Billing: ${result.debugMessage}"
+                    _isPurchasing.value = false
+                }
+            }
+        }
+
+        val client = BillingClient.newBuilder(context)
+            .setListener(listener)
+            .enablePendingPurchases(
+                PendingPurchasesParams.newBuilder().enableOneTimeProducts().build()
+            )
+            .build()
+
+        client.startConnection(object : BillingClientStateListener {
+            override fun onBillingSetupFinished(result: BillingResult) {
+                if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+                    queryProduct(client)
+                } else {
+                    _error.value = "Play Billing no disponible (${result.debugMessage})."
+                }
+            }
+            override fun onBillingServiceDisconnected() { /* el siguiente queryProductDetails reintentará */ }
+        })
+        billingClient = client
+    }
+
+    private fun queryProduct(client: BillingClient) {
+        val params = QueryProductDetailsParams.newBuilder()
+            .setProductList(listOf(
+                QueryProductDetailsParams.Product.newBuilder()
+                    .setProductId(PRODUCT_ID)
+                    .setProductType(BillingClient.ProductType.SUBS)
+                    .build()
+            )).build()
+
+        client.queryProductDetailsAsync(params) { result, list ->
+            if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+                _productDetails.value = list.firstOrNull()
+                if (list.isEmpty()) {
+                    _error.value = "Producto $PRODUCT_ID no configurado en Play Console."
+                }
+            } else {
+                _error.value = "queryProductDetails falló: ${result.debugMessage}"
+            }
+        }
+    }
+
+    /**
+     * Lanza el sheet de compra. Necesita `Activity` (no se puede lanzar desde ApplicationContext).
+     * Antes de lanzar, garantiza que `businesses/{uid}.appAccountToken` existe — sin eso,
+     * el webhook server-side no podría mapear la compra al merchant correcto.
+     */
+    fun launchPurchase(activity: Activity) {
+        val client = billingClient ?: run {
+            _error.value = "Play Billing no inicializado."
+            return
+        }
+        val product = _productDetails.value ?: run {
+            _error.value = "Producto no cargado."
+            return
+        }
+        _isPurchasing.value = true
+        viewModelScope.launch {
+            try {
+                val token = firebaseService.getOrCreateAppAccountToken()
+                val offerToken = product.subscriptionOfferDetails?.firstOrNull()?.offerToken
+                if (offerToken == null) {
+                    _error.value = "El producto no tiene base plan activo en Play Console."
+                    _isPurchasing.value = false
+                    return@launch
+                }
+
+                val flowParams = BillingFlowParams.newBuilder()
+                    .setProductDetailsParamsList(listOf(
+                        BillingFlowParams.ProductDetailsParams.newBuilder()
+                            .setProductDetails(product)
+                            .setOfferToken(offerToken)
+                            .build()
+                    ))
+                    .setObfuscatedAccountId(token)
+                    .build()
+
+                client.launchBillingFlow(activity, flowParams)
+                // El resultado llega vía PurchasesUpdatedListener (handlePurchase).
+            } catch (e: Exception) {
+                _error.value = "Error iniciando compra: ${e.message}"
+                _isPurchasing.value = false
+            }
+        }
+    }
+
+    private fun handlePurchase(purchase: Purchase) {
+        if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) return
+        // Acknowledge: si no se hace en 3 días, Google reembolsa automáticamente.
+        if (!purchase.isAcknowledged) {
+            val params = AcknowledgePurchaseParams.newBuilder()
+                .setPurchaseToken(purchase.purchaseToken)
+                .build()
+            billingClient?.acknowledgePurchase(params) { result ->
+                if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                    _error.value = "Acknowledge falló: ${result.debugMessage}"
+                }
+            }
+        }
+        _isPurchasing.value = false
+        _purchaseSuccessful.value = true
+        // Refrescar el merchant tras unos segundos para recoger lo que escriba el webhook.
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(3000)
+            firebaseService.currentUid?.let { uid ->
+                _merchant.value = firebaseService.getMerchantProfile(uid)
+            }
+        }
+    }
 
     fun clearError() { _error.value = null }
+    fun clearPurchaseSuccess() { _purchaseSuccessful.value = false }
+
+    override fun onCleared() {
+        billingClient?.endConnection()
+        billingClient = null
+        super.onCleared()
+    }
 }

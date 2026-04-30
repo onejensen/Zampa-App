@@ -58,13 +58,6 @@ struct CreateMenuView: View {
                     }
                     .buttonStyle(.plain)
 
-                    // ── MEAL TYPE PICKER ────────────────────────────────
-                    Picker("Tipo", selection: $mealType) {
-                        Text(localization.t("create_menu_lunch")).tag(MealType.lunch)
-                        Text(localization.t("create_menu_dinner")).tag(MealType.dinner)
-                    }
-                    .pickerStyle(.segmented)
-
                     // ── OFFER TYPE + INCLUDES ─────────────────────────────
                     OfferDetailsSection(
                         offerType: $viewModel.offerType,
@@ -335,7 +328,7 @@ struct OfferDetailsSection: View {
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 9)
                                 .background(RoundedRectangle(cornerRadius: 10).fill(
-                                    selected ? Color.appPrimary : Color.appSurface
+                                    selected ? Color.appPrimary : Color.appChipBackground
                                 ))
                         }
                         .buttonStyle(.borderless)
@@ -360,7 +353,7 @@ struct OfferDetailsSection: View {
                                 .padding(.vertical, 9)
                                 .frame(maxWidth: .infinity)
                                 .background(RoundedRectangle(cornerRadius: 10).fill(
-                                    selected ? Color.appPrimary : Color.appSurface
+                                    selected ? Color.appPrimary : Color.appChipBackground
                                 ))
                         }
                         .buttonStyle(.borderless)
@@ -458,7 +451,7 @@ struct DietaryChip: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 10).fill(isOn ? color : Color.appSurface))
+            .background(RoundedRectangle(cornerRadius: 10).fill(isOn ? color : Color.appChipBackground))
         }
         .buttonStyle(.borderless) // prevents Form rows from swallowing sibling button taps
     }

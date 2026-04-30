@@ -47,7 +47,7 @@ data class ScheduleEntry(
 /**
  * Estado de suscripción de un merchant.
  *  - "trial": dentro del periodo gratuito de 90 días tras registro
- *  - "active": suscripción de pago vigente (webhook RevenueCat)
+ *  - "active": suscripción de pago vigente (Cloud Functions appStoreNotifications/playRTDN)
  *  - "expired": trial o suscripción caducada — no puede publicar
  */
 object SubscriptionStatus {
@@ -79,6 +79,18 @@ data class Merchant(
     val trialEndsAt: Long? = null,
     /** Fin de la suscripción de pago vigente (ms epoch). */
     val subscriptionActiveUntil: Long? = null,
+    /**
+     * Verificación manual del comercio. Falso al registrarse; admin lo cambia desde Firebase Console
+     * tras revisar `pendingVerifications/{id}`. Las ofertas de comercios no verificados se filtran
+     * del feed. Ausente o `true` = verificado (compat con docs legacy).
+     */
+    val isVerified: Boolean? = null,
+    /**
+     * UUID generado por la app antes de la primera compra IAP. Apple lo recibe como
+     * `appAccountToken` (StoreKit 2) y Google como `obfuscatedAccountId` (Play Billing).
+     * El webhook usa este campo para mapear la transacción al merchant correcto.
+     */
+    val appAccountToken: String? = null,
 ) {
     /** Trial no expirado o suscripción vigente. */
     fun canPublish(nowMs: Long = System.currentTimeMillis()): Boolean {
@@ -149,6 +161,11 @@ data class Menu(
     val updatedAt: String = "",
     val isActive: Boolean = true,
     val isMerchantPro: Boolean? = false,
+    /**
+     * Denormalizado de `businesses/{businessId}.isVerified`. Ausente o `true` = visible.
+     * Las ofertas con `false` se filtran del feed hasta que admin verifique el comercio.
+     */
+    val isMerchantVerified: Boolean? = null,
     val dietaryInfo: DietaryInfo = DietaryInfo(),
     val offerType: String? = null,
     val includesDrink: Boolean = false,

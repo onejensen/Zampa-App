@@ -55,6 +55,7 @@ struct FeedView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(height: 36)
+                        .foregroundColor(.appTextPrimary)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -629,14 +630,14 @@ struct MenuCard: View {
                         icon: "clock.fill",
                         label: status.label,
                         foreground: status.isOpen ? .white : .appTextSecondary,
-                        background: status.isOpen ? Color.green : Color.appInputBackground
+                        background: status.isOpen ? Color.green : Color.appChipBackground
                     )
                     let distanceChip = calculateDistance().map { distance in
                         InlineChip(
                             icon: "location.fill",
                             label: distance,
                             foreground: .appTextSecondary,
-                            background: Color.appInputBackground
+                            background: Color.appChipBackground
                         )
                     }
                     let cuisineChip: InlineChip? = (merchant?.cuisineTypes?.first).map { cuisine in
@@ -644,7 +645,7 @@ struct MenuCard: View {
                             icon: "fork.knife",
                             label: cuisine,
                             foreground: .appTextSecondary,
-                            background: Color.appInputBackground
+                            background: Color.appChipBackground
                         )
                     }
                     ViewThatFits(in: .horizontal) {

@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.sozolab.zampa.R
+import com.sozolab.zampa.ui.theme.ChipBackground
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -433,7 +434,7 @@ fun MenuDetailScreen(
                         Surface(
                             onClick = { selectedTag = if (isSelected) null else tag },
                             shape = RoundedCornerShape(22.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else ChipBackground
                         ) {
                             Text(
                                 tag,
@@ -501,7 +502,7 @@ fun MenuDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         includes.forEach { label ->
-                            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                            Surface(shape = RoundedCornerShape(8.dp), color = ChipBackground) {
                                 Text(
                                     label,
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),

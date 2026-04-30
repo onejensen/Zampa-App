@@ -19,6 +19,9 @@ struct ZampaApp: App {
                 .preferredColorScheme(appState.appColorScheme.colorScheme)
                 .onAppear {
                     PushManager.shared.registerForNotifications()
+                    // Listener global de StoreKit 2: procesa renovaciones, restores
+                    // y compras pendientes que se aprueben mientras la app está abierta.
+                    StoreKitManager.shared.startTransactionListener()
                 }
                 .onOpenURL { url in
                     // Custom scheme: tanto el callback de Google Sign-In como

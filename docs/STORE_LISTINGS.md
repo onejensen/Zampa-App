@@ -66,7 +66,7 @@ Disponible en español, catalán, euskera, gallego, inglés, alemán, francés e
 PRIVACIDAD
 Zampa solo recopila los datos estrictamente necesarios para el servicio. Los comercios controlan sus datos y los clientes pueden eliminar su cuenta en cualquier momento desde la app.
 
-GRATIS PARA COMENSALES · Los restaurantes tienen un periodo de prueba de 90 días y después una suscripción mensual de 14,99 €.
+GRATIS PARA COMENSALES · Los restaurantes tienen un periodo de prueba de 90 días y después una suscripción mensual de 24,99 €.
 
 Más info: https://www.getzampa.com
 Contacto: soporte@getzampa.com
@@ -125,7 +125,7 @@ FOR RESTAURANTS
 AVAILABLE IN
 Spanish, Catalan, Basque, Galician, English, German, French, Italian.
 
-FREE FOR DINERS. Restaurants: 90-day free trial then €14.99/month.
+FREE FOR DINERS. Restaurants: 90-day free trial then €24.99/month.
 
 More: https://www.getzampa.com
 Contact: soporte@getzampa.com

@@ -335,6 +335,7 @@ async function main() {
         updatedAt: isoNow,
         isActive: true,
         isMerchantPro: bot.planTier === "pro",
+        isMerchantVerified: true,
         dietaryInfo: fullDietary(tpl.diet),
         offerType,
         includesDrink: offerType === "Menu del dia",

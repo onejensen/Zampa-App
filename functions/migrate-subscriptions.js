@@ -3,7 +3,7 @@
  * Backfill de campos de suscripción en `businesses/{id}`.
  *
  * Cambios en el modelo (2026-04-20): todos los merchants ahora tienen suscripción
- * de pago (14,99 €/mes) con 90 días de prueba desde `createdAt`.
+ * de pago (24,99 €/mes) con 90 días de prueba desde `createdAt`.
  *
  * Idempotente: solo escribe los campos que falten.
  *

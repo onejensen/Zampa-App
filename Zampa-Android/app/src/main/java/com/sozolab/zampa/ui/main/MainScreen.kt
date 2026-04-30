@@ -132,6 +132,7 @@ fun MainScreen(
                     onNavigateToDetail = onNavigateToDetail,
                     onNavigateToProfile = { selectedTab = Tab.PROFILE },
                     onNavigateToLocation = onNavigateToLocation,
+                    onNavigateToMerchant = onNavigateToMerchant,
                     modifier = Modifier.padding(paddingValues)
                 )
             }

@@ -72,6 +72,7 @@ struct MerchantProfileView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: 120, height: 120)
+                            .foregroundColor(.white)
                             .opacity(0.35)
                     )
             }

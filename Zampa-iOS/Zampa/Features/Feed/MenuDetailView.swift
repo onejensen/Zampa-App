@@ -205,7 +205,7 @@ struct MenuDetailView: View {
                                                 .padding(.horizontal, 18).padding(.vertical, 9)
                                                 .background(
                                                     RoundedRectangle(cornerRadius: 22)
-                                                        .fill(selectedTag == tag ? Color.appPrimary : Color.appInputBackground)
+                                                        .fill(selectedTag == tag ? Color.appPrimary : Color.appChipBackground)
                                                 )
                                         }
                                     }
@@ -354,7 +354,7 @@ struct MenuDetailView: View {
                         Spacer(minLength: 32)
                     }
                 }
-                .background(Color.appBackground.ignoresSafeArea())
+                .background(Color.appSurface.ignoresSafeArea())
                 .navigationTitle(merchant?.name ?? menu.title)
                 .navigationBarTitleDisplayMode(.inline)
                 .navigationBarBackButtonHidden(false)

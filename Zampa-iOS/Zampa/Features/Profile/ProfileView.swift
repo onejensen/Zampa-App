@@ -21,6 +21,7 @@ struct ProfileView: View {
     @State private var activeSheet: ProfileSheet?
     @State private var pendingPickerAction: PickerAction?
     @State private var showingSourceDialog = false
+    @State private var showingLogoutConfirm = false
     @State private var editNameText = ""
     @State private var isSavingName = false
     @State private var isUploadingPhoto = false
@@ -228,7 +229,7 @@ struct ProfileView: View {
                 }
 
                 Section {
-                    Button(action: { appState.logout() }) {
+                    Button(action: { showingLogoutConfirm = true }) {
                         HStack {
                             Spacer()
                             Text(localization.t("profile_logout"))
@@ -238,23 +239,34 @@ struct ProfileView: View {
                         }
                     }
                     .listRowBackground(Color.appSurface)
+                    .confirmationDialog(
+                        localization.t("profile_logout_confirm_title"),
+                        isPresented: $showingLogoutConfirm,
+                        titleVisibility: .visible
+                    ) {
+                        Button(localization.t("profile_logout"), role: .destructive) {
+                            appState.logout()
+                        }
+                        Button(localization.t("common_cancel"), role: .cancel) {}
+                    } message: {
+                        Text(localization.t("profile_logout_confirm_body"))
+                    }
                 }
 
-                // Sólo clientes pueden eliminar su cuenta desde la app en v1.
-                // Comercios deben contactar soporte (no hay botón oculto).
-                if appState.currentUser?.role == .cliente {
-                    Section {
-                        Button(action: { activeSheet = .deleteAccount }) {
-                            HStack {
-                                Spacer()
-                                Text(localization.t("profile_delete_account"))
-                                    .font(.appButton)
-                                    .foregroundColor(.red.opacity(0.7))
-                                Spacer()
-                            }
+                // Borrado de cuenta disponible para cualquier rol (Apple guideline 5.1.1(v) /
+                // Play Account Deletion policy). El sheet avisa al merchant si tiene
+                // suscripción activa de que debe cancelarla aparte en App Store / Play Store.
+                Section {
+                    Button(action: { activeSheet = .deleteAccount }) {
+                        HStack {
+                            Spacer()
+                            Text(localization.t("profile_delete_account"))
+                                .font(.appButton)
+                                .foregroundColor(.red.opacity(0.7))
+                            Spacer()
                         }
-                        .listRowBackground(Color.appSurface)
                     }
+                    .listRowBackground(Color.appSurface)
                 }
             }
             .listStyle(InsetGroupedListStyle())
@@ -527,9 +539,29 @@ private struct DeleteAccountConfirmationSheet: View {
                         Text(localization.t("profile_delete_item_profile"))
                         Text(localization.t("profile_delete_item_favorites"))
                         Text(localization.t("profile_delete_item_history"))
+                        if appState.currentUser?.role == .comercio {
+                            Text(localization.t("profile_delete_item_business"))
+                            Text(localization.t("profile_delete_item_offers"))
+                        }
                     }
                     .font(.appBody)
                     .foregroundColor(.appTextPrimary)
+
+                    // Aviso específico para comercios con suscripción activa: Apple/Google
+                    // requieren que la cancelación de la suscripción la haga el usuario
+                    // en su tienda (no podemos cancelarla desde el servidor).
+                    if appState.currentUser?.role == .comercio,
+                       appState.merchantProfile?.subscriptionStatus == .active {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            Text(localization.t("profile_delete_subscription_warning"))
+                                .font(.appCaption)
+                                .foregroundColor(.appTextPrimary)
+                        }
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.12)))
+                    }
 
                     Divider()
 

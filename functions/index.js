@@ -1,9 +1,44 @@
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onRequest } = require("firebase-functions/v2/https");
+const { onMessagePublished } = require("firebase-functions/v2/pubsub");
+const { defineSecret } = require("firebase-functions/params");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
+
+// ── Suscripciones in-app (StoreKit + Play Billing) ────────────────────────────
+//
+// Apple → la app se inicializa pasando `appAccountToken: UUID(uuidString: firebase.auth.uid)`
+// en `Product.PurchaseOption.appAccountToken(...)`. Apple incluye ese UUID en cada
+// notificación (`signedTransactionInfo.appAccountToken`), permitiéndonos mapear el
+// evento al `businesses/{uid}` correcto.
+//
+// Google → la app pasa `obfuscatedAccountId = firebase.auth.uid` en `BillingFlowParams`.
+// Google lo devuelve como `obfuscatedExternalAccountId` al consultar el purchaseToken.
+//
+// Ambas plataformas requieren validación server-side antes de fiarnos del cliente.
+
+// Apple: secret con la KEY (.p8) del App Store Server API.
+// Generar en App Store Connect → Users and Access → Integrations → App Store Server API.
+// Se sube con: `firebase functions:secrets:set APPLE_ASSAPI_PRIVATE_KEY`
+// (pegar el contenido completo del .p8 incluyendo BEGIN/END).
+const APPLE_ASSAPI_PRIVATE_KEY = defineSecret("APPLE_ASSAPI_PRIVATE_KEY");
+// IDs públicos (no son secretos pero los dejamos como secrets para no hardcodear).
+const APPLE_ASSAPI_KEY_ID = defineSecret("APPLE_ASSAPI_KEY_ID");
+const APPLE_ASSAPI_ISSUER_ID = defineSecret("APPLE_ASSAPI_ISSUER_ID");
+// Bundle ID del app iOS publicado (com.Sozolab.zampa).
+const APPLE_BUNDLE_ID = "com.Sozolab.zampa";
+// Package name del app Android (com.sozolab.zampa).
+const ANDROID_PACKAGE_NAME = "com.sozolab.zampa";
+// SKU del producto (debe coincidir en App Store Connect, Play Console y nuestro código).
+const SUBSCRIPTION_PRODUCT_ID = "zampa_pro_monthly";
+
+// Apple Root CA - G3 embebido en base64 (cert público, ~580 bytes binarios).
+// Fuente original: https://www.apple.com/certificateauthority/AppleRootCA-G3.cer
+// Si Apple lo rota (raro: válido hasta 2039), reemplazar este string.
+const APPLE_ROOT_CA_G3_B64 = "MIICQzCCAcmgAwIBAgIILcX8iNLFS5UwCgYIKoZIzj0EAwMwZzEbMBkGA1UEAwwSQXBwbGUgUm9vdCBDQSAtIEczMSYwJAYDVQQLDB1BcHBsZSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTETMBEGA1UECgwKQXBwbGUgSW5jLjELMAkGA1UEBhMCVVMwHhcNMTQwNDMwMTgxOTA2WhcNMzkwNDMwMTgxOTA2WjBnMRswGQYDVQQDDBJBcHBsZSBSb290IENBIC0gRzMxJjAkBgNVBAsMHUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MRMwEQYDVQQKDApBcHBsZSBJbmMuMQswCQYDVQQGEwJVUzB2MBAGByqGSM49AgEGBSuBBAAiA2IABJjpLz1AcqTtkyJygRMc3RCV8cWjTnHcFBbZDuWmBSp3ZHtfTjjTuxxEtX/1H7YyYl3J6YRbTzBPEVoA/VhYDKX1DyxNB0cTddqXl5dvMVztK517IDvYuVTZXpmkOlEKMaNCMEAwHQYDVR0OBBYEFLuw3qFYM4iapIqZ3r6966/ayySrMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMDA2gAMGUCMQCD6cHEFl4aXTQY2e3v9GwOAEZLuN+yRhHFD/3meoyhpmvOwgPUnPWTxnS4at+qIxUCMG1mihDK1A3UT82NQz60imOlM27jbdoXt2QfyFMm+YhidDkLF1vLUagM6BgD56KyKA==";
 
 /**
  * Expira menús automáticamente cada hora.
@@ -273,6 +308,51 @@ exports.onMenuPublished = onDocumentCreated("dailyOffers/{menuId}", async (event
     }
 });
 
+/**
+ * Cuando un nuevo comercio se registra (`businesses/{id}` se crea con `isVerified: false`),
+ * añadimos una entrada en `pendingVerifications/{id}` para que el admin pueda revisarla
+ * desde Firebase Console y decidir si flippear `isVerified: true` manualmente.
+ *
+ * Si el doc se crea ya verificado (legacy / seed), no hacemos nada.
+ *
+ * Idempotente: si el doc de `pendingVerifications` ya existe, no lo sobreescribe.
+ */
+exports.onBusinessCreated = onDocumentCreated("businesses/{merchantId}", async (event) => {
+    try {
+        const data = event.data?.data();
+        if (!data) {
+            logger.warn("onBusinessCreated: data vacío, saliendo.");
+            return;
+        }
+
+        // Si ya viene verificado o sin el flag, no es un caso de moderación.
+        if (data.isVerified !== false) {
+            logger.info(`onBusinessCreated: ${event.params.merchantId} no requiere verificación (isVerified=${data.isVerified}).`);
+            return;
+        }
+
+        const db = admin.firestore();
+        const ref = db.collection("pendingVerifications").doc(event.params.merchantId);
+
+        // Snapshot mínimo de datos para que el admin pueda decidir desde Firebase Console
+        // sin tener que abrir el doc del businesses por separado.
+        await ref.set({
+            merchantId: event.params.merchantId,
+            name: data.name || null,
+            email: data.email || null,        // si lo guardáramos en el futuro
+            phone: data.phone || null,
+            taxId: data.taxId || null,
+            addressText: data.addressText || null,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            status: "pending",
+        }, { merge: true });
+
+        logger.info(`onBusinessCreated: pendingVerifications/${event.params.merchantId} creado.`);
+    } catch (error) {
+        logger.error("Error en onBusinessCreated:", error);
+    }
+});
+
 // ── Helpers ──
 
 function chunkArray(arr, size) {
@@ -316,10 +396,13 @@ async function removeInvalidTokens(db, invalidTokens) {
  *   3. Borra notifications (userId == uid)
  *   4. Borra deviceTokens (userId == uid)
  *   5. Borra customers/{uid}
- *   6. Borra Storage users/{uid}/
- *   7. Borra users/{uid}
- *   8. Borra el Auth user
- *   9. Escribe purgedAccounts/{uid} con el resultado (auditoría)
+ *   6. Si es merchant: borra dailyOffers (businessId == uid),
+ *      metrics/{uid} (incluyendo subcollection daily/), pendingVerifications/{uid},
+ *      subscriptions (businessId == uid), y businesses/{uid}.
+ *   7. Borra Storage users/{uid}/ y dailyOffers/{uid}-* (fotos de oferta).
+ *   8. Borra users/{uid}
+ *   9. Borra el Auth user
+ *  10. Escribe purgedAccounts/{uid} con el resultado (auditoría)
  *
  * Pasos best-effort: un fallo en un paso NO aborta el resto, se registra en
  * `errors` y el usuario queda marcado como parcialmente procesado. Si el paso
@@ -378,6 +461,36 @@ exports.purgeDeletedAccounts = onSchedule(
             await runStep("customers", () =>
                 db.collection("customers").doc(uid).delete()
             );
+
+            // Datos de comercio: solo procesamos si existe el doc en businesses/.
+            const bizDoc = await db.collection("businesses").doc(uid).get();
+            if (bizDoc.exists) {
+                await runStep("dailyOffers", () => deleteQueryInBatches(
+                    db.collection("dailyOffers").where("businessId", "==", uid)
+                ));
+                await runStep("metricsDaily", async () => {
+                    const dailySnap = await db.collection("metrics").doc(uid)
+                        .collection("daily").get();
+                    if (dailySnap.empty) return;
+                    for (const chunk of chunkArray(dailySnap.docs, 400)) {
+                        const batch = db.batch();
+                        chunk.forEach(d => batch.delete(d.ref));
+                        await batch.commit();
+                    }
+                });
+                await runStep("metricsRoot", () =>
+                    db.collection("metrics").doc(uid).delete()
+                );
+                await runStep("pendingVerifications", () =>
+                    db.collection("pendingVerifications").doc(uid).delete()
+                );
+                await runStep("subscriptions", () => deleteQueryInBatches(
+                    db.collection("subscriptions").where("businessId", "==", uid)
+                ));
+                await runStep("businesses", () =>
+                    db.collection("businesses").doc(uid).delete()
+                );
+            }
             await runStep("storage", async () => {
                 const bucket = admin.storage().bucket();
                 const [files] = await bucket.getFiles({ prefix: `users/${uid}/` });
@@ -501,6 +614,311 @@ exports.refreshExchangeRates = onSchedule(
         } catch (e) {
             logger.error("refreshExchangeRates: escritura a Firestore falló.", e);
             throw e;
+        }
+    }
+);
+
+// ── Helper: resolver appAccountToken (UUID) → merchantId ──────────────────────
+//
+// Firebase UIDs no son UUIDs, pero Apple requiere UUID en `appAccountToken`.
+// Solución: las apps generan un UUID y lo guardan en `businesses/{uid}.appAccountToken`
+// antes de la primera compra. El webhook hace lookup por ese campo para mapear el
+// evento al merchant correcto.
+async function resolveMerchantId(appAccountToken) {
+    if (!appAccountToken) return null;
+    const db = admin.firestore();
+    const q = await db.collection("businesses")
+        .where("appAccountToken", "==", appAccountToken)
+        .limit(1)
+        .get();
+    return q.empty ? null : q.docs[0].id;
+}
+
+// ── Helper: actualizar suscripción + auditar evento ───────────────────────────
+//
+// Idempotente: si `eventId` ya existe en `subscriptions`, salimos sin tocar nada.
+// Devuelve `true` si se procesó, `false` si era duplicado.
+async function applySubscriptionUpdate({
+    eventId, businessId, platform, type, expirationMs, productId, rawEvent, newStatus,
+}) {
+    const db = admin.firestore();
+    const eventRef = db.collection("subscriptions").doc(eventId);
+
+    try {
+        await eventRef.create({
+            eventId,
+            businessId: businessId || null,
+            platform,        // 'apple' | 'google'
+            type,
+            receivedAt: admin.firestore.FieldValue.serverTimestamp(),
+            expirationMs: expirationMs || null,
+            productId: productId || null,
+            rawEvent,
+        });
+    } catch (e) {
+        if (e.code === 6) { // ALREADY_EXISTS
+            logger.info(`Evento ${eventId} ya procesado (idempotencia).`);
+            return false;
+        }
+        throw e;
+    }
+
+    if (!businessId || !newStatus) return true;
+
+    await db.collection("businesses").doc(businessId).set({
+        subscriptionStatus: newStatus,
+        subscriptionActiveUntil: expirationMs || 0,
+    }, { merge: true });
+    logger.info(`businesses/${businessId} → ${newStatus} hasta ${expirationMs}`);
+    return true;
+}
+
+// ── Apple App Store Server Notifications v2 ───────────────────────────────────
+//
+// Apple envía un único body `{ signedPayload: <JWS> }` al endpoint configurado en
+// App Store Connect → App Information → App Store Server Notifications. La firma
+// se verifica con la cadena de certificados de Apple (Apple Root CA - G3).
+//
+// Configuración en App Store Connect:
+//   - Production Server URL: la URL devuelta por `firebase deploy --only functions:appStoreNotifications`
+//   - Sandbox Server URL: la misma (el handler ya distingue por `data.environment`).
+//   - Version 2 Notifications.
+//
+// La app debe pasar `Product.PurchaseOption.appAccountToken(UUID(uuidString: uid))`
+// al iniciar la compra, donde `uid` = firebase.auth.uid del merchant.
+exports.appStoreNotifications = onRequest(
+    {
+        secrets: [APPLE_ASSAPI_PRIVATE_KEY, APPLE_ASSAPI_KEY_ID, APPLE_ASSAPI_ISSUER_ID],
+        region: "us-central1",
+    },
+    async (req, res) => {
+        if (req.method !== "POST") {
+            res.status(405).send("Method Not Allowed");
+            return;
+        }
+
+        const signedPayload = req.body?.signedPayload;
+        if (!signedPayload) {
+            logger.warn("appStoreNotifications: body sin signedPayload.");
+            res.status(400).send("Bad Request");
+            return;
+        }
+
+        try {
+            // Apple SDK oficial: verifica la cadena de certificados y decodifica el JWS.
+            const {
+                SignedDataVerifier, Environment,
+            } = require("@apple/app-store-server-library");
+
+            // Apple Root CA - G3 embebida en base64 (ver constante arriba).
+            const rootCert = Buffer.from(APPLE_ROOT_CA_G3_B64, "base64");
+
+            const verifier = new SignedDataVerifier(
+                [rootCert],
+                /* enableOnlineChecks */ true,
+                Environment.PRODUCTION,  // el SDK detecta sandbox automáticamente
+                APPLE_BUNDLE_ID
+            );
+
+            const notification = await verifier.verifyAndDecodeNotification(signedPayload);
+            const data = notification.data || {};
+            const env = data.environment;        // "Sandbox" | "Production"
+            const notificationType = notification.notificationType;
+            const subtype = notification.subtype;
+
+            // notificationUUID es único por evento → usamos como event id.
+            const eventId = `apple_${notification.notificationUUID}`;
+
+            // Decodificar transactionInfo y renewalInfo.
+            const txInfo = data.signedTransactionInfo
+                ? await verifier.verifyAndDecodeTransaction(data.signedTransactionInfo)
+                : null;
+
+            // appAccountToken es un UUID generado por la app y guardado en
+            // businesses/{uid}.appAccountToken. Lookup inverso por ese campo.
+            const businessId = await resolveMerchantId(txInfo?.appAccountToken);
+            const expirationMs = txInfo?.expiresDate || null;
+            const productId = txInfo?.productId || null;
+
+            // Mapeo de notificationType + subtype → estado.
+            // https://developer.apple.com/documentation/appstoreservernotifications/notificationtype
+            let newStatus = null;
+            switch (notificationType) {
+                case "SUBSCRIBED":
+                case "DID_RENEW":
+                case "DID_CHANGE_RENEWAL_STATUS":
+                case "OFFER_REDEEMED":
+                    newStatus = "active";
+                    break;
+                case "EXPIRED":
+                case "REVOKE":
+                case "GRACE_PERIOD_EXPIRED":
+                    newStatus = "expired";
+                    break;
+                case "DID_FAIL_TO_RENEW":
+                    // En grace period la suscripción sigue siendo válida hasta `expiresDate`.
+                    // Si subtype === "GRACE_PERIOD" → mantenemos active.
+                    // Si no hay grace period configurado → expira ahora.
+                    newStatus = subtype === "GRACE_PERIOD" ? "active" : "expired";
+                    break;
+                case "REFUND":
+                case "REFUND_DECLINED":
+                case "CONSUMPTION_REQUEST":
+                case "PRICE_INCREASE":
+                case "RENEWAL_EXTENDED":
+                case "TEST":
+                    // No afectan al status del merchant (o son informativos).
+                    break;
+                default:
+                    logger.info(`appStoreNotifications: type '${notificationType}' no manejado.`);
+            }
+
+            await applySubscriptionUpdate({
+                eventId,
+                businessId,
+                platform: `apple_${env?.toLowerCase() || "unknown"}`,
+                type: subtype ? `${notificationType}.${subtype}` : notificationType,
+                expirationMs,
+                productId,
+                rawEvent: { notification, transactionInfo: txInfo },
+                newStatus,
+            });
+
+            res.status(200).send({ ok: true });
+        } catch (err) {
+            logger.error("appStoreNotifications: fallo verificando/aplicando.", err);
+            // 500 → Apple reintenta hasta 5 veces. Si el fallo es persistente y queremos
+            // dejar de recibir reintentos para un evento concreto, lo procesamos en logs
+            // manualmente. 200 con error interno también es válido.
+            res.status(500).send("Internal Error");
+        }
+    }
+);
+
+// ── Google Play Real-time Developer Notifications ─────────────────────────────
+//
+// Google envía mensajes a un Pub/Sub topic. Cada mensaje contiene
+// `subscriptionNotification: { purchaseToken, subscriptionId, notificationType }`
+// pero NO incluye expiry ni `obfuscatedExternalAccountId` (= firebase uid).
+// Hay que llamar a `androidpublisher.purchases.subscriptionsv2.get` para obtener
+// el estado real.
+//
+// Configuración (una sola vez):
+//   1. En GCP Console → Pub/Sub, crear topic `play-rtdn` en el proyecto eatout-70b8b.
+//   2. En Play Console → Monetize setup → Real-time developer notifications,
+//      pegar el topic name `projects/eatout-70b8b/topics/play-rtdn`.
+//   3. Linkear la cuenta de servicio de Play (mostrada por Play Console) con permiso
+//      `Pub/Sub Publisher` sobre el topic.
+//   4. Habilitar Google Play Android Developer API en GCP Console.
+//   5. En Play Console → Users and permissions → API access → vincular la cuenta de
+//      servicio que usa Cloud Functions (por defecto la del proyecto, ej.
+//      `eatout-70b8b@appspot.gserviceaccount.com`) con permiso "View financial data".
+//
+// La app debe pasar `BillingFlowParams.setObfuscatedAccountId(firebase.auth.uid)`
+// al lanzar la compra para que `purchases.subscriptionsv2.get` devuelva ese campo.
+exports.playRTDN = onMessagePublished(
+    { topic: "play-rtdn", region: "us-central1" },
+    async (event) => {
+        try {
+            const { google } = require("googleapis");
+
+            const data = event.data?.message?.data;
+            if (!data) {
+                logger.warn("playRTDN: mensaje sin data.");
+                return;
+            }
+
+            // Pub/Sub manda data en base64.
+            const decoded = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
+            const { subscriptionNotification, oneTimeProductNotification, testNotification, packageName } = decoded;
+
+            // Test events del Play Console:
+            if (testNotification) {
+                logger.info("playRTDN: testNotification recibido OK.", testNotification);
+                return;
+            }
+
+            // Sólo procesamos suscripciones (no compras one-time ni voided purchases).
+            if (!subscriptionNotification) {
+                logger.info("playRTDN: notificación no-subscription, ignorada.");
+                return;
+            }
+
+            if (packageName !== ANDROID_PACKAGE_NAME) {
+                logger.warn(`playRTDN: packageName desconocido '${packageName}', ignorando.`);
+                return;
+            }
+
+            const {
+                purchaseToken, subscriptionId, notificationType,
+            } = subscriptionNotification;
+
+            // notificationType (https://developer.android.com/google/play/billing/rtdn-reference#sub):
+            //   1=RECOVERED  2=RENEWED  3=CANCELED  4=PURCHASED  5=ON_HOLD
+            //   6=IN_GRACE_PERIOD  7=RESTARTED  8=PRICE_CHANGE_CONFIRMED  9=DEFERRED
+            //   10=PAUSED  11=PAUSE_SCHEDULE_CHANGED  12=REVOKED  13=EXPIRED
+            //   20=PENDING_PURCHASE_CANCELED
+            const eventId = `google_${purchaseToken}_${notificationType}_${decoded.eventTimeMillis}`;
+
+            // Validar el purchaseToken contra Google Play Developer API.
+            // Application Default Credentials funciona en Cloud Functions sin más
+            // setup siempre que la cuenta de servicio del proyecto esté linkeada en
+            // Play Console.
+            const auth = new google.auth.GoogleAuth({
+                scopes: ["https://www.googleapis.com/auth/androidpublisher"],
+            });
+            const androidpublisher = google.androidpublisher({ version: "v3", auth });
+
+            const subResp = await androidpublisher.purchases.subscriptionsv2.get({
+                packageName,
+                token: purchaseToken,
+            });
+            const sub = subResp.data || {};
+
+            // sub.lineItems[0].expiryTime es ISO string. sub.subscriptionState =
+            // SUBSCRIPTION_STATE_ACTIVE / IN_GRACE_PERIOD / ON_HOLD / PAUSED / EXPIRED / CANCELED / PENDING.
+            const expiryTimeIso = sub.lineItems?.[0]?.expiryTime;
+            const expirationMs = expiryTimeIso ? Date.parse(expiryTimeIso) : null;
+            // obfuscatedExternalAccountId = el mismo UUID guardado en businesses (lo
+            // mantenemos consistente entre ambas plataformas para simplificar el lookup).
+            const businessId = await resolveMerchantId(
+                sub.externalAccountIdentifiers?.obfuscatedExternalAccountId
+            );
+            const subState = sub.subscriptionState || "";
+
+            let newStatus = null;
+            switch (subState) {
+                case "SUBSCRIPTION_STATE_ACTIVE":
+                case "SUBSCRIPTION_STATE_IN_GRACE_PERIOD":
+                case "SUBSCRIPTION_STATE_CANCELED":  // cancelado pero válido hasta expiry
+                    newStatus = "active";
+                    break;
+                case "SUBSCRIPTION_STATE_ON_HOLD":
+                case "SUBSCRIPTION_STATE_PAUSED":
+                case "SUBSCRIPTION_STATE_EXPIRED":
+                    newStatus = "expired";
+                    break;
+                case "SUBSCRIPTION_STATE_PENDING":
+                    // Compra esperando confirmación (e.g. transferencia bancaria).
+                    // No tocamos status hasta que se confirme.
+                    break;
+                default:
+                    logger.info(`playRTDN: subscriptionState desconocido '${subState}'.`);
+            }
+
+            await applySubscriptionUpdate({
+                eventId,
+                businessId,
+                platform: "google",
+                type: `RTDN_${notificationType}_${subState}`,
+                expirationMs,
+                productId: subscriptionId,
+                rawEvent: { notification: decoded, subscription: sub },
+                newStatus,
+            });
+        } catch (err) {
+            logger.error("playRTDN: fallo procesando notificación.", err);
+            throw err;  // Pub/Sub reintenta automáticamente.
         }
     }
 );

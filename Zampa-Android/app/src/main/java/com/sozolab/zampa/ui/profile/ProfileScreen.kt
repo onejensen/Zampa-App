@@ -26,7 +26,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import com.sozolab.zampa.data.ThemeManager
 import com.sozolab.zampa.data.model.User
+import com.sozolab.zampa.ui.theme.LocalThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +55,7 @@ fun ProfileScreen(
     var showPhotoSourceDialog by remember { mutableStateOf(false) }
     var rawBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var showLogoutConfirm by remember { mutableStateOf(false) }
     var deleteTypedConfirmation by remember { mutableStateOf("") }
     var deleteIsSubmitting by remember { mutableStateOf(false) }
     var deleteErrorMessage by remember { mutableStateOf<String?>(null) }
@@ -186,6 +189,32 @@ fun ProfileScreen(
                     Text("• Tu perfil y foto", style = MaterialTheme.typography.bodyMedium)
                     Text("• Tus favoritos", style = MaterialTheme.typography.bodyMedium)
                     Text("• Tu historial", style = MaterialTheme.typography.bodyMedium)
+                    if (isMerchant) {
+                        Text("• Tu perfil de comercio", style = MaterialTheme.typography.bodyMedium)
+                        Text("• Todas tus ofertas publicadas", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(12.dp))
+                        Surface(
+                            color = androidx.compose.ui.graphics.Color(0xFFFF6B35).copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Icon(
+                                    Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = androidx.compose.ui.graphics.Color(0xFFFF6B35),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    "Si tienes una suscripción activa, el borrado NO la cancela. Cancélala manualmente en Play Store → Suscripciones para evitar cobros futuros.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(16.dp))
                     Text(
                         "Para confirmar, escribe ELIMINAR:",
@@ -254,6 +283,32 @@ fun ProfileScreen(
                     },
                     enabled = !deleteIsSubmitting
                 ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showLogoutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            title = { Text("¿Cerrar sesión?") },
+            text = { Text("Tendrás que volver a iniciar sesión la próxima vez para acceder a tu cuenta.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutConfirm = false
+                        onLogout()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Cerrar Sesión")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutConfirm = false }) {
                     Text("Cancelar")
                 }
             }
@@ -430,6 +485,9 @@ fun ProfileScreen(
                 modifier = Modifier.clickable(onClick = onNavigateToCurrencyPreference)
             )
         }
+        item {
+            ThemePickerRow()
+        }
         if (isMerchant) {
             item { SectionHeader("Mi Restaurante") }
             item {
@@ -483,7 +541,7 @@ fun ProfileScreen(
         item {
             Spacer(Modifier.height(16.dp))
             OutlinedButton(
-                onClick = onLogout,
+                onClick = { showLogoutConfirm = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp),
@@ -497,8 +555,8 @@ fun ProfileScreen(
             }
         }
 
-        // Delete account (solo clientes)
-        if (!isMerchant && onRequestAccountDeletion != null) {
+        // Delete account (todos los roles — Apple/Google requieren in-app deletion).
+        if (onRequestAccountDeletion != null) {
             item {
                 Spacer(Modifier.height(24.dp))
                 TextButton(
@@ -550,4 +608,53 @@ private fun ProfileMenuItem(
         },
         modifier = Modifier.clickable(onClick = onClick)
     )
+}
+
+/**
+ * Selector de tema (Sistema / Claro / Oscuro). Espejo del Picker iOS.
+ * Persiste vía ThemeManager (SharedPreferences) y `MainActivity` re-evalúa
+ * `isDark` al recomponer porque escucha el StateFlow.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemePickerRow() {
+    val themeManager = LocalThemeManager.current ?: return
+    val current by themeManager.theme.collectAsState()
+    val options = listOf(
+        ThemeManager.SYSTEM to "Sistema",
+        ThemeManager.LIGHT to "Claro",
+        ThemeManager.DARK to "Oscuro",
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Brightness6,
+                contentDescription = "Tema",
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(16.dp))
+            Text("Tema", style = MaterialTheme.typography.bodyLarge)
+        }
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            options.forEachIndexed { index, (value, label) ->
+                SegmentedButton(
+                    selected = current == value,
+                    onClick = { themeManager.setTheme(value) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = MaterialTheme.colorScheme.primary,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                        activeBorderColor = MaterialTheme.colorScheme.primary,
+                    )
+                ) {
+                    Text(label)
+                }
+            }
+        }
+    }
 }

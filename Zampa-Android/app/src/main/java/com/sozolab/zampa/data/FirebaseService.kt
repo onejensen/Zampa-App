@@ -48,6 +48,7 @@ class FirebaseService @Inject constructor() {
                 "id" to uid, "userId" to uid, "name" to name,
                 "acceptsReservations" to false, "planTier" to "free",
                 "isHighlighted" to false,
+                "isVerified" to false,
                 "subscriptionStatus" to com.sozolab.zampa.data.model.SubscriptionStatus.TRIAL,
                 "trialEndsAt" to trialEndMs,
                 "createdAt" to FieldValue.serverTimestamp()
@@ -112,6 +113,7 @@ class FirebaseService @Inject constructor() {
                     "id" to uid, "userId" to uid, "name" to name,
                     "acceptsReservations" to false, "planTier" to "free",
                     "isHighlighted" to false,
+                    "isVerified" to false,
                     "subscriptionStatus" to com.sozolab.zampa.data.model.SubscriptionStatus.TRIAL,
                     "trialEndsAt" to trialEndMs,
                     "createdAt" to FieldValue.serverTimestamp()
@@ -209,6 +211,7 @@ class FirebaseService @Inject constructor() {
                 } ?: (d["updatedAt"] as? String ?: ""),
                 isActive = d["isActive"] as? Boolean ?: true,
                 isMerchantPro = d["isMerchantPro"] as? Boolean ?: false,
+                isMerchantVerified = d["isMerchantVerified"] as? Boolean,
                 dietaryInfo = (d["dietaryInfo"] as? Map<*, *>)
                     ?.let { DietaryInfo.from(it.mapKeys { k -> k.key.toString() }.mapValues { v -> v.value as Any }) }
                     ?: DietaryInfo(),
@@ -221,11 +224,13 @@ class FirebaseService @Inject constructor() {
                 recurringDays = (d["recurringDays"] as? List<*>)?.mapNotNull { (it as? Long)?.toInt() },
             )
         }
-        // Filtrar menús expirados (>24h) excepto permanentes
-        // Today's weekday in 0=Mon…6=Sun convention
+        // Filtrar menús expirados (>24h) excepto permanentes y comercios no verificados
+        // (`isMerchantVerified == false`). Ausente o `true` = visible (compat con docs legacy).
         val calWeekday = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)
         val todayWeekday = if (calWeekday == java.util.Calendar.SUNDAY) 6 else calWeekday - 2
-        val activeMenus = menus.filter { it.isToday && it.isVisibleOnDay(todayWeekday) }
+        val activeMenus = menus.filter {
+            it.isToday && it.isVisibleOnDay(todayWeekday) && (it.isMerchantVerified ?: true)
+        }
         return MenuPage(activeMenus, snapshot.documents.lastOrNull())
     }
 
@@ -252,6 +257,7 @@ class FirebaseService @Inject constructor() {
                 } ?: (d["createdAt"] as? String ?: ""),
                 isActive = d["isActive"] as? Boolean ?: true,
                 isMerchantPro = d["isMerchantPro"] as? Boolean ?: false,
+                isMerchantVerified = d["isMerchantVerified"] as? Boolean,
                 dietaryInfo = (d["dietaryInfo"] as? Map<*, *>)
                     ?.let { DietaryInfo.from(it.mapKeys { k -> k.key.toString() }.mapValues { v -> v.value as Any }) }
                     ?: DietaryInfo(),
@@ -280,6 +286,8 @@ class FirebaseService @Inject constructor() {
         val businessDoc = db.collection("businesses").document(uid).get().await()
         val planTier = businessDoc.getString("planTier") ?: "free"
         val isPro = planTier == "pro"
+        // Comercio verificado: ausente o true. Sólo `false` explícito oculta del feed.
+        val isVerified = businessDoc.getBoolean("isVerified") ?: true
 
         // Guard client-side: suscripción vigente (trial o pago).
         // Las rules bloquean server-side de todas formas, pero esto evita subir la foto
@@ -310,7 +318,7 @@ class FirebaseService @Inject constructor() {
             "title" to title, "description" to description, "priceTotal" to price, "currency" to currency,
             "photoUrls" to listOf(photoUrl), "tags" to (tags ?: emptyList<String>()),
             "createdAt" to createdAtStr, "updatedAt" to createdAtStr, "isActive" to true,
-            "isMerchantPro" to isPro, "dietaryInfo" to dietaryInfo.toMap(),
+            "isMerchantPro" to isPro, "isMerchantVerified" to isVerified, "dietaryInfo" to dietaryInfo.toMap(),
             "includesDrink" to includesDrink, "includesDessert" to includesDessert, "includesCoffee" to includesCoffee,
             "serviceTime" to serviceTime, "isPermanent" to isPermanent
         )
@@ -322,7 +330,7 @@ class FirebaseService @Inject constructor() {
 
         return Menu(id = id, businessId = uid, title = title, description = description,
             priceTotal = price, currency = currency, photoUrls = listOf(photoUrl), tags = tags,
-            createdAt = createdAtStr, isActive = true, isMerchantPro = isPro, dietaryInfo = dietaryInfo,
+            createdAt = createdAtStr, isActive = true, isMerchantPro = isPro, isMerchantVerified = isVerified, dietaryInfo = dietaryInfo,
             offerType = offerType, includesDrink = includesDrink, includesDessert = includesDessert, includesCoffee = includesCoffee,
             serviceTime = serviceTime, isPermanent = isPermanent,
             recurringDays = if (isPermanent) recurringDays else null)
@@ -458,7 +466,25 @@ class FirebaseService @Inject constructor() {
             taxId = d["taxId"] as? String,
             subscriptionStatus = d["subscriptionStatus"] as? String,
             trialEndsAt = (d["trialEndsAt"] as? Number)?.toLong(),
-            subscriptionActiveUntil = (d["subscriptionActiveUntil"] as? Number)?.toLong())
+            subscriptionActiveUntil = (d["subscriptionActiveUntil"] as? Number)?.toLong(),
+            isVerified = d["isVerified"] as? Boolean,
+            appAccountToken = d["appAccountToken"] as? String)
+    }
+
+    /**
+     * Genera y guarda un UUID en `businesses/{uid}.appAccountToken` si aún no existe.
+     * Idempotente: devuelve el existente si ya hay uno. Necesario antes de la primera
+     * compra IAP — el webhook (playRTDN) lo usa para mapear la transacción al merchant.
+     */
+    suspend fun getOrCreateAppAccountToken(): String {
+        val uid = currentUid ?: throw Exception("No autenticado")
+        val ref = db.collection("businesses").document(uid)
+        val doc = ref.get().await()
+        val existing = doc.getString("appAccountToken")
+        if (!existing.isNullOrBlank()) return existing
+        val token = java.util.UUID.randomUUID().toString()
+        ref.set(mapOf("appAccountToken" to token), com.google.firebase.firestore.SetOptions.merge()).await()
+        return token
     }
 
     /**

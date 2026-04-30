@@ -407,12 +407,14 @@
     <string name="subscription_value_push">Push-notify your followers</string>
     <string name="subscription_value_stats">Impression and click stats</string>
     <string name="subscription_value_profile">Public profile visible to customers</string>
-    <string name="subscription_price_monthly">€14.99/month</string>
+    <string name="subscription_price_monthly">€24.99/month</string>
     <string name="subscription_trial_days_remaining">%1$d trial days remaining</string>
     <string name="subscription_trial_ends_today">Last day of your free trial</string>
     <string name="subscription_expired_title">Trial ended</string>
     <string name="subscription_expired_body">Subscribe to keep publishing offers. Your profile stays visible to customers.</string>
-    <string name="subscription_subscribe_cta">Subscribe for €14.99/month</string>
+    <string name="subscription_subscribe_cta">Subscribe for €24.99/month</string>
+    <string name="subscription_subscribe_cta_now">Subscribe now</string>
+    <string name="subscription_no_commitment">No commitment, cancel anytime</string>
     <string name="subscription_required_error">You need an active subscription to publish. Start or renew your subscription.</string>
     <string name="profile_restart_tour">Replay app tour</string>
 </resources>

@@ -18,7 +18,8 @@ struct ScheduleEntry: Codable, Identifiable {
 
 /// Estado de la suscripción de un merchant.
 /// - `trial`: dentro del periodo gratuito de 90 días tras registro
-/// - `active`: suscripción de pago vigente (RevenueCat webhook)
+/// - `active`: suscripción de pago vigente (actualizado por Cloud Functions tras
+///   Apple ASSN v2 / Google RTDN tras compra/renovación)
 /// - `expired`: trial o suscripción caducada — no puede publicar nuevas ofertas
 enum SubscriptionStatus: String, Codable {
     case trial
@@ -49,8 +50,17 @@ struct Merchant: Codable, Identifiable {
     let subscriptionStatus: SubscriptionStatus?
     /// Fin del periodo de prueba (createdAt + 90 días). ISO8601 en Firestore.
     let trialEndsAt: Date?
-    /// Fin de la suscripción de pago vigente. Se actualiza desde el webhook de RevenueCat.
+    /// Fin de la suscripción de pago vigente. Lo actualizan las Cloud Functions
+    /// `appStoreNotifications` (iOS) y `playRTDN` (Android).
     let subscriptionActiveUntil: Date?
+    /// Verificación manual del comercio. Falso al registrarse; admin lo cambia desde Firebase Console
+    /// tras revisar `pendingVerifications/{id}`. Las ofertas de comercios no verificados no aparecen
+    /// en el feed público. Ausente o `true` = verificado (compat con docs legacy).
+    let isVerified: Bool?
+    /// UUID generado por la app antes de la primera compra IAP. Se envía a Apple
+    /// como `appAccountToken` (StoreKit 2) y a Google como `obfuscatedAccountId`
+    /// (Play Billing). El webhook usa este campo para mapear la transacción al merchant.
+    let appAccountToken: String?
 
     init(
         id: String,
@@ -70,7 +80,9 @@ struct Merchant: Codable, Identifiable {
         taxId: String? = nil,
         subscriptionStatus: SubscriptionStatus? = nil,
         trialEndsAt: Date? = nil,
-        subscriptionActiveUntil: Date? = nil
+        subscriptionActiveUntil: Date? = nil,
+        isVerified: Bool? = nil,
+        appAccountToken: String? = nil
     ) {
         self.id = id
         self.userId = userId
@@ -90,6 +102,8 @@ struct Merchant: Codable, Identifiable {
         self.subscriptionStatus = subscriptionStatus
         self.trialEndsAt = trialEndsAt
         self.subscriptionActiveUntil = subscriptionActiveUntil
+        self.isVerified = isVerified
+        self.appAccountToken = appAccountToken
     }
 
     /// ¿El merchant puede publicar nuevas ofertas ahora?

@@ -77,6 +77,9 @@ struct Menu: Codable, Identifiable, Equatable {
     let updatedAt: String
     let isActive: Bool
     let isMerchantPro: Bool?
+    /// Denormalizado de `businesses/{businessId}.isVerified`. Ausente o `true` = visible.
+    /// Las ofertas con `false` se filtran del feed hasta que admin verifique el comercio.
+    let isMerchantVerified: Bool?
     let dietaryInfo: DietaryInfo
     /// "Menú", "Plato del día" or "Oferta". Nil = not specified.
     let offerType: String?
@@ -104,6 +107,7 @@ struct Menu: Codable, Identifiable, Equatable {
         updatedAt: String = "",
         isActive: Bool = true,
         isMerchantPro: Bool? = false,
+        isMerchantVerified: Bool? = nil,
         dietaryInfo: DietaryInfo = DietaryInfo(),
         offerType: String? = nil,
         includesDrink: Bool = false,
@@ -126,6 +130,7 @@ struct Menu: Codable, Identifiable, Equatable {
         self.updatedAt = updatedAt
         self.isActive = isActive
         self.isMerchantPro = isMerchantPro
+        self.isMerchantVerified = isMerchantVerified
         self.dietaryInfo = dietaryInfo
         self.offerType = offerType
         self.includesDrink = includesDrink

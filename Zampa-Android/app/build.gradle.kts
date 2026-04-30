@@ -121,6 +121,9 @@ dependencies {
     // Coroutines Play Services (await() para Task<T>)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
 
+    // Play Billing (suscripción zampa_pro_monthly)
+    implementation("com.android.billingclient:billing-ktx:7.1.1")
+
     // Haze: backdrop-blur estilo Liquid Glass (RenderEffect en Android 12+)
     implementation("dev.chrisbanes.haze:haze:1.6.4")
     implementation("dev.chrisbanes.haze:haze-materials:1.6.4")

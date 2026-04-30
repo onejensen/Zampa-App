@@ -2,10 +2,12 @@ import SwiftUI
 
 struct SubscriptionView: View {
     @ObservedObject var localization = LocalizationManager.shared
+    @ObservedObject var storeKit = StoreKitManager.shared
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
 
     @State private var promoFreeUntil: Date? = nil
+    @State private var purchaseSuccessful: Bool = false
 
     private var merchant: Merchant? { appState.merchantProfile }
     private var status: SubscriptionStatus { merchant?.subscriptionStatus ?? .trial }
@@ -30,6 +32,7 @@ struct SubscriptionView: View {
                         promoFreeUntil = Date(timeIntervalSince1970: Double(ms) / 1000)
                     }
                 } catch {}
+                await storeKit.loadProduct()
             }
             .background(Color.appBackground.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -113,26 +116,73 @@ struct SubscriptionView: View {
     // MARK: - Precio + CTA
     private var priceAndCTA: some View {
         VStack(spacing: 16) {
-            Text(localization.t("subscription_price_monthly"))
+            // Precio: si StoreKit cargó el producto, interpolamos su `displayPrice`
+            // (formato localizado por Apple) en el sufijo localizado. Sin producto
+            // cargado, fallback al string completo traducido.
+            Text(storeKit.product.map {
+                String(format: localization.t("subscription_price_format"), $0.displayPrice)
+            } ?? localization.t("subscription_price_monthly"))
                 .font(.custom("Sora-Bold", size: 28))
                 .foregroundColor(.appPrimary)
 
-            Button(action: { /* TODO: integrar RevenueCat + StoreKit */ }) {
-                Text(localization.t("subscription_subscribe_cta"))
-                    .font(.appHeadline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.appPrimary.opacity(0.5)))
+            Button(action: {
+                Task {
+                    let ok = await storeKit.purchase()
+                    if ok {
+                        purchaseSuccessful = true
+                        // Refrescar el merchantProfile tras unos segundos para
+                        // recoger el cambio de subscriptionStatus que escribe el webhook.
+                        try? await Task.sleep(nanoseconds: 3_000_000_000)
+                        if let uid = appState.currentUser?.id,
+                           let m = try? await FirebaseService.shared.getMerchantProfile(merchantId: uid) {
+                            appState.merchantProfile = m
+                        }
+                    }
+                }
+            }) {
+                VStack(spacing: 4) {
+                    HStack(spacing: 10) {
+                        if storeKit.isPurchasing {
+                            ProgressView().progressViewStyle(.circular).tint(.white)
+                        }
+                        Text(localization.t("subscription_subscribe_cta_now"))
+                            .font(.appHeadline)
+                            .fontWeight(.bold)
+                    }
+                    Text(localization.t("subscription_no_commitment"))
+                        .font(.custom("Sora-Regular", size: 12))
+                        .opacity(0.85)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(RoundedRectangle(cornerRadius: 12).fill(
+                    canPurchase ? Color.appPrimary : Color.appPrimary.opacity(0.5)
+                ))
             }
-            .disabled(true) // Billing aún no integrado
+            .disabled(!canPurchase)
 
-            Text(localization.t("subscription_coming_soon_ios"))
-                .font(.appCaption)
-                .foregroundColor(.appTextSecondary)
-                .multilineTextAlignment(.center)
+            if let err = storeKit.lastError {
+                Text(err)
+                    .font(.appCaption)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+            }
         }
+        .alert(localization.t("subscription_active_title"), isPresented: $purchaseSuccessful) {
+            Button(localization.t("common_ok"), role: .cancel) {
+                presentationMode.wrappedValue.dismiss()
+            }
+        }
+    }
+
+    /// Sólo permitir comprar si: (1) producto cargado, (2) no hay compra en curso,
+    /// (3) no estamos en periodo gratis (promo o trial activo).
+    private var canPurchase: Bool {
+        storeKit.product != nil
+            && !storeKit.isPurchasing
+            && !promoActive
+            && status != .active
     }
 }
 

@@ -101,6 +101,7 @@ class FirebaseService {
                 "acceptsReservations": false,
                 "planTier": "free",
                 "isHighlighted": false,
+                "isVerified": false,
                 "subscriptionStatus": SubscriptionStatus.trial.rawValue,
                 "trialEndsAt": trialEndMs,
                 "createdAt": FieldValue.serverTimestamp()
@@ -417,7 +418,13 @@ class FirebaseService {
         // Today's weekday in 0=Mon…6=Sun convention
         let calWeekday = Calendar.current.component(.weekday, from: Date())
         let todayWeekday = calWeekday == 1 ? 6 : calWeekday - 2
-        let activeMenus = menus.filter { $0.isToday && $0.isVisibleOnDay(todayWeekday) }
+        // Filtramos ofertas de comercios no verificados (`isMerchantVerified == false`).
+        // Ausente o `true` = visible (compat con docs legacy).
+        let activeMenus = menus.filter {
+            $0.isToday
+            && $0.isVisibleOnDay(todayWeekday)
+            && ($0.isMerchantVerified ?? true)
+        }
         return (activeMenus, snapshot.documents.last)
     }
     
@@ -448,6 +455,7 @@ class FirebaseService {
         }()
         let isActive = data["isActive"] as? Bool ?? true
         let isMerchantPro = data["isMerchantPro"] as? Bool ?? false
+        let isMerchantVerified = data["isMerchantVerified"] as? Bool
         let dietaryInfo = DietaryInfo.from(data["dietaryInfo"] as? [String: Any] ?? [:])
         let recurringDays: [Int]? = {
             guard let arr = data["recurringDays"] as? [Any] else { return nil }
@@ -457,9 +465,9 @@ class FirebaseService {
                 return nil
             }
         }()
-        return Menu(id: id, businessId: businessId, date: date, title: title, description: description, priceTotal: priceTotal, currency: currency, photoUrls: photoUrls, tags: tags, createdAt: createdAt, updatedAt: updatedAt, isActive: isActive, isMerchantPro: isMerchantPro, dietaryInfo: dietaryInfo, offerType: data["offerType"] as? String, includesDrink: data["includesDrink"] as? Bool ?? false, includesDessert: data["includesDessert"] as? Bool ?? false, includesCoffee: data["includesCoffee"] as? Bool ?? false, serviceTime: data["serviceTime"] as? String ?? "both", isPermanent: data["isPermanent"] as? Bool ?? false, recurringDays: recurringDays)
+        return Menu(id: id, businessId: businessId, date: date, title: title, description: description, priceTotal: priceTotal, currency: currency, photoUrls: photoUrls, tags: tags, createdAt: createdAt, updatedAt: updatedAt, isActive: isActive, isMerchantPro: isMerchantPro, isMerchantVerified: isMerchantVerified, dietaryInfo: dietaryInfo, offerType: data["offerType"] as? String, includesDrink: data["includesDrink"] as? Bool ?? false, includesDessert: data["includesDessert"] as? Bool ?? false, includesCoffee: data["includesCoffee"] as? Bool ?? false, serviceTime: data["serviceTime"] as? String ?? "both", isPermanent: data["isPermanent"] as? Bool ?? false, recurringDays: recurringDays)
     }
-    
+
     /// Obtiene ofertas de un comercio específico
     func getMenusByMerchant(merchantId: String) async throws -> [Menu] {
         let snapshot = try await db.collection("dailyOffers")
@@ -482,6 +490,8 @@ class FirebaseService {
         let businessDoc = try await db.collection("businesses").document(businessId).getDocument()
         let planTier = (businessDoc.data()?["planTier"] as? String) ?? "free"
         let isPro = (planTier == "pro")
+        // Comercio verificado: ausente o true. Sólo `false` explícito oculta del feed.
+        let isVerified = (businessDoc.data()?["isVerified"] as? Bool) ?? true
 
         // Guard client-side: suscripción vigente (trial o pago) o promo global.
         // Las rules bloquean server-side de todas formas, pero esto evita subir la foto
@@ -526,6 +536,7 @@ class FirebaseService {
             "updatedAt": createdAtStr,
             "isActive": true,
             "isMerchantPro": isPro,
+            "isMerchantVerified": isVerified,
             "dietaryInfo": dietaryInfo.firestoreMap,
             "offerType": offerType as Any,
             "includesDrink": includesDrink,
@@ -555,6 +566,7 @@ class FirebaseService {
             updatedAt: createdAtStr,
             isActive: true,
             isMerchantPro: isPro,
+            isMerchantVerified: isVerified,
             dietaryInfo: dietaryInfo,
             offerType: offerType,
             includesDrink: includesDrink,
@@ -1017,6 +1029,7 @@ class FirebaseService {
             }(),
             isActive: data["isActive"] as? Bool ?? true,
             isMerchantPro: data["isMerchantPro"] as? Bool ?? false,
+            isMerchantVerified: data["isMerchantVerified"] as? Bool,
             dietaryInfo: dietaryInfo,
             offerType: data["offerType"] as? String,
             includesDrink: data["includesDrink"] as? Bool ?? false,
@@ -1079,8 +1092,28 @@ class FirebaseService {
             taxId: data["taxId"] as? String,
             subscriptionStatus: status,
             trialEndsAt: trialEndsAt,
-            subscriptionActiveUntil: activeUntil
+            subscriptionActiveUntil: activeUntil,
+            isVerified: data["isVerified"] as? Bool,
+            appAccountToken: data["appAccountToken"] as? String
         )
+    }
+
+    /// Genera y guarda un UUID en `businesses/{uid}.appAccountToken` si aún no existe.
+    /// Idempotente: si ya hay token, lo devuelve sin escribir. Necesario antes de la
+    /// primera compra IAP — el webhook lo usa para mapear la transacción al merchant.
+    func getOrCreateAppAccountToken() async throws -> UUID {
+        guard let uid = currentFirebaseUser?.uid else {
+            throw FirebaseServiceError.notAuthenticated
+        }
+        let ref = db.collection("businesses").document(uid)
+        let doc = try await ref.getDocument()
+        if let existing = doc.data()?["appAccountToken"] as? String,
+           let uuid = UUID(uuidString: existing) {
+            return uuid
+        }
+        let uuid = UUID()
+        try await ref.setData(["appAccountToken": uuid.uuidString], merge: true)
+        return uuid
     }
 
     // MARK: - User History

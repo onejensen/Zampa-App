@@ -21,6 +21,13 @@ service cloud.firestore {
     function isMerchantProUser(uid) {
       return merchantPlanTier(uid) == 'pro';
     }
+    /**
+     * ¿El comercio está verificado? Ausente o `true` cuenta como verificado para
+     * mantener compat con docs legacy. Sólo `false` explícito significa pendiente.
+     */
+    function isMerchantVerifiedUser(uid) {
+      return get(/databases/$(database)/documents/businesses/$(uid)).data.get('isVerified', true) == true;
+    }
 
     /**
      * Promo global: si `config/promo.freeUntil` (ms epoch) > now, todos los
@@ -95,16 +102,38 @@ service cloud.firestore {
     match /businesses/{merchantId} {
       allow read: if true; // Perfiles públicos
       allow create: if isOwner(merchantId) && isMerchant()
-        // El cliente nunca puede crearse como pro/destacado
+        // El cliente nunca puede crearse como pro/destacado/verificado
         && (!('planTier' in request.resource.data) || request.resource.data.planTier == 'free')
         && (!('isHighlighted' in request.resource.data) || request.resource.data.isHighlighted == false)
+        && (!('isVerified' in request.resource.data) || request.resource.data.isVerified == false)
         && (!('taxId' in request.resource.data) || isValidTaxIdShape(request.resource.data.taxId));
       allow update: if isOwner(merchantId)
-        // planTier e isHighlighted solo los modifica backend (Cloud Function tras webhook de pago)
+        // planTier, isHighlighted e isVerified solo los modifica backend (Cloud Function /
+        // admin desde Firebase Console tras revisar pendingVerifications)
         && unchanged('planTier')
         && unchanged('isHighlighted')
-        && (!('taxId' in request.resource.data) || isValidTaxIdShape(request.resource.data.taxId));
+        && unchanged('isVerified')
+        // subscriptionStatus / subscriptionActiveUntil solo los actualizan
+        // las Cloud Functions appStoreNotifications / playRTDN.
+        && unchanged('subscriptionStatus')
+        && unchanged('subscriptionActiveUntil')
+        && (!('taxId' in request.resource.data) || isValidTaxIdShape(request.resource.data.taxId))
+        // appAccountToken: UUID generado por la app antes de la primera compra.
+        // Sólo se permite asignarlo una vez (de ausente a string); no editarlo después.
+        && (!('appAccountToken' in request.resource.data)
+            || (request.resource.data.appAccountToken is string
+                && (!('appAccountToken' in resource.data)
+                    || resource.data.appAccountToken == request.resource.data.appAccountToken)));
       allow delete: if false;
+    }
+
+    // ── Pending Verifications ──
+    // Cola de comercios pendientes de verificación manual. La crea la Cloud Function
+    // `onBusinessCreated` cuando un nuevo merchant se registra. El admin la consulta
+    // y la borra desde Firebase Console (o vía herramientas admin) tras flippear
+    // `businesses/{id}.isVerified = true`. Los clientes nunca acceden a esta colección.
+    match /pendingVerifications/{merchantId} {
+      allow read, write: if false; // Solo backend (Cloud Functions / admin SDK)
     }
 
     // ── Customer Profiles ──
@@ -125,11 +154,17 @@ service cloud.firestore {
       allow create: if isMerchant()
         && hasActiveSubscription(request.auth.uid)
         && request.resource.data.businessId == request.auth.uid
-        && request.resource.data.isMerchantPro == isMerchantProUser(request.auth.uid);
+        && request.resource.data.isMerchantPro == isMerchantProUser(request.auth.uid)
+        // isMerchantVerified debe coincidir con el flag del comercio (no permitimos
+        // spoof desde el cliente). Si no está presente, no se valida (legacy / migración).
+        && (!('isMerchantVerified' in request.resource.data)
+            || request.resource.data.isMerchantVerified == isMerchantVerifiedUser(request.auth.uid));
       allow update: if isAuth()
         && resource.data.businessId == request.auth.uid
         && request.resource.data.businessId == request.auth.uid
-        && request.resource.data.isMerchantPro == isMerchantProUser(request.auth.uid);
+        && request.resource.data.isMerchantPro == isMerchantProUser(request.auth.uid)
+        && (!('isMerchantVerified' in request.resource.data)
+            || request.resource.data.isMerchantVerified == isMerchantVerifiedUser(request.auth.uid));
       allow delete: if isAuth() && resource.data.businessId == request.auth.uid;
     }
 
@@ -154,8 +189,12 @@ service cloud.firestore {
     }
 
     // ── Device Tokens ──
+    // El usuario puede leer/escribir sólo sus propios tokens (necesario para el
+    // sweep en `requestAccountDeletion` que limpia los tokens al pedir borrado).
+    // Otros usuarios no pueden ver tokens ajenos: el filtro por `userId` en cualquier
+    // query devuelve sólo los del propio uid, evitando exfiltración.
     match /deviceTokens/{tokenId} {
-      allow read: if false; // Solo backend
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuth() && resource.data.userId == request.auth.uid;
       allow delete: if isAuth() && resource.data.userId == request.auth.uid;
@@ -170,7 +209,7 @@ service cloud.firestore {
     }
 
     // ── Subscriptions ──
-    // Solo backend (webhook RevenueCat -> Cloud Function) puede crear/actualizar.
+    // Solo backend (Cloud Functions appStoreNotifications / playRTDN) puede crear/actualizar.
     match /subscriptions/{subId} {
       allow read: if isAuth() && resource.data.businessId == request.auth.uid;
       allow create: if false;

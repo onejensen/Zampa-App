@@ -13,9 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import android.app.Activity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,12 +35,20 @@ fun SubscriptionScreen(
     val merchant by viewModel.merchant.collectAsState()
     val promoFreeUntilMs by viewModel.promoFreeUntilMs.collectAsState()
     val error by viewModel.error.collectAsState()
+    val productDetails by viewModel.productDetails.collectAsState()
+    val isPurchasing by viewModel.isPurchasing.collectAsState()
+    val purchaseSuccessful by viewModel.purchaseSuccessful.collectAsState()
+    val context = LocalContext.current
 
     val nowMs = System.currentTimeMillis()
     val promoActive = (promoFreeUntilMs ?: 0L) > nowMs
     val status = merchant?.subscriptionStatus ?: SubscriptionStatus.TRIAL
     val trialDays = merchant?.trialDaysRemaining()
     val canPublish = promoActive || (merchant?.canPublish() ?: true)
+    val canPurchase = productDetails != null
+        && !isPurchasing
+        && !promoActive
+        && status != SubscriptionStatus.ACTIVE
 
     Scaffold(
         topBar = {
@@ -80,29 +90,68 @@ fun SubscriptionScreen(
             }
 
             // ── CTA suscripción ───────────────────────────────────────────
+            // Si Play Billing cargó el producto, usamos su precio formateado.
+            val priceLabel = productDetails?.subscriptionOfferDetails
+                ?.firstOrNull()
+                ?.pricingPhases
+                ?.pricingPhaseList
+                ?.firstOrNull()
+                ?.formattedPrice
+                ?.let { "$it/mes" }
+                ?: stringResource(R.string.subscription_price_monthly)
             Text(
-                stringResource(R.string.subscription_price_monthly),
+                priceLabel,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
 
             Button(
-                onClick = { /* TODO: integrar RevenueCat + Play Billing */ },
-                modifier = Modifier.fillMaxWidth().height(54.dp),
+                onClick = {
+                    (context as? Activity)?.let { viewModel.launchPurchase(it) }
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
                 shape = RoundedCornerShape(12.dp),
-                enabled = false // Billing aún no integrado
+                enabled = canPurchase
             ) {
-                Text(stringResource(R.string.subscription_subscribe_cta), fontWeight = FontWeight.Bold)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isPurchasing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                        }
+                        Text(
+                            stringResource(R.string.subscription_subscribe_cta_now),
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        stringResource(R.string.subscription_no_commitment),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
+                }
             }
-
-            Text(
-                stringResource(R.string.subscription_coming_soon_android),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
         }
+    }
+
+    if (purchaseSuccessful) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearPurchaseSuccess(); onDismiss() },
+            title = { Text(stringResource(R.string.subscription_active_title)) },
+            text = { Text(stringResource(R.string.subscription_active_title)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearPurchaseSuccess(); onDismiss() }) {
+                    Text(stringResource(R.string.common_ok))
+                }
+            }
+        )
     }
 
     error?.let {

@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,9 +46,11 @@ fun FeedScreen(
     onNavigateToDetail: (String) -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToLocation: () -> Unit,
+    onNavigateToMerchant: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = hiltViewModel()
 ) {
+    var viewMode by remember { mutableStateOf(FeedViewMode.LIST) }
     val authViewModel: com.sozolab.zampa.ui.auth.AuthViewModel = hiltViewModel()
     val currentUser by authViewModel.currentUser.collectAsState()
     val menus by viewModel.menus.collectAsState()
@@ -188,6 +191,25 @@ fun FeedScreen(
                 onClick = { sortOption = SortOption.PRICE }
             )
             Spacer(Modifier.weight(1f))
+            // Toggle Lista ↔ Mapa
+            IconButton(
+                onClick = {
+                    viewMode = if (viewMode == FeedViewMode.LIST) FeedViewMode.MAP else FeedViewMode.LIST
+                },
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(
+                        if (viewMode == FeedViewMode.MAP) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        RoundedCornerShape(10.dp)
+                    )
+            ) {
+                Icon(
+                    if (viewMode == FeedViewMode.LIST) Icons.Default.Map else Icons.AutoMirrored.Filled.List,
+                    contentDescription = if (viewMode == FeedViewMode.LIST) "Ver mapa" else "Ver lista",
+                    tint = if (viewMode == FeedViewMode.MAP) Color.White else MaterialTheme.colorScheme.onSurface
+                )
+            }
             Box {
                 IconButton(
                     onClick = { showFilterSheet = true },
@@ -269,6 +291,15 @@ fun FeedScreen(
                     }) { Text("Limpiar filtros") }
                 }
             }
+        } else if (viewMode == FeedViewMode.MAP) {
+            FeedMapView(
+                menus = sortedMenus,
+                merchantMap = merchantMap,
+                userLocation = userLocation,
+                onNavigateToDetail = onNavigateToDetail,
+                onNavigateToMerchant = onNavigateToMerchant,
+                modifier = Modifier.fillMaxSize()
+            )
         } else {
             LazyColumn(
                 state = listState,
@@ -353,6 +384,7 @@ fun SortPill(
 
 // MARK: - Menu Card
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MenuCard(
     menu: Menu,
@@ -440,17 +472,6 @@ fun MenuCard(
                     contentScale = ContentScale.Crop
                 )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)),
-                                startY = 100f
-                            )
-                        )
-                )
-
                 // TOP-LEFT: Destacado badge
                 if (menu.isMerchantPro == true || merchant?.planTier == "pro") {
                     Surface(
@@ -520,85 +541,95 @@ fun MenuCard(
                     }
                 }
 
-                // BOTTOM-LEFT: Distance chip
-                distanceText?.let { dist ->
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(10.dp),
-                        color = Color.Black.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.LocationOn,
-                                contentDescription = null,
-                                modifier = Modifier.size(10.dp),
-                                tint = Color.White
-                            )
-                            Text(dist, style = MaterialTheme.typography.labelSmall, color = Color.White)
-                        }
-                    }
-                }
-
-                // BOTTOM-RIGHT: Open status chip
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(10.dp),
-                    color = if (scheduleInfo.isOpen) Color(0xFF22C55E) else Color(0xFF6B7280).copy(alpha = 0.7f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        scheduleInfo.label,
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
             }
 
             // ── INFO ─────────────────────────────────────────────────────
             Column(
                 modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            merchant?.name ?: "",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            maxLines = 1
-                        )
-                        merchant?.cuisineTypes?.firstOrNull()?.let { cuisine ->
-                            Text(
-                                cuisine,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(10.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        "Ver oferta →",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(vertical = 10.dp)
-                            .fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        merchant?.name ?: "",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
+
+                // Chip row: status · distancia · cocina (mismo patrón que iOS InlineChip).
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    InlineChip(
+                        icon = Icons.Default.AccessTime,
+                        label = scheduleInfo.label,
+                        background = if (scheduleInfo.isOpen) Color(0xFF22C55E)
+                                     else MaterialTheme.colorScheme.surfaceVariant,
+                        foreground = if (scheduleInfo.isOpen) Color.White
+                                     else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    distanceText?.let { dist ->
+                        InlineChip(
+                            icon = Icons.Default.LocationOn,
+                            label = dist,
+                            background = MaterialTheme.colorScheme.surfaceVariant,
+                            foreground = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    merchant?.cuisineTypes?.firstOrNull()?.let { cuisine ->
+                        InlineChip(
+                            icon = Icons.Default.Restaurant,
+                            label = cuisine,
+                            background = MaterialTheme.colorScheme.surfaceVariant,
+                            foreground = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
+        }
+    }
+}
+
+/** Pill compacto con icono + label. Equivalente al `InlineChip` de iOS. */
+@Composable
+private fun InlineChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    background: Color,
+    foreground: Color,
+) {
+    Surface(
+        color = background,
+        shape = RoundedCornerShape(6.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(12.dp),
+                tint = foreground
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = foreground,
+                maxLines = 1
+            )
         }
     }
 }
@@ -800,4 +831,6 @@ fun offerTypeLabel(value: String): String = when (value) {
     OfferTypes.OFERTA_PERMANENTE -> stringResource(R.string.offer_type_permanente)
     else -> value
 }
+
+enum class FeedViewMode { LIST, MAP }
 

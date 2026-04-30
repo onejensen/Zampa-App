@@ -235,6 +235,7 @@ private struct BrandMarker: View {
             .resizable()
             .scaledToFit()
             .frame(width: 28, height: 28)
+            .foregroundColor(.white)
             .padding(8)
             .background(Circle().fill(Color.appPrimary))
             .overlay(Circle().stroke(Color.white, lineWidth: 2))

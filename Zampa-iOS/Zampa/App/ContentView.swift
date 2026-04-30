@@ -19,6 +19,7 @@ struct ContentView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: 120, height: 120)
+                            .foregroundColor(.white)
                         Text("Zampa")
                             .font(.custom("Sora-Bold", size: 36))
                             .foregroundColor(.white)

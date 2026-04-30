@@ -407,12 +407,14 @@
     <string name="subscription_value_push">Notifie tes abonnés par push</string>
     <string name="subscription_value_stats">Statistiques d\'impressions et de clics</string>
     <string name="subscription_value_profile">Profil public visible pour les clients</string>
-    <string name="subscription_price_monthly">14,99 €/mois</string>
+    <string name="subscription_price_monthly">24,99 €/mois</string>
     <string name="subscription_trial_days_remaining">%1$d jours d\'essai restants</string>
     <string name="subscription_trial_ends_today">Dernier jour de l\'essai gratuit</string>
     <string name="subscription_expired_title">Essai terminé</string>
     <string name="subscription_expired_body">Abonnez-vous pour continuer à publier des offres. Votre profil reste visible pour les clients.</string>
-    <string name="subscription_subscribe_cta">S\'abonner pour 14,99 €/mois</string>
+    <string name="subscription_subscribe_cta">S\'abonner pour 24,99 €/mois</string>
+    <string name="subscription_subscribe_cta_now">S\'abonner maintenant</string>
+    <string name="subscription_no_commitment">Sans engagement, annulable à tout moment</string>
     <string name="subscription_required_error">Un abonnement actif est requis pour publier. Démarrez ou renouvelez votre abonnement.</string>
     <string name="profile_restart_tour">Revoir le tour de l\'app</string>
 </resources>
