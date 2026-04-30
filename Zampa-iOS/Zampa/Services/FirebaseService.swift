@@ -255,6 +255,23 @@ class FirebaseService {
         guard let data = doc.data() else { return nil }
         return parseMerchant(data: data, id: doc.documentID)
     }
+
+    /// Devuelve todos los comercios verificados con dirección geocodificada,
+    /// para mostrarlos en el mapa del feed. Filtramos cliente-side por
+    /// `isVerified != false` (ausente o true cuenta como verificado, compat legacy)
+    /// y por coordenadas no-cero. Para escalas grandes habría que paginar o usar
+    /// geo-queries; con cientos de comercios esto va sobrado.
+    func getAllVerifiedMerchants() async throws -> [Merchant] {
+        let snap = try await db.collection("businesses").getDocuments()
+        return snap.documents.compactMap { doc in
+            let m = parseMerchant(data: doc.data(), id: doc.documentID)
+            // Filtrar no-verificados (isVerified == false explícito).
+            if m.isVerified == false { return nil }
+            // Filtrar sin coords reales.
+            guard let addr = m.address, addr.lat != 0 || addr.lng != 0 else { return nil }
+            return m
+        }
+    }
     
     /// Actualiza el nombre visible del usuario en Firestore
     func updateUserName(_ name: String) async throws {
@@ -465,7 +482,11 @@ class FirebaseService {
                 return nil
             }
         }()
-        return Menu(id: id, businessId: businessId, date: date, title: title, description: description, priceTotal: priceTotal, currency: currency, photoUrls: photoUrls, tags: tags, createdAt: createdAt, updatedAt: updatedAt, isActive: isActive, isMerchantPro: isMerchantPro, isMerchantVerified: isMerchantVerified, dietaryInfo: dietaryInfo, offerType: data["offerType"] as? String, includesDrink: data["includesDrink"] as? Bool ?? false, includesDessert: data["includesDessert"] as? Bool ?? false, includesCoffee: data["includesCoffee"] as? Bool ?? false, serviceTime: data["serviceTime"] as? String ?? "both", isPermanent: data["isPermanent"] as? Bool ?? false, recurringDays: recurringDays)
+        let republishedFrom = data["republishedFrom"] as? String
+        let republishedAt = (data["republishedAt"] as? Timestamp).map {
+            ISO8601DateFormatter().string(from: $0.dateValue())
+        } ?? data["republishedAt"] as? String
+        return Menu(id: id, businessId: businessId, date: date, title: title, description: description, priceTotal: priceTotal, currency: currency, photoUrls: photoUrls, tags: tags, createdAt: createdAt, updatedAt: updatedAt, isActive: isActive, isMerchantPro: isMerchantPro, isMerchantVerified: isMerchantVerified, dietaryInfo: dietaryInfo, offerType: data["offerType"] as? String, includesDrink: data["includesDrink"] as? Bool ?? false, includesDessert: data["includesDessert"] as? Bool ?? false, includesCoffee: data["includesCoffee"] as? Bool ?? false, serviceTime: data["serviceTime"] as? String ?? "both", isPermanent: data["isPermanent"] as? Bool ?? false, recurringDays: recurringDays, republishedFrom: republishedFrom, republishedAt: republishedAt)
     }
 
     /// Obtiene ofertas de un comercio específico
@@ -995,7 +1016,7 @@ class FirebaseService {
               let priceTotal = data["priceTotal"] as? Double else {
             return nil
         }
-        
+
         let dietaryInfo = DietaryInfo.from(data["dietaryInfo"] as? [String: Any] ?? [:])
         let recurringDays: [Int]? = {
             guard let arr = data["recurringDays"] as? [Any] else { return nil }
@@ -1005,6 +1026,10 @@ class FirebaseService {
                 return nil
             }
         }()
+        let republishedFrom = data["republishedFrom"] as? String
+        let republishedAt = (data["republishedAt"] as? Timestamp).map {
+            ISO8601DateFormatter().string(from: $0.dateValue())
+        } ?? data["republishedAt"] as? String
         return Menu(
             id: doc.documentID,
             businessId: businessId,
@@ -1037,7 +1062,9 @@ class FirebaseService {
             includesCoffee: data["includesCoffee"] as? Bool ?? false,
             serviceTime: data["serviceTime"] as? String ?? "both",
             isPermanent: data["isPermanent"] as? Bool ?? false,
-            recurringDays: recurringDays
+            recurringDays: recurringDays,
+            republishedFrom: republishedFrom,
+            republishedAt: republishedAt
         )
     }
 

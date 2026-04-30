@@ -92,6 +92,10 @@ struct Menu: Codable, Identifiable, Equatable {
     let isPermanent: Bool
     /// Días de la semana en que esta oferta permanente es visible (0=lun…6=dom). Nil = todos los días (legado).
     let recurringDays: [Int]?
+    /// Source menu id when this offer was created via "Republicar"; nil for fresh creations.
+    let republishedFrom: String?
+    /// Server timestamp (ISO 8601 string) of when the republish happened; nil otherwise.
+    let republishedAt: String?
 
     init(
         id: String,
@@ -115,7 +119,9 @@ struct Menu: Codable, Identifiable, Equatable {
         includesCoffee: Bool = false,
         serviceTime: String = "both",
         isPermanent: Bool = false,
-        recurringDays: [Int]? = nil
+        recurringDays: [Int]? = nil,
+        republishedFrom: String? = nil,
+        republishedAt: String? = nil
     ) {
         self.id = id
         self.businessId = businessId
@@ -139,6 +145,8 @@ struct Menu: Codable, Identifiable, Equatable {
         self.serviceTime = serviceTime
         self.isPermanent = isPermanent
         self.recurringDays = recurringDays
+        self.republishedFrom = republishedFrom
+        self.republishedAt = republishedAt
     }
 
     /// Precio formateado con el símbolo de la moneda del restaurante (ej: "10,50 €", "$10.50", "£9.99")
