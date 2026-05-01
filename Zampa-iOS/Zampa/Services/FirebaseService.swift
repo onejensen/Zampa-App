@@ -405,17 +405,24 @@ class FirebaseService {
     // MARK: - Daily Offers
     
     /// Obtiene ofertas diarias para el feed público
+    /// - Parameter cuisineFilters: lista de cocinas a incluir; vacío/nil = sin filtro.
+    ///   Firestore `arrayContainsAny` admite hasta 10 valores; con más, hay que filtrar
+    ///   client-side (caso poco realista para un usuario eligiendo cocinas).
     func getActiveMenus(
         limit: Int = 20,
         lastDocument: DocumentSnapshot? = nil,
-        cuisineFilter: String? = nil,
+        cuisineFilters: [String]? = nil,
         maxPrice: Double? = nil
     ) async throws -> (menus: [Menu], lastDoc: DocumentSnapshot?) {
         var query: Query = db.collection("dailyOffers")
             .whereField("isActive", isEqualTo: true)
-        
-        if let cuisine = cuisineFilter {
-            query = query.whereField("tags", arrayContains: cuisine)
+
+        if let cuisines = cuisineFilters, !cuisines.isEmpty {
+            if cuisines.count == 1 {
+                query = query.whereField("tags", arrayContains: cuisines[0])
+            } else {
+                query = query.whereField("tags", arrayContainsAny: Array(cuisines.prefix(10)))
+            }
         }
         
         if let price = maxPrice {

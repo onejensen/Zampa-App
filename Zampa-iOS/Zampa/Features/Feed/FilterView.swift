@@ -5,14 +5,14 @@ struct FilterView: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject var localization = LocalizationManager.shared
 
-    @State var selectedCuisine: String?
+    @State var selectedCuisines: Set<String> = []
     @State var maxPrice: Double = 30
     @State var maxDistanceKm: Double?
     @State var onlyFavorites: Bool = false
     @State var onlyOpen: Bool = false
-    @State var offerType: String? = nil
+    @State var offerTypes: Set<String> = []
 
-    var onApply: (String?, Double?, Double?, Bool, Bool, String?) -> Void
+    var onApply: (Set<String>, Double?, Double?, Bool, Bool, Set<String>) -> Void
 
     @State private var cuisineOptions: [String] = []
 
@@ -48,12 +48,12 @@ struct FilterView: View {
                 Spacer()
 
                 Button(localization.t("filter_clear")) {
-                    selectedCuisine = nil
+                    selectedCuisines = []
                     maxPrice = 30
                     maxDistanceKm = nil
                     onlyFavorites = false
                     onlyOpen = false
-                    offerType = nil
+                    offerTypes = []
                 }
                 .foregroundColor(.appPrimary)
             }
@@ -100,9 +100,13 @@ struct FilterView: View {
                             ForEach(offerTypeLabels, id: \.value) { option in
                                 CategoryPill(
                                     title: option.label,
-                                    isSelected: offerType == option.value
+                                    isSelected: offerTypes.contains(option.value)
                                 ) {
-                                    offerType = (offerType == option.value) ? nil : option.value
+                                    if offerTypes.contains(option.value) {
+                                        offerTypes.remove(option.value)
+                                    } else {
+                                        offerTypes.insert(option.value)
+                                    }
                                 }
                             }
                         }
@@ -116,8 +120,12 @@ struct FilterView: View {
 
                         ChipFlow(spacing: 8) {
                             ForEach(cuisineOptions, id: \.self) { option in
-                                CategoryPill(title: option, isSelected: selectedCuisine == option) {
-                                    selectedCuisine = (selectedCuisine == option) ? nil : option
+                                CategoryPill(title: option, isSelected: selectedCuisines.contains(option)) {
+                                    if selectedCuisines.contains(option) {
+                                        selectedCuisines.remove(option)
+                                    } else {
+                                        selectedCuisines.insert(option)
+                                    }
                                 }
                             }
                         }
@@ -163,7 +171,7 @@ struct FilterView: View {
             // Apply Button
             VStack {
                 Button(action: {
-                    onApply(selectedCuisine, maxPrice, maxDistanceKm, onlyFavorites, onlyOpen, offerType)
+                    onApply(selectedCuisines, maxPrice, maxDistanceKm, onlyFavorites, onlyOpen, offerTypes)
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Text(localization.t("filter_show_results"))
@@ -185,7 +193,7 @@ struct FilterView: View {
 }
 
 #Preview {
-    FilterView(selectedCuisine: nil, maxPrice: 30, maxDistanceKm: nil, onlyFavorites: false, onlyOpen: false, offerType: nil) { _, _, _, _, _, _ in }
+    FilterView(selectedCuisines: [], maxPrice: 30, maxDistanceKm: nil, onlyFavorites: false, onlyOpen: false, offerTypes: []) { _, _, _, _, _, _ in }
 }
 
 /// Layout que coloca los hijos en filas, saltando a la siguiente cuando no caben.

@@ -162,17 +162,26 @@ class FirebaseService @Inject constructor() {
 
     data class MenuPage(val menus: List<Menu>, val lastDoc: com.google.firebase.firestore.DocumentSnapshot?)
 
+    /**
+     * Obtiene ofertas diarias para el feed público.
+     * @param cuisineFilters lista de cocinas a incluir; vacío/null = sin filtro.
+     * Firestore `whereArrayContainsAny` admite hasta 10 valores.
+     */
     suspend fun getActiveMenus(
         limit: Int = 20,
         lastDocument: com.google.firebase.firestore.DocumentSnapshot? = null,
-        cuisineFilter: String? = null,
+        cuisineFilters: List<String>? = null,
         maxPrice: Double? = null
     ): MenuPage {
         var query: com.google.firebase.firestore.Query = db.collection("dailyOffers")
             .whereEqualTo("isActive", true)
-        
-        cuisineFilter?.let {
-            query = query.whereArrayContains("tags", it)
+
+        if (!cuisineFilters.isNullOrEmpty()) {
+            query = if (cuisineFilters.size == 1) {
+                query.whereArrayContains("tags", cuisineFilters[0])
+            } else {
+                query.whereArrayContainsAny("tags", cuisineFilters.take(10))
+            }
         }
         
         maxPrice?.let {

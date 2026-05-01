@@ -14,7 +14,7 @@ struct FeedView: View {
     @State private var searchText: String = ""
     @State private var lastDoc: DocumentSnapshot? = nil
     @State private var canLoadMore: Bool = true
-    @State private var selectedCuisine: String? = nil
+    @State private var selectedCuisines: Set<String> = []
     @State private var maxPrice: Double? = nil
     @State private var maxDistanceKm: Double? = nil
     @State private var onlyFavorites: Bool = false
@@ -22,7 +22,7 @@ struct FeedView: View {
     @State private var showingFilters = false
     @State private var showingLocationPrompt = false
     @State private var onlyOpen: Bool = false
-    @State private var offerType: String? = nil
+    @State private var offerTypes: Set<String> = []
     @State private var merchantMap: [String: Merchant] = [:]
     @State private var viewMode: FeedViewMode = .list
     @State private var presentedMenu: Menu? = nil
@@ -33,7 +33,7 @@ struct FeedView: View {
     enum SortOption { case distance, price }
     enum FeedViewMode { case list, map }
 
-    var hasClientSideFilters: Bool { maxDistanceKm != nil || onlyFavorites || onlyOpen || offerType != nil }
+    var hasClientSideFilters: Bool { maxDistanceKm != nil || onlyFavorites || onlyOpen || !offerTypes.isEmpty }
 
     var body: some View {
         NavigationView {
@@ -133,12 +133,12 @@ struct FeedView: View {
                             .font(.appSubheadline)
                             .foregroundColor(.appTextSecondary)
                         Button(localization.t("feed_clear_filters")) {
-                            selectedCuisine = nil
+                            selectedCuisines = []
                             maxPrice = nil
                             maxDistanceKm = nil
                             onlyFavorites = false
                             onlyOpen = false
-                            offerType = nil
+                            offerTypes = []
                             loadMenus()
                         }
                         .foregroundColor(.appPrimary)
@@ -190,19 +190,19 @@ struct FeedView: View {
             .navigationBarHidden(true)
             .sheet(isPresented: $showingFilters) {
                 FilterView(
-                    selectedCuisine: selectedCuisine,
+                    selectedCuisines: selectedCuisines,
                     maxPrice: maxPrice ?? 30,
                     maxDistanceKm: maxDistanceKm,
                     onlyFavorites: onlyFavorites,
                     onlyOpen: onlyOpen,
-                    offerType: offerType
-                ) { cuisine, price, distance, favOnly, openOnly, type in
-                    self.selectedCuisine = cuisine
+                    offerTypes: offerTypes
+                ) { cuisines, price, distance, favOnly, openOnly, types in
+                    self.selectedCuisines = cuisines
                     self.maxPrice = price
                     self.maxDistanceKm = distance
                     self.onlyFavorites = favOnly
                     self.onlyOpen = openOnly
-                    self.offerType = type
+                    self.offerTypes = types
                     loadMenus()
                 }
             }
@@ -268,7 +268,7 @@ struct FeedView: View {
     }
 
     private var filtersActive: Bool {
-        selectedCuisine != nil || (maxPrice != nil && maxPrice! < 100) || maxDistanceKm != nil || onlyFavorites || onlyOpen || offerType != nil
+        !selectedCuisines.isEmpty || (maxPrice != nil && maxPrice! < 100) || maxDistanceKm != nil || onlyFavorites || onlyOpen || !offerTypes.isEmpty
     }
 
     private var filteredMenus: [Menu] {
@@ -294,12 +294,14 @@ struct FeedView: View {
                 return isOpenNow(schedule: m.schedule)
             }
         }
-        if let type = offerType {
+        if !offerTypes.isEmpty {
             result = result.filter { menu in
-                if type == OfferTypes.ofertaPermanente {
-                    return menu.isPermanent || menu.offerType == OfferTypes.ofertaPermanente
+                offerTypes.contains { type in
+                    if type == OfferTypes.ofertaPermanente {
+                        return menu.isPermanent || menu.offerType == OfferTypes.ofertaPermanente
+                    }
+                    return menu.offerType == type
                 }
-                return menu.offerType == type
             }
         }
         if sortOption == .price {
@@ -379,7 +381,7 @@ struct FeedView: View {
 
                 let result = try await MenuService.shared.getMenus(
                     limit: 100,
-                    cuisineFilter: selectedCuisine,
+                    cuisineFilters: selectedCuisines.isEmpty ? nil : Array(selectedCuisines),
                     maxPrice: maxPrice
                 )
                 var filtered = result.menus
@@ -422,7 +424,7 @@ struct FeedView: View {
                 let result = try await MenuService.shared.getMenus(
                     limit: 100,
                     lastDocument: lastDoc,
-                    cuisineFilter: selectedCuisine,
+                    cuisineFilters: selectedCuisines.isEmpty ? nil : Array(selectedCuisines),
                     maxPrice: maxPrice
                 )
                 let merchants = await fetchMerchants(for: result.menus)
@@ -449,7 +451,7 @@ struct FeedView: View {
 
             let result = try await MenuService.shared.getMenus(
                 limit: 100,
-                cuisineFilter: selectedCuisine,
+                cuisineFilters: selectedCuisines.isEmpty ? nil : Array(selectedCuisines),
                 maxPrice: maxPrice
             )
             var filtered = result.menus
@@ -487,7 +489,7 @@ struct FeedView: View {
 
                 let result = try await MenuService.shared.getMenus(
                     limit: 100,
-                    cuisineFilter: selectedCuisine,
+                    cuisineFilters: selectedCuisines.isEmpty ? nil : Array(selectedCuisines),
                     maxPrice: maxPrice
                 )
                 var filtered = result.menus

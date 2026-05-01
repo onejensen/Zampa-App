@@ -42,7 +42,7 @@ class FeedViewModel @Inject constructor(
     var canLoadMore = true
         private set
 
-    private var selectedCuisine: String? = null
+    private var selectedCuisines: Set<String> = emptySet()
     private var maxPrice: Double? = null
     private var maxDistanceKm: Double? = null
     private var onlyFavorites: Boolean = false
@@ -83,8 +83,8 @@ class FeedViewModel @Inject constructor(
         }
     }
 
-    fun applyFilters(cuisine: String?, price: Double?, distanceKm: Double?, favoritesOnly: Boolean) {
-        selectedCuisine = cuisine
+    fun applyFilters(cuisines: Set<String>, price: Double?, distanceKm: Double?, favoritesOnly: Boolean) {
+        selectedCuisines = cuisines
         maxPrice = price
         maxDistanceKm = distanceKm
         onlyFavorites = favoritesOnly
@@ -111,7 +111,7 @@ class FeedViewModel @Inject constructor(
                 // 2. Fetch from Firestore (server-side: cuisine + price)
                 val result = firebaseService.getActiveMenus(
                     limit = 100,
-                    cuisineFilter = selectedCuisine,
+                    cuisineFilters = if (selectedCuisines.isEmpty()) null else selectedCuisines.toList(),
                     maxPrice = maxPrice
                 )
                 var filtered = result.menus
@@ -165,7 +165,7 @@ class FeedViewModel @Inject constructor(
                 val result = firebaseService.getActiveMenus(
                     limit = 100,
                     lastDocument = lastDoc,
-                    cuisineFilter = selectedCuisine,
+                    cuisineFilters = if (selectedCuisines.isEmpty()) null else selectedCuisines.toList(),
                     maxPrice = maxPrice
                 )
                 val idsToFetch = result.menus.map { it.businessId }.toSet()

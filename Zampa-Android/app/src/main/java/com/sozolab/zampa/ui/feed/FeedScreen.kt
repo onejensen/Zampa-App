@@ -77,16 +77,41 @@ fun FeedScreen(
     var sortOption by remember { mutableStateOf(SortOption.DISTANCE) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var activeFilters by remember { mutableStateOf(ActiveFilters()) }
-    var selectedCuisine by remember { mutableStateOf<String?>(null) }
+    var selectedCuisines by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     val listState = rememberLazyListState()
 
-    val sortedMenus = remember(menus, sortOption, selectedCuisine, activeFilters.onlyOpen, activeFilters.offerType, merchantMap, userLocation) {
+    val sortedMenus = remember(
+        menus, sortOption, selectedCuisines,
+        activeFilters.onlyOpen, activeFilters.offerTypes, activeFilters.maxDistanceKm,
+        merchantMap, userLocation
+    ) {
         var result = menus
-        // Filtro client-side por tipo de oferta (no se manda al backend porque
-        // el campo se denormaliza en cada Menu).
-        activeFilters.offerType?.let { type ->
-            result = result.filter { it.offerType == type }
+        // Filtro client-side por tipo(s) de oferta (no se manda al backend porque
+        // el campo se denormaliza en cada Menu). Acepta múltiples tipos seleccionados.
+        if (activeFilters.offerTypes.isNotEmpty()) {
+            result = result.filter { menu ->
+                activeFilters.offerTypes.any { type ->
+                    if (type == "Oferta permanente") menu.isPermanent || menu.offerType == type
+                    else menu.offerType == type
+                }
+            }
+        }
+        // Filtro client-side por distancia máxima (km). Requiere ubicación del
+        // usuario y dirección geocodificada del comercio; si falta cualquiera,
+        // el menú se excluye para no mostrar resultados sin distancia válida.
+        activeFilters.maxDistanceKm?.let { maxKm ->
+            val uLoc = userLocation
+            if (uLoc != null) {
+                result = result.filter { menu ->
+                    val addr = merchantMap[menu.businessId]?.address ?: return@filter false
+                    val mLoc = android.location.Location("").apply {
+                        latitude = addr.lat
+                        longitude = addr.lng
+                    }
+                    uLoc.distanceTo(mLoc).toDouble() / 1000.0 <= maxKm
+                }
+            }
         }
         if (sortOption == SortOption.PRICE) {
             result = result.sortedBy { it.priceTotal }
@@ -298,8 +323,8 @@ fun FeedScreen(
                     Spacer(Modifier.height(12.dp))
                     TextButton(onClick = {
                         activeFilters = ActiveFilters()
-                        selectedCuisine = null
-                        viewModel.applyFilters(null, null, null, false)
+                        selectedCuisines = emptySet()
+                        viewModel.applyFilters(emptySet(), null, null, false)
                     }) { Text("Limpiar filtros") }
                 }
             }
@@ -346,16 +371,16 @@ fun FeedScreen(
         FilterSheet(
             initialFilters = activeFilters,
             onDismiss = { showFilterSheet = false },
-            onApply = { cuisine, price, distanceKm, openOnly, offerType ->
+            onApply = { cuisines, price, distanceKm, openOnly, offerTypes ->
                 activeFilters = ActiveFilters(
-                    cuisine = cuisine,
+                    cuisines = cuisines,
                     maxPrice = price,
                     maxDistanceKm = distanceKm,
                     onlyOpen = openOnly,
-                    offerType = offerType,
+                    offerTypes = offerTypes,
                 )
-                selectedCuisine = cuisine
-                viewModel.applyFilters(cuisine, price, distanceKm, false)
+                selectedCuisines = cuisines
+                viewModel.applyFilters(cuisines, price, distanceKm, false)
                 showFilterSheet = false
             },
             currencyPreference = currentUser?.currencyPreference,
@@ -655,17 +680,17 @@ private fun InlineChip(
 // MARK: - Active Filters
 
 data class ActiveFilters(
-    val cuisine: String? = null,
+    val cuisines: Set<String> = emptySet(),
     val maxPrice: Double? = null,
     val maxDistanceKm: Double? = null,
     val onlyOpen: Boolean = false,
-    val offerType: String? = null,  // ej: "Menú del día", "Plato del día", "Oferta del día", "Oferta permanente"
+    val offerTypes: Set<String> = emptySet(),  // valores: "Menú del día", "Plato del día", "Oferta del día", "Oferta permanente"
 ) {
-    val isActive get() = cuisine != null
+    val isActive get() = cuisines.isNotEmpty()
         || (maxPrice != null && maxPrice < 100)
         || maxDistanceKm != null
         || onlyOpen
-        || offerType != null
+        || offerTypes.isNotEmpty()
 }
 
 // MARK: - Filter Sheet
@@ -675,15 +700,15 @@ data class ActiveFilters(
 fun FilterSheet(
     initialFilters: ActiveFilters,
     onDismiss: () -> Unit,
-    onApply: (String?, Double?, Double?, Boolean, String?) -> Unit,
+    onApply: (Set<String>, Double?, Double?, Boolean, Set<String>) -> Unit,
     currencyPreference: String? = null,
     formatConverted: (Double, String) -> String? = { _, _ -> null },
 ) {
-    var selectedCuisine by remember { mutableStateOf(initialFilters.cuisine) }
+    var selectedCuisines by remember { mutableStateOf(initialFilters.cuisines) }
     var maxPrice by remember { mutableStateOf(initialFilters.maxPrice?.toFloat() ?: 30f) }
     var maxDistanceKm by remember { mutableStateOf(initialFilters.maxDistanceKm) }
     var onlyOpen by remember { mutableStateOf(initialFilters.onlyOpen) }
-    var selectedOfferType by remember { mutableStateOf(initialFilters.offerType) }
+    var selectedOfferTypes by remember { mutableStateOf(initialFilters.offerTypes) }
     var cuisines by remember { mutableStateOf<List<String>>(emptyList()) }
 
     val offerTypes = listOf("Menú del día", "Plato del día", "Oferta del día", "Oferta permanente")
@@ -731,11 +756,11 @@ fun FilterSheet(
                 }
                 Text("Filtrar", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 TextButton(onClick = {
-                    selectedCuisine = null
+                    selectedCuisines = emptySet()
                     maxPrice = 30f
                     maxDistanceKm = null
                     onlyOpen = false
-                    selectedOfferType = null
+                    selectedOfferTypes = emptySet()
                 }) { Text("Limpiar") }
             }
 
@@ -776,8 +801,14 @@ fun FilterSheet(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     offerTypes.forEach { type ->
                         FilterChip(
-                            selected = selectedOfferType == type,
-                            onClick = { selectedOfferType = if (selectedOfferType == type) null else type },
+                            selected = type in selectedOfferTypes,
+                            onClick = {
+                                selectedOfferTypes = if (type in selectedOfferTypes) {
+                                    selectedOfferTypes - type
+                                } else {
+                                    selectedOfferTypes + type
+                                }
+                            },
                             label = { Text(type, maxLines = 1, softWrap = false) }
                         )
                     }
@@ -790,8 +821,14 @@ fun FilterSheet(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cuisines.forEach { cuisine ->
                         FilterChip(
-                            selected = selectedCuisine == cuisine,
-                            onClick = { selectedCuisine = if (selectedCuisine == cuisine) null else cuisine },
+                            selected = cuisine in selectedCuisines,
+                            onClick = {
+                                selectedCuisines = if (cuisine in selectedCuisines) {
+                                    selectedCuisines - cuisine
+                                } else {
+                                    selectedCuisines + cuisine
+                                }
+                            },
                             label = { Text(cuisine, maxLines = 1, softWrap = false) }
                         )
                     }
@@ -833,7 +870,7 @@ fun FilterSheet(
             }
 
             Button(
-                onClick = { onApply(selectedCuisine, maxPrice.toDouble(), maxDistanceKm, onlyOpen, selectedOfferType) },
+                onClick = { onApply(selectedCuisines, maxPrice.toDouble(), maxDistanceKm, onlyOpen, selectedOfferTypes) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {

@@ -14,13 +14,13 @@ class MenuService {
     func getMenus(
         limit: Int = 20,
         lastDocument: DocumentSnapshot? = nil,
-        cuisineFilter: String? = nil,
+        cuisineFilters: [String]? = nil,
         maxPrice: Double? = nil
     ) async throws -> (menus: [Menu], lastDoc: DocumentSnapshot?) {
         return try await firebase.getActiveMenus(
             limit: limit,
             lastDocument: lastDocument,
-            cuisineFilter: cuisineFilter,
+            cuisineFilters: cuisineFilters,
             maxPrice: maxPrice
         )
     }
