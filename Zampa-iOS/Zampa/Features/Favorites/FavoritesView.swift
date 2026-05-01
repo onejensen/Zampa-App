@@ -66,6 +66,16 @@ struct FavoritesView: View {
             )) { wrapper in
                 NavigationView {
                     MerchantProfileView(merchantId: wrapper.id)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button(action: { selectedMerchantId = nil }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.title2)
+                                        .symbolRenderingMode(.hierarchical)
+                                        .foregroundColor(.appTextSecondary)
+                                }
+                            }
+                        }
                 }
             }
         }

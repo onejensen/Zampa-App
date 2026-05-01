@@ -38,7 +38,7 @@ struct MainTabView: View {
             set: { deepLinkMenuId = $0?.id }
         )) { item in
             NavigationStack {
-                MenuDetailView(menuId: item.id)
+                MenuDetailView(menuId: item.id, presentedAsSheet: true)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .openMenuDetail)) { notification in

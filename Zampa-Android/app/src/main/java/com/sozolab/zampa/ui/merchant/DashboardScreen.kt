@@ -640,7 +640,20 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            Text("Editar menú", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Editar menú",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                }
+            }
             Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
@@ -906,7 +919,20 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            Text("Nuevo menú", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Nuevo menú",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                }
+            }
             Spacer(Modifier.height(16.dp))
 
             // Photo picker with preview

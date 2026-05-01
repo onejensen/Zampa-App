@@ -312,6 +312,7 @@ private struct SocialRoleSelectionView: View {
     let onComplete: (User) -> Void
 
     @ObservedObject var localization = LocalizationManager.shared
+    @Environment(\.dismiss) var dismiss
     @State private var selectedRole: User.UserRole = .cliente
     @State private var displayName: String
     @State private var isLoading = false
@@ -389,6 +390,16 @@ private struct SocialRoleSelectionView: View {
                 .background(Color.appBackground)
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundColor(.appTextSecondary)
+                    }
+                }
+            }
         }
         .alert(localization.t("common_error"), isPresented: $showError) {
             Button("OK", role: .cancel) {}
