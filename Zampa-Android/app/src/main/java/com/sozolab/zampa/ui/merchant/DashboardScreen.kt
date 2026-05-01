@@ -630,7 +630,10 @@ fun EditMenuSheet(menu: Menu, viewModel: DashboardViewModel, onDismiss: () -> Un
         viewModel.loadOccupiedDays(excludingMenuId = menu.id)
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
         Column(
             modifier = Modifier
                 .padding(24.dp)
@@ -893,7 +896,10 @@ fun CreateMenuSheet(viewModel: DashboardViewModel, onDismiss: () -> Unit) {
         } catch (_: Exception) { emptyList() }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
         Column(
             modifier = Modifier
                 .padding(24.dp)
