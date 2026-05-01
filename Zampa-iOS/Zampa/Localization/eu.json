@@ -121,6 +121,7 @@
   "detail_about_restaurant": "Jatetxeari buruz",
   "detail_close": "Itxi",
   "detail_share_text": "Begiratu menu hau Zampa-n:",
+  "merchant_share_text": "Begiratu jatetxe hau Zampa-n:",
   "detail_closes_at": "Ixten du",
   "detail_opens_at": "Irekitzen du",
   "detail_favorite": "Gogokoa",
@@ -399,6 +400,7 @@
   "map_no_locations": "Ez dago mapan erakusteko kokapenik duen jatetxerik",
   "map_view_offer": "Eskaintza ikusi",
   "map_view_restaurant": "Jatetxea ikusi",
+  "map_no_offer_today": "Gaur eskaintzarik gabe",
   "merchant_profile_title": "Jatetxea",
   "merchant_profile_offers_header": "Eskaintza aktiboak",
   "merchant_profile_no_offers": "Gaur ez dago eskaintza aktiborik",
@@ -421,6 +423,11 @@
   "subscription_subscribe_cta": "Harpidetu 24,99 €/hile truke",
   "subscription_subscribe_cta_now": "Harpidetu orain",
   "subscription_no_commitment": "Konpromisorik gabe, noiznahi ezeztatu",
+  "subscription_plan_monthly": "Hilekoa",
+  "subscription_plan_annual": "Urtekoa",
+  "subscription_savings_2months": "2 hilabete doan",
+  "subscription_price_format_annual": "%@/urteko",
+  "subscription_annual_equivalent": "%@/hile urtero fakturatuta",
   "subscription_required_error": "Argitaratzeko harpidetza aktiboa behar duzu. Hasi harpidetza bat edo berritu daukazuna.",
   "profile_restart_tour": "Aplikazioaren tourra errepikatu"
 }

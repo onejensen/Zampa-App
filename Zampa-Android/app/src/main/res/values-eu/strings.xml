@@ -121,6 +121,7 @@
     <string name="detail_about_restaurant">Jatetxeari buruz</string>
     <string name="detail_close">Itxi</string>
     <string name="detail_share_text">Begiratu menu hau Zampa-n:</string>
+    <string name="merchant_share_text">Begiratu jatetxe hau Zampa-n:</string>
     <string name="detail_closes_at">Ixten du</string>
     <string name="detail_opens_at">Irekitzen du</string>
     <string name="detail_favorite">Gogokoa</string>
@@ -395,6 +396,7 @@
     <string name="map_no_locations">Ez dago mapan erakusteko kokapenik duen jatetxerik</string>
     <string name="map_view_offer">Eskaintza ikusi</string>
     <string name="map_view_restaurant">Jatetxea ikusi</string>
+    <string name="map_no_offer_today">Gaur eskaintzarik gabe</string>
     <string name="merchant_profile_title">Jatetxea</string>
     <string name="merchant_profile_offers_header">Eskaintza aktiboak</string>
     <string name="merchant_profile_no_offers">Gaur ez dago eskaintza aktiborik</string>
@@ -408,6 +410,7 @@
     <string name="subscription_value_stats">Inpresioen eta kliken estatistikak</string>
     <string name="subscription_value_profile">Profil publikoa bezeroentzat ikusgai</string>
     <string name="subscription_price_monthly">24,99 €/hile</string>
+    <string name="subscription_price_format">%1$s/hile</string>
     <string name="subscription_trial_days_remaining">Proba-egun %1$d geratzen dira</string>
     <string name="subscription_trial_ends_today">Doako probaren azken eguna</string>
     <string name="subscription_expired_title">Proba amaitu da</string>
@@ -415,6 +418,11 @@
     <string name="subscription_subscribe_cta">Harpidetu 24,99 €/hile truke</string>
     <string name="subscription_subscribe_cta_now">Harpidetu orain</string>
     <string name="subscription_no_commitment">Konpromisorik gabe, noiznahi ezeztatu</string>
+    <string name="subscription_plan_monthly">Hilekoa</string>
+    <string name="subscription_plan_annual">Urtekoa</string>
+    <string name="subscription_savings_2months">2 hilabete doan</string>
+    <string name="subscription_price_format_annual">%1$s/urteko</string>
+    <string name="subscription_annual_equivalent">%1$s/hile urtero fakturatuta</string>
     <string name="subscription_required_error">Argitaratzeko harpidetza aktiboa behar duzu. Hasi harpidetza bat edo berritu daukazuna.</string>
     <string name="profile_restart_tour">Aplikazioaren tourra errepikatu</string>
 </resources>

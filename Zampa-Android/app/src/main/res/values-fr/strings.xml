@@ -121,6 +121,7 @@
     <string name="detail_about_restaurant">À propos du restaurant</string>
     <string name="detail_close">Fermer</string>
     <string name="detail_share_text">Regarde ce menu sur Zampa :</string>
+    <string name="merchant_share_text">Découvre ce restaurant sur Zampa:</string>
     <string name="detail_closes_at">Ferme à</string>
     <string name="detail_opens_at">Ouvre à</string>
     <string name="detail_favorite">Favori</string>
@@ -395,6 +396,7 @@
     <string name="map_no_locations">Aucun restaurant avec emplacement à afficher sur la carte</string>
     <string name="map_view_offer">Voir l\'offre</string>
     <string name="map_view_restaurant">Voir le restaurant</string>
+    <string name="map_no_offer_today">Pas d\'offre aujourd\'hui</string>
     <string name="merchant_profile_title">Restaurant</string>
     <string name="merchant_profile_offers_header">Offres actives</string>
     <string name="merchant_profile_no_offers">Aucune offre active aujourd\'hui</string>
@@ -408,6 +410,7 @@
     <string name="subscription_value_stats">Statistiques d\'impressions et de clics</string>
     <string name="subscription_value_profile">Profil public visible pour les clients</string>
     <string name="subscription_price_monthly">24,99 €/mois</string>
+    <string name="subscription_price_format">%1$s/mois</string>
     <string name="subscription_trial_days_remaining">%1$d jours d\'essai restants</string>
     <string name="subscription_trial_ends_today">Dernier jour de l\'essai gratuit</string>
     <string name="subscription_expired_title">Essai terminé</string>
@@ -415,6 +418,11 @@
     <string name="subscription_subscribe_cta">S\'abonner pour 24,99 €/mois</string>
     <string name="subscription_subscribe_cta_now">S\'abonner maintenant</string>
     <string name="subscription_no_commitment">Sans engagement, annulable à tout moment</string>
+    <string name="subscription_plan_monthly">Mensuel</string>
+    <string name="subscription_plan_annual">Annuel</string>
+    <string name="subscription_savings_2months">2 mois gratuits</string>
+    <string name="subscription_price_format_annual">%1$s/an</string>
+    <string name="subscription_annual_equivalent">%1$s/mois facturé annuellement</string>
     <string name="subscription_required_error">Un abonnement actif est requis pour publier. Démarrez ou renouvelez votre abonnement.</string>
     <string name="profile_restart_tour">Revoir le tour de l\'app</string>
 </resources>

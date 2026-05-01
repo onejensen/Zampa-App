@@ -121,6 +121,7 @@
   "detail_about_restaurant": "Sobre el restaurante",
   "detail_close": "Cerrar",
   "detail_share_text": "¡Mira este menú en Zampa:",
+  "merchant_share_text": "¡Mira este restaurante en Zampa:",
   "detail_closes_at": "Cierra a las",
   "detail_opens_at": "Abre a las",
   "detail_favorite": "Favorito",
@@ -399,6 +400,7 @@
   "map_no_locations": "Ningún restaurante con ubicación para mostrar en el mapa",
   "map_view_offer": "Ver oferta",
   "map_view_restaurant": "Ver restaurante",
+  "map_no_offer_today": "Sin oferta hoy",
   "merchant_profile_title": "Restaurante",
   "merchant_profile_offers_header": "Ofertas activas",
   "merchant_profile_no_offers": "Sin ofertas activas hoy",
@@ -421,6 +423,11 @@
   "subscription_subscribe_cta": "Suscribirme por 24,99 €/mes",
   "subscription_subscribe_cta_now": "Suscribirme ahora",
   "subscription_no_commitment": "Sin permanencia, cancela cuando quieras",
+  "subscription_plan_monthly": "Mensual",
+  "subscription_plan_annual": "Anual",
+  "subscription_savings_2months": "2 meses gratis",
+  "subscription_price_format_annual": "%@/año",
+  "subscription_annual_equivalent": "%@/mes facturado anualmente",
   "subscription_required_error": "Necesitas una suscripción activa para publicar. Inicia una suscripción o renueva la actual.",
   "profile_restart_tour": "Repetir tour de la app"
 }

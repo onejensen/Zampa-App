@@ -121,6 +121,7 @@
     <string name="detail_about_restaurant">Sobre el restaurante</string>
     <string name="detail_close">Cerrar</string>
     <string name="detail_share_text">¡Mira este menú en Zampa:</string>
+    <string name="merchant_share_text">¡Mira este restaurante en Zampa:</string>
     <string name="detail_closes_at">Cierra a las</string>
     <string name="detail_opens_at">Abre a las</string>
     <string name="detail_favorite">Favorito</string>
@@ -418,6 +419,7 @@
     <string name="map_no_locations">Ningún restaurante con ubicación para mostrar en el mapa</string>
     <string name="map_view_offer">Ver oferta</string>
     <string name="map_view_restaurant">Ver restaurante</string>
+    <string name="map_no_offer_today">Sin oferta hoy</string>
     <string name="merchant_profile_title">Restaurante</string>
     <string name="merchant_profile_offers_header">Ofertas activas</string>
     <string name="merchant_profile_no_offers">Sin ofertas activas hoy</string>
@@ -431,6 +433,7 @@
     <string name="subscription_value_stats">Estadísticas de impresiones y clics</string>
     <string name="subscription_value_profile">Perfil público visible para clientes</string>
     <string name="subscription_price_monthly">24,99 €/mes</string>
+    <string name="subscription_price_format">%1$s/mes</string>
     <string name="subscription_trial_days_remaining">%1$d días de prueba restantes</string>
     <string name="subscription_trial_ends_today">Último día de prueba gratuita</string>
     <string name="subscription_expired_title">Prueba terminada</string>
@@ -438,6 +441,11 @@
     <string name="subscription_subscribe_cta">Suscribirme por 24,99 €/mes</string>
     <string name="subscription_subscribe_cta_now">Suscribirme ahora</string>
     <string name="subscription_no_commitment">Sin permanencia, cancela cuando quieras</string>
+    <string name="subscription_plan_monthly">Mensual</string>
+    <string name="subscription_plan_annual">Anual</string>
+    <string name="subscription_savings_2months">2 meses gratis</string>
+    <string name="subscription_price_format_annual">%1$s/año</string>
+    <string name="subscription_annual_equivalent">%1$s/mes facturado anualmente</string>
     <string name="subscription_required_error">Necesitas una suscripción activa para publicar. Inicia una suscripción o renueva la actual.</string>
     <string name="profile_restart_tour">Repetir tour de la app</string>
 </resources>

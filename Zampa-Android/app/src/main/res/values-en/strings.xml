@@ -121,6 +121,7 @@
     <string name="detail_about_restaurant">About the restaurant</string>
     <string name="detail_close">Close</string>
     <string name="detail_share_text">Check out this menu on Zampa:</string>
+    <string name="merchant_share_text">Check out this restaurant on Zampa:</string>
     <string name="detail_closes_at">Closes at</string>
     <string name="detail_opens_at">Opens at</string>
     <string name="detail_favorite">Favorite</string>
@@ -395,6 +396,7 @@
     <string name="map_no_locations">No restaurants with a location to show on the map</string>
     <string name="map_view_offer">View offer</string>
     <string name="map_view_restaurant">View restaurant</string>
+    <string name="map_no_offer_today">No offer today</string>
     <string name="merchant_profile_title">Restaurant</string>
     <string name="merchant_profile_offers_header">Active offers</string>
     <string name="merchant_profile_no_offers">No active offers today</string>
@@ -408,6 +410,7 @@
     <string name="subscription_value_stats">Impression and click stats</string>
     <string name="subscription_value_profile">Public profile visible to customers</string>
     <string name="subscription_price_monthly">€24.99/month</string>
+    <string name="subscription_price_format">%1$s/month</string>
     <string name="subscription_trial_days_remaining">%1$d trial days remaining</string>
     <string name="subscription_trial_ends_today">Last day of your free trial</string>
     <string name="subscription_expired_title">Trial ended</string>
@@ -415,6 +418,11 @@
     <string name="subscription_subscribe_cta">Subscribe for €24.99/month</string>
     <string name="subscription_subscribe_cta_now">Subscribe now</string>
     <string name="subscription_no_commitment">No commitment, cancel anytime</string>
+    <string name="subscription_plan_monthly">Monthly</string>
+    <string name="subscription_plan_annual">Annual</string>
+    <string name="subscription_savings_2months">2 months free</string>
+    <string name="subscription_price_format_annual">%1$s/year</string>
+    <string name="subscription_annual_equivalent">%1$s/month billed annually</string>
     <string name="subscription_required_error">You need an active subscription to publish. Start or renew your subscription.</string>
     <string name="profile_restart_tour">Replay app tour</string>
 </resources>

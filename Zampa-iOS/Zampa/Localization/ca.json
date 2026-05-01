@@ -121,6 +121,7 @@
   "detail_about_restaurant": "Sobre el restaurant",
   "detail_close": "Tancar",
   "detail_share_text": "Mira aquest menú a Zampa:",
+  "merchant_share_text": "Mira aquest restaurant a Zampa:",
   "detail_closes_at": "Tanca a les",
   "detail_opens_at": "Obre a les",
   "detail_favorite": "Favorit",
@@ -399,6 +400,7 @@
   "map_no_locations": "Cap restaurant amb ubicació per mostrar al mapa",
   "map_view_offer": "Veure oferta",
   "map_view_restaurant": "Veure restaurant",
+  "map_no_offer_today": "Sense oferta avui",
   "merchant_profile_title": "Restaurant",
   "merchant_profile_offers_header": "Ofertes actives",
   "merchant_profile_no_offers": "Sense ofertes actives avui",
@@ -421,6 +423,11 @@
   "subscription_subscribe_cta": "Subscriure'm per 24,99 €/mes",
   "subscription_subscribe_cta_now": "Subscriure'm ara",
   "subscription_no_commitment": "Sense permanència, cancel·la quan vulguis",
+  "subscription_plan_monthly": "Mensual",
+  "subscription_plan_annual": "Anual",
+  "subscription_savings_2months": "2 mesos gratis",
+  "subscription_price_format_annual": "%@/any",
+  "subscription_annual_equivalent": "%@/mes facturat anualment",
   "subscription_required_error": "Necessites una subscripció activa per publicar. Inicia una subscripció o renova l'actual.",
   "profile_restart_tour": "Repetir el tour de l'app"
 }

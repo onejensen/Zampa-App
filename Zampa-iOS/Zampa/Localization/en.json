@@ -121,6 +121,7 @@
   "detail_about_restaurant": "About the restaurant",
   "detail_close": "Close",
   "detail_share_text": "Check out this menu on Zampa:",
+  "merchant_share_text": "Check out this restaurant on Zampa:",
   "detail_closes_at": "Closes at",
   "detail_opens_at": "Opens at",
   "detail_favorite": "Favorite",
@@ -399,6 +400,7 @@
   "map_no_locations": "No restaurants with a location to show on the map",
   "map_view_offer": "View offer",
   "map_view_restaurant": "View restaurant",
+  "map_no_offer_today": "No offer today",
   "merchant_profile_title": "Restaurant",
   "merchant_profile_offers_header": "Active offers",
   "merchant_profile_no_offers": "No active offers today",
@@ -421,6 +423,11 @@
   "subscription_subscribe_cta": "Subscribe for €24.99/month",
   "subscription_subscribe_cta_now": "Subscribe now",
   "subscription_no_commitment": "No commitment, cancel anytime",
+  "subscription_plan_monthly": "Monthly",
+  "subscription_plan_annual": "Annual",
+  "subscription_savings_2months": "2 months free",
+  "subscription_price_format_annual": "%@/year",
+  "subscription_annual_equivalent": "%@/month billed annually",
   "subscription_required_error": "You need an active subscription to publish. Start or renew your subscription.",
   "profile_restart_tour": "Replay app tour"
 }

@@ -121,6 +121,7 @@
     <string name="detail_about_restaurant">Über das Restaurant</string>
     <string name="detail_close">Schließen</string>
     <string name="detail_share_text">Schau dir dieses Menü auf Zampa an:</string>
+    <string name="merchant_share_text">Schau dir dieses Restaurant auf Zampa an:</string>
     <string name="detail_closes_at">Schließt um</string>
     <string name="detail_opens_at">Öffnet um</string>
     <string name="detail_favorite">Favorit</string>
@@ -395,6 +396,7 @@
     <string name="map_no_locations">Keine Restaurants mit Standort für die Karte</string>
     <string name="map_view_offer">Angebot ansehen</string>
     <string name="map_view_restaurant">Restaurant ansehen</string>
+    <string name="map_no_offer_today">Heute kein Angebot</string>
     <string name="merchant_profile_title">Restaurant</string>
     <string name="merchant_profile_offers_header">Aktive Angebote</string>
     <string name="merchant_profile_no_offers">Heute keine aktiven Angebote</string>
@@ -408,6 +410,7 @@
     <string name="subscription_value_stats">Statistiken zu Impressionen und Klicks</string>
     <string name="subscription_value_profile">Öffentliches Profil für Kunden sichtbar</string>
     <string name="subscription_price_monthly">24,99 €/Monat</string>
+    <string name="subscription_price_format">%1$s/Monat</string>
     <string name="subscription_trial_days_remaining">Noch %1$d Probetage</string>
     <string name="subscription_trial_ends_today">Letzter Tag der kostenlosen Testphase</string>
     <string name="subscription_expired_title">Testphase beendet</string>
@@ -415,6 +418,11 @@
     <string name="subscription_subscribe_cta">Für 24,99 €/Monat abonnieren</string>
     <string name="subscription_subscribe_cta_now">Jetzt abonnieren</string>
     <string name="subscription_no_commitment">Keine Mindestlaufzeit, jederzeit kündbar</string>
+    <string name="subscription_plan_monthly">Monatlich</string>
+    <string name="subscription_plan_annual">Jährlich</string>
+    <string name="subscription_savings_2months">2 Monate gratis</string>
+    <string name="subscription_price_format_annual">%1$s/Jahr</string>
+    <string name="subscription_annual_equivalent">%1$s/Monat jährlich abgerechnet</string>
     <string name="subscription_required_error">Du brauchst ein aktives Abo, um zu veröffentlichen. Starte oder verlängere dein Abonnement.</string>
     <string name="profile_restart_tour">App-Tour wiederholen</string>
 </resources>
