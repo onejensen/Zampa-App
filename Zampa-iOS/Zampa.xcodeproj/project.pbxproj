@@ -95,14 +95,14 @@
 			containerPortal = B2EA74A4AF65ECD87962526A /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = D3FC55475AD8D1D6A4089CD1;
-			remoteInfo = EatOut;
+			remoteInfo = Zampa;
 		};
 		EE56F818E7893E0B9D739B61 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B2EA74A4AF65ECD87962526A /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = D3FC55475AD8D1D6A4089CD1;
-			remoteInfo = EatOut;
+			remoteInfo = Zampa;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -294,12 +294,12 @@
 			path = App;
 			sourceTree = "<group>";
 		};
-		5B65EA840F1556A1BEA2BB77 /* EatOutUITests */ = {
+		5B65EA840F1556A1BEA2BB77 /* ZampaUITests */ = {
 			isa = PBXGroup;
 			children = (
 				72E6896DBFEB00D36E430197 /* .gitkeep */,
 			);
-			path = EatOutUITests;
+			path = ZampaUITests;
 			sourceTree = "<group>";
 		};
 		86E1717D305D2F143467FAC0 /* Core */ = {
@@ -329,13 +329,13 @@
 			path = Favorites;
 			sourceTree = "<group>";
 		};
-		A08EC3B4E3B94341979B8463 /* EatOutTests */ = {
+		A08EC3B4E3B94341979B8463 /* ZampaTests */ = {
 			isa = PBXGroup;
 			children = (
 				4F8647C556DAC3A53211039C /* .gitkeep */,
 				RD001122334455667788AAFF /* RecurringDaysTests.swift */,
 			);
-			path = EatOutTests;
+			path = ZampaTests;
 			sourceTree = "<group>";
 		};
 		A0B3548FFBA815F7905DBB87 /* Features */ = {
@@ -438,8 +438,8 @@
 			isa = PBXGroup;
 			children = (
 				182D0ABDD2A0F5FD1B49A7BF /* Zampa */,
-				A08EC3B4E3B94341979B8463 /* EatOutTests */,
-				5B65EA840F1556A1BEA2BB77 /* EatOutUITests */,
+				A08EC3B4E3B94341979B8463 /* ZampaTests */,
+				5B65EA840F1556A1BEA2BB77 /* ZampaUITests */,
 				A4445FDBAC944580FDB5FB53 /* Products */,
 				C8DCB8C42F5F4C5900C4D1FB /* Zampa.icon */,
 			);
@@ -475,7 +475,7 @@
 				A582820C39A3F7C887C6712A /* PBXTargetDependency */,
 			);
 			name = ZampaUITests;
-			productName = EatOutUITests;
+			productName = ZampaUITests;
 			productReference = 92DDDF050ABE186E082ED6A9 /* ZampaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -502,7 +502,7 @@
 				ABBA00020000CAFE0002CAFE /* FirebaseAnalytics */,
 				C8DCB8CA2F60839600C4D1FB /* GoogleSignIn */,
 			);
-			productName = EatOut;
+			productName = Zampa;
 			productReference = 26538C68CC32729958BE2650 /* Zampa.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -518,7 +518,7 @@
 				B35A8A63102C35AD1C88F39E /* PBXTargetDependency */,
 			);
 			name = ZampaTests;
-			productName = EatOutTests;
+			productName = ZampaTests;
 			productReference = 8152ECC34BCCFEF8F735B2D4 /* ZampaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -700,7 +700,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = EatOut;
+				TEST_TARGET_NAME = Zampa;
 			};
 			name = Debug;
 		};
@@ -880,7 +880,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = EatOut;
+				TEST_TARGET_NAME = Zampa;
 			};
 			name = Release;
 		};
