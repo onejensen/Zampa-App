@@ -89,7 +89,9 @@ fun FavoritesScreen(
                             EmptyFavoritesContent()
                         } else {
                             LazyColumn(
-                                contentPadding = PaddingValues(16.dp),
+                                // Bottom padding extra para que la última card no
+                                // quede tapada por la nav bar (que flota encima).
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 item {

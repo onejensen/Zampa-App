@@ -17,7 +17,7 @@ import com.sozolab.zampa.ui.onboarding.AppOnboardingScreen
 import com.sozolab.zampa.data.model.User
 
 enum class Tab(val label: String) {
-    FEED("Feed"), FAVORITES("Favoritos"), DASHBOARD("Mis Menús"), PROFILE("Perfil")
+    FEED("Ofertas"), FAVORITES("Favoritos"), DASHBOARD("Mis Menús"), PROFILE("Perfil")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,6 +29,7 @@ fun MainScreen(
     onNavigateToDetail: (String) -> Unit,
     onNavigateToMerchant: (String) -> Unit = {},
     onNavigateToStats: () -> Unit,
+    onNavigateToSubscription: () -> Unit = {},
     onNavigateToDietaryPreferences: () -> Unit = {},
     onNavigateToNotificationPreferences: () -> Unit = {},
     onNavigateToCurrencyPreference: () -> Unit = {},
@@ -107,7 +108,7 @@ fun MainScreen(
                         icon = {
                             Icon(
                                 when (tab) {
-                                    Tab.FEED -> Icons.Default.Home
+                                    Tab.FEED -> Icons.Default.RestaurantMenu
                                     Tab.FAVORITES -> Icons.Default.Favorite
                                     Tab.DASHBOARD -> Icons.Default.AddBox
                                     Tab.PROFILE -> Icons.Default.Person
@@ -157,10 +158,11 @@ fun MainScreen(
                     onProfilePhotoUpdated = { bitmap, photoData -> authViewModel.updateProfilePhoto(bitmap, photoData) },
                     onNavigateToStats = onNavigateToStats,
                     onNavigateToEditProfile = onNavigateToSetup,
-                    onNavigateToSubscription = {},
+                    onNavigateToSubscription = onNavigateToSubscription,
                     onNavigateToDietaryPreferences = onNavigateToDietaryPreferences,
                     onNavigateToNotificationPreferences = onNavigateToNotificationPreferences,
                     onNavigateToCurrencyPreference = onNavigateToCurrencyPreference,
+                    onNavigateToLanguage = onNavigateToLanguage,
                     onNavigateToHistory = onNavigateToHistory,
                     onRequestAccountDeletion = { onError -> authViewModel.requestAccountDeletion(onError) },
                     modifier = Modifier.padding(paddingValues)

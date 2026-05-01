@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -17,7 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -45,6 +48,7 @@ fun ProfileScreen(
     onNavigateToSubscription: () -> Unit = {},
     onNavigateToNotificationPreferences: () -> Unit = {},
     onNavigateToCurrencyPreference: () -> Unit = {},
+    onNavigateToLanguage: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
     onRequestAccountDeletion: ((onError: (String) -> Unit) -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -319,22 +323,23 @@ fun ProfileScreen(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 16.dp)
     ) {
-        // Header: Avatar + User Info
+        // Header: Avatar + User Info en horizontal (paridad iOS).
         item {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Avatar with camera overlay
+                // Avatar con cámara overlay
                 Box(
                     contentAlignment = Alignment.BottomEnd,
                     modifier = Modifier.clickable { showPhotoSourceDialog = true }
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(100.dp)
+                            .size(96.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
@@ -363,7 +368,7 @@ fun ProfileScreen(
 
                     FilledIconButton(
                         onClick = { showPhotoSourceDialog = true },
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(30.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         )
@@ -371,67 +376,41 @@ fun ProfileScreen(
                         Icon(
                             Icons.Default.CameraAlt,
                             contentDescription = "Cambiar foto",
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(16.dp),
+                            tint = Color.White
                         )
                     }
                 }
-                
-                Spacer(Modifier.height(12.dp))
-                
-                Text(
-                    user?.name ?: "Usuario",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Text(
-                    user?.email ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                TextButton(onClick = {
-                    editNameText = user?.name ?: ""
-                    showEditNameDialog = true
-                }) {
-                    Text("Editar nombre", style = MaterialTheme.typography.labelMedium)
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        user?.name ?: "Usuario",
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        user?.email ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "Editar nombre",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable {
+                            editNameText = user?.name ?: ""
+                            showEditNameDialog = true
+                        }
+                    )
                 }
-                Spacer(Modifier.height(4.dp))
-                
-                AssistChip(
-                    onClick = {},
-                    label = {
-                        Text(if (isMerchant) "Restaurante" else "Cliente")
-                    },
-                    leadingIcon = {
-                        Icon(
-                            if (isMerchant) Icons.Default.Storefront else Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                )
             }
         }
         
-        // Section: Mi Actividad
-        item {
-            SectionHeader("Mi Actividad")
-        }
-        item {
-            ProfileMenuItem(
-                icon = Icons.Default.Favorite,
-                title = "Favoritos",
-                iconTint = MaterialTheme.colorScheme.error,
-                onClick = {}
-            )
-        }
-        item {
-            ProfileMenuItem(
-                icon = Icons.Default.History,
-                title = "Historial",
-                iconTint = MaterialTheme.colorScheme.primary,
-                onClick = onNavigateToHistory
-            )
-        }
-        
+        // Sección "Mi Actividad" eliminada: Favoritos vive en su propio bottom-tab,
+        // Historial se quitó como feature.
+
         // Section: Preferencias
         item {
             SectionHeader("Preferencias")
@@ -483,6 +462,40 @@ fun ProfileScreen(
                     )
                 },
                 modifier = Modifier.clickable(onClick = onNavigateToCurrencyPreference)
+            )
+        }
+        // Idioma — debajo de Moneda.
+        item {
+            val langCode = user?.languagePreference ?: "auto"
+            val langLabel = when (langCode) {
+                "es" -> "Español"
+                "ca" -> "Català"
+                "eu" -> "Euskara"
+                "gl" -> "Galego"
+                "en" -> "English"
+                "de" -> "Deutsch"
+                "fr" -> "Français"
+                "it" -> "Italiano"
+                else -> "Sistema"
+            }
+            ListItem(
+                headlineContent = { Text("Idioma") },
+                supportingContent = { Text(langLabel) },
+                leadingContent = {
+                    Icon(
+                        Icons.Default.Language,
+                        contentDescription = "Idioma",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                trailingContent = {
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                modifier = Modifier.clickable(onClick = onNavigateToLanguage)
             )
         }
         item {
@@ -625,36 +638,50 @@ private fun ThemePickerRow() {
         ThemeManager.LIGHT to "Claro",
         ThemeManager.DARK to "Oscuro",
     )
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    // SegmentedButton de Material3 tiene un alto + padding mínimo grande que
+    // empuja el label "Tema" fuera de la pantalla. Sustituimos por pills
+    // custom (Surface + clickable) con padding compacto, conservando el tamaño
+    // del texto pero reduciendo la altura del componente.
+    ListItem(
+        headlineContent = { Text("Tema") },
+        leadingContent = {
             Icon(
                 Icons.Default.Brightness6,
                 contentDescription = "Tema",
                 tint = MaterialTheme.colorScheme.primary
             )
-            Spacer(Modifier.width(16.dp))
-            Text("Tema", style = MaterialTheme.typography.bodyLarge)
-        }
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            options.forEachIndexed { index, (value, label) ->
-                SegmentedButton(
-                    selected = current == value,
-                    onClick = { themeManager.setTheme(value) },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                        activeBorderColor = MaterialTheme.colorScheme.primary,
-                    )
-                ) {
-                    Text(label)
+        },
+        trailingContent = {
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(2.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                options.forEach { (value, label) ->
+                    val isSelected = current == value
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary
+                                else Color.Transparent
+                            )
+                            .clickable { themeManager.setTheme(value) }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                    else MaterialTheme.colorScheme.onSurface,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        )
+                    }
                 }
             }
         }
-    }
+    )
 }

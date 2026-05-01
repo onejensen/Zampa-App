@@ -18,6 +18,7 @@ struct MerchantProfileView: View {
     @State private var isLoading = true
     @State private var error: String?
     @State private var mapPosition: MapCameraPosition = .automatic
+    @State private var isFavorite: Bool = false
 
     var body: some View {
         ScrollView {
@@ -135,20 +136,59 @@ struct MerchantProfileView: View {
 
     @ViewBuilder
     private var actionButtons: some View {
-        HStack(spacing: 12) {
-            if let phone = merchant?.phone, !phone.isEmpty {
-                ProfileActionButton(
-                    icon: "phone.fill",
-                    label: localization.t("detail_call"),
-                    action: { callPhone(phone) }
-                )
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                if let phone = merchant?.phone, !phone.isEmpty {
+                    ProfileActionButton(
+                        icon: "phone.fill",
+                        label: localization.t("detail_call"),
+                        action: { callPhone(phone) }
+                    )
+                }
+                if let addr = merchant?.address {
+                    ProfileActionButton(
+                        icon: "map.fill",
+                        label: localization.t("detail_directions"),
+                        action: { openDirections(to: addr) }
+                    )
+                }
             }
-            if let addr = merchant?.address {
+            HStack(spacing: 12) {
                 ProfileActionButton(
-                    icon: "map.fill",
-                    label: localization.t("detail_directions"),
-                    action: { openDirections(to: addr) }
+                    icon: isFavorite ? "heart.fill" : "heart",
+                    label: localization.t("detail_favorite"),
+                    tint: isFavorite ? .red : nil,
+                    action: { toggleFavorite() }
                 )
+                if let merchant = merchant {
+                    ShareLink(
+                        item: shareURL,
+                        subject: Text(merchant.name),
+                        message: Text("\(localization.t("merchant_share_text")) \(merchant.name)")
+                    ) {
+                        ShareActionButtonContent(label: localization.t("detail_share"))
+                    }
+                }
+            }
+        }
+    }
+
+    /// URL público que se comparte. Apunta al landing — cuando se añada
+    /// la ruta `/r/{id}` en el landing + AASA, los Universal Links abrirán
+    /// la app directamente en el perfil del restaurante.
+    private var shareURL: URL {
+        URL(string: "https://www.getzampa.com/r/\(merchantId)")
+            ?? URL(string: "https://www.getzampa.com")!
+    }
+
+    private func toggleFavorite() {
+        let previousState = isFavorite
+        isFavorite.toggle()
+        Task {
+            if let newState = try? await FirebaseService.shared.toggleFavorite(merchantId: merchantId) {
+                await MainActor.run { self.isFavorite = newState }
+            } else {
+                await MainActor.run { self.isFavorite = previousState }
             }
         }
     }
@@ -190,9 +230,12 @@ struct MerchantProfileView: View {
             let (m, rawOffers) = try await (merchantTask, offersTask)
             // Solo ofertas hoy/permanentes (misma lógica que feed)
             let active = rawOffers.filter { $0.isToday }
+            // Estado de favorito (no bloqueante: si falla, se mantiene en false).
+            let fav = (try? await FirebaseService.shared.isFavorite(merchantId: merchantId)) ?? false
             await MainActor.run {
                 self.merchant = m
                 self.offers = active
+                self.isFavorite = fav
                 self.isLoading = false
             }
         } catch {
@@ -246,11 +289,15 @@ private struct ProfileInfoRow: View {
 private struct ProfileActionButton: View {
     let icon: String
     let label: String
+    /// Color del icono cuando se quiere resaltar un estado (e.g. heart.fill rojo
+    /// cuando es favorito). Si nil, usa blanco.
+    var tint: Color? = nil
     let action: () -> Void
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
+                    .foregroundColor(tint ?? .white)
                 Text(label).font(.custom("Sora-SemiBold", size: 14))
             }
             .foregroundColor(.white)
@@ -259,6 +306,23 @@ private struct ProfileActionButton: View {
             .background(Color.appPrimary)
             .cornerRadius(12)
         }
+    }
+}
+
+/// Contenido visual para `ShareLink` — replica el look de `ProfileActionButton`
+/// sin envolver en otro Button (ShareLink ya provee el tap target).
+private struct ShareActionButtonContent: View {
+    let label: String
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "square.and.arrow.up")
+            Text(label).font(.custom("Sora-SemiBold", size: 14))
+        }
+        .foregroundColor(.white)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Color.appPrimary)
+        .cornerRadius(12)
     }
 }
 

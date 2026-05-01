@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 
 struct SubscriptionView: View {
     @ObservedObject var localization = LocalizationManager.shared
@@ -8,12 +9,35 @@ struct SubscriptionView: View {
 
     @State private var promoFreeUntil: Date? = nil
     @State private var purchaseSuccessful: Bool = false
+    @State private var selectedPlan: SubscriptionPlan = .annual  // anual por defecto (más LTV)
+
+    enum SubscriptionPlan { case monthly, annual }
 
     private var merchant: Merchant? { appState.merchantProfile }
     private var status: SubscriptionStatus { merchant?.subscriptionStatus ?? .trial }
     private var trialDays: Int? { merchant?.trialDaysRemaining() }
     private var promoActive: Bool { (promoFreeUntil ?? .distantPast) > Date() }
     private var canPublish: Bool { promoActive || (merchant?.canPublish() ?? true) }
+
+    /// Producto StoreKit del plan seleccionado actualmente. Si el plan elegido no
+    /// está cargado (e.g. anual aún no creado en ASC), cae al otro.
+    private var currentProduct: StoreKit.Product? {
+        switch selectedPlan {
+        case .annual:  return storeKit.annualProduct ?? storeKit.monthlyProduct
+        case .monthly: return storeKit.monthlyProduct ?? storeKit.annualProduct
+        }
+    }
+
+    /// Plan efectivo según los productos disponibles. Si solo hay uno, fuerza ese.
+    private var effectivePlan: SubscriptionPlan {
+        if storeKit.annualProduct == nil { return .monthly }
+        if storeKit.monthlyProduct == nil { return .annual }
+        return selectedPlan
+    }
+
+    private var hasBothPlans: Bool {
+        storeKit.monthlyProduct != nil && storeKit.annualProduct != nil
+    }
 
     var body: some View {
         NavigationView {
@@ -116,22 +140,29 @@ struct SubscriptionView: View {
     // MARK: - Precio + CTA
     private var priceAndCTA: some View {
         VStack(spacing: 16) {
-            // Precio: si StoreKit cargó el producto, interpolamos su `displayPrice`
-            // (formato localizado por Apple) en el sufijo localizado. Sin producto
-            // cargado, fallback al string completo traducido.
-            Text(storeKit.product.map {
-                String(format: localization.t("subscription_price_format"), $0.displayPrice)
-            } ?? localization.t("subscription_price_monthly"))
+            // Toggle Mensual/Anual sólo si hay ambos productos cargados.
+            if hasBothPlans {
+                planSelector
+            }
+
+            // Precio del plan seleccionado, formateado con el sufijo correcto.
+            Text(priceText)
                 .font(.custom("Sora-Bold", size: 28))
                 .foregroundColor(.appPrimary)
 
+            // Sub-label con la equivalencia mensual del plan anual.
+            if effectivePlan == .annual, let monthly = annualMonthlyEquivalent {
+                Text(String(format: localization.t("subscription_annual_equivalent"), monthly))
+                    .font(.appCaption)
+                    .foregroundColor(.appTextSecondary)
+            }
+
             Button(action: {
                 Task {
-                    let ok = await storeKit.purchase()
+                    guard let product = currentProduct else { return }
+                    let ok = await storeKit.purchase(product)
                     if ok {
                         purchaseSuccessful = true
-                        // Refrescar el merchantProfile tras unos segundos para
-                        // recoger el cambio de subscriptionStatus que escribe el webhook.
                         try? await Task.sleep(nanoseconds: 3_000_000_000)
                         if let uid = appState.currentUser?.id,
                            let m = try? await FirebaseService.shared.getMerchantProfile(merchantId: uid) {
@@ -176,10 +207,64 @@ struct SubscriptionView: View {
         }
     }
 
+    /// Segmented control "Mensual / Anual · 2 meses gratis".
+    @ViewBuilder
+    private var planSelector: some View {
+        HStack(spacing: 0) {
+            planSegment(.monthly, label: localization.t("subscription_plan_monthly"))
+            planSegment(.annual, label: localization.t("subscription_plan_annual"), savings: localization.t("subscription_savings_2months"))
+        }
+        .padding(4)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color.appInputBackground))
+    }
+
+    @ViewBuilder
+    private func planSegment(_ plan: SubscriptionPlan, label: String, savings: String? = nil) -> some View {
+        let isSelected = effectivePlan == plan
+        Button(action: { selectedPlan = plan }) {
+            VStack(spacing: 2) {
+                Text(label)
+                    .font(.custom("Sora-SemiBold", size: 14))
+                    .foregroundColor(isSelected ? .white : .appTextPrimary)
+                if let savings, !savings.isEmpty {
+                    Text(savings)
+                        .font(.custom("Sora-Regular", size: 11))
+                        .foregroundColor(isSelected ? .white.opacity(0.9) : .appPrimary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 10).fill(
+                isSelected ? Color.appPrimary : Color.clear
+            ))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Texto principal del precio (eje. "24,99 €/mes" o "249,90 €/año").
+    private var priceText: String {
+        guard let product = currentProduct else {
+            return localization.t("subscription_price_monthly")
+        }
+        let format = effectivePlan == .annual
+            ? localization.t("subscription_price_format_annual")
+            : localization.t("subscription_price_format")
+        return String(format: format, product.displayPrice)
+    }
+
+    /// Para el plan anual: devuelve el equivalente mensual ya formateado (ej. "20,82 €").
+    /// Usa el `priceFormatStyle` del propio producto para que el símbolo de moneda
+    /// coincida con el storefront del usuario (€ en ES, $ en US, etc.).
+    private var annualMonthlyEquivalent: String? {
+        guard let annual = storeKit.annualProduct else { return nil }
+        let monthlyDecimal = annual.price / 12
+        return monthlyDecimal.formatted(annual.priceFormatStyle)
+    }
+
     /// Sólo permitir comprar si: (1) producto cargado, (2) no hay compra en curso,
     /// (3) no estamos en periodo gratis (promo o trial activo).
     private var canPurchase: Bool {
-        storeKit.product != nil
+        currentProduct != nil
             && !storeKit.isPurchasing
             && !promoActive
             && status != .active

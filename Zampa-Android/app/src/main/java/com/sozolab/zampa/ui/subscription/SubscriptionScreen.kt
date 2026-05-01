@@ -38,6 +38,9 @@ fun SubscriptionScreen(
     val productDetails by viewModel.productDetails.collectAsState()
     val isPurchasing by viewModel.isPurchasing.collectAsState()
     val purchaseSuccessful by viewModel.purchaseSuccessful.collectAsState()
+    val selectedPlan by viewModel.selectedPlan.collectAsState()
+    val selectedOffer by viewModel.selectedOffer.collectAsState()
+    val hasBothPlans by viewModel.hasBothPlans.collectAsState()
     val context = LocalContext.current
 
     val nowMs = System.currentTimeMillis()
@@ -45,7 +48,7 @@ fun SubscriptionScreen(
     val status = merchant?.subscriptionStatus ?: SubscriptionStatus.TRIAL
     val trialDays = merchant?.trialDaysRemaining()
     val canPublish = promoActive || (merchant?.canPublish() ?: true)
-    val canPurchase = productDetails != null
+    val canPurchase = selectedOffer != null
         && !isPurchasing
         && !promoActive
         && status != SubscriptionStatus.ACTIVE
@@ -89,22 +92,92 @@ fun SubscriptionScreen(
                 }
             }
 
+            // ── Toggle Mensual / Anual (solo si ambos base plans están cargados) ──
+            // Ambos pills con la misma estructura (un Text) → mismo tamaño visual.
+            // El "2 meses gratis" se muestra como badge separado bajo el row cuando
+            // Anual esté seleccionado, en lugar de incrustarlo en la pill.
+            if (hasBothPlans) {
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = selectedPlan == SubscriptionViewModel.Plan.MONTHLY,
+                        onClick = { viewModel.selectPlan(SubscriptionViewModel.Plan.MONTHLY) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = MaterialTheme.colorScheme.primary,
+                            activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                            activeBorderColor = MaterialTheme.colorScheme.primary,
+                        )
+                    ) {
+                        Text(stringResource(R.string.subscription_plan_monthly))
+                    }
+                    SegmentedButton(
+                        selected = selectedPlan == SubscriptionViewModel.Plan.ANNUAL,
+                        onClick = { viewModel.selectPlan(SubscriptionViewModel.Plan.ANNUAL) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = MaterialTheme.colorScheme.primary,
+                            activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                            activeBorderColor = MaterialTheme.colorScheme.primary,
+                        )
+                    ) {
+                        Text(stringResource(R.string.subscription_plan_annual))
+                    }
+                }
+                // Badge "2 meses gratis" sólo cuando Anual esté seleccionado.
+                if (selectedPlan == SubscriptionViewModel.Plan.ANNUAL) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.subscription_savings_2months),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+
             // ── CTA suscripción ───────────────────────────────────────────
-            // Si Play Billing cargó el producto, usamos su precio formateado.
-            val priceLabel = productDetails?.subscriptionOfferDetails
-                ?.firstOrNull()
+            // Precio del plan seleccionado, formateado por Google con la moneda
+            // y duración correctas (ej: "24,99 €/mes" o "249,90 €/año").
+            val pricingPhase = selectedOffer
                 ?.pricingPhases
                 ?.pricingPhaseList
                 ?.firstOrNull()
-                ?.formattedPrice
-                ?.let { "$it/mes" }
-                ?: stringResource(R.string.subscription_price_monthly)
+            val priceLabel = pricingPhase?.formattedPrice?.let { price ->
+                when (selectedPlan) {
+                    SubscriptionViewModel.Plan.MONTHLY ->
+                        stringResource(R.string.subscription_price_format, price)
+                    SubscriptionViewModel.Plan.ANNUAL ->
+                        stringResource(R.string.subscription_price_format_annual, price)
+                }
+            } ?: stringResource(R.string.subscription_price_monthly)
             Text(
                 priceLabel,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
+
+            // Sub-label con equivalencia mensual del plan anual ("20,82 €/mes facturado anualmente").
+            if (selectedPlan == SubscriptionViewModel.Plan.ANNUAL && pricingPhase != null) {
+                val monthlyEquiv = run {
+                    val perMonthMicros = pricingPhase.priceAmountMicros / 12
+                    val cents = perMonthMicros / 10000
+                    val main = cents / 100
+                    val frac = cents % 100
+                    // Extraemos símbolo de moneda del formattedPrice ("24,99 €" → "€").
+                    val currencyChar = pricingPhase.formattedPrice.replace(Regex("[\\d,.\\s]"), "")
+                    "%d,%02d %s".format(main, frac, currencyChar).trim()
+                }
+                Text(
+                    stringResource(R.string.subscription_annual_equivalent, monthlyEquiv),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             Button(
                 onClick = {

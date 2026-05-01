@@ -50,7 +50,23 @@ class FeedViewModel @Inject constructor(
     init {
         fetchLocation()
         loadMenus()
+        loadAllMerchants()
         observeCity()
+    }
+
+    /**
+     * Carga todos los comercios verificados con coordenadas para mostrarlos como
+     * pines en el mapa, incluyendo los que NO tienen oferta hoy. Se siembra el
+     * `merchantMap` y luego `loadMenus` puede sobrescribir/añadir según haga falta.
+     * Best-effort: si falla, no bloqueamos el feed.
+     */
+    private fun loadAllMerchants() {
+        viewModelScope.launch {
+            try {
+                val all = firebaseService.getAllVerifiedMerchants()
+                _merchantMap.value = _merchantMap.value + all.associateBy { it.id }
+            } catch (_: Exception) { /* silent */ }
+        }
     }
 
     fun fetchLocation() {

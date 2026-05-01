@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- windowBackground naranja brand para que el cold start flash sea naranja
+         continuo con el splash de Compose, sin el splash nativo extra. -->
     <style name="Theme.Zampa" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/brand_orange</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-    </style>
-
-    <style name="Theme.Zampa.Splash" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@drawable/splash_screen</item>
-        <item name="android:statusBarColor">#FAAF32</item>
-        <item name="android:navigationBarColor">#FAAF32</item>
     </style>
 </resources>

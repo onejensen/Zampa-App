@@ -15,17 +15,19 @@ struct FeedMapView: View {
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var selectedPin: MerchantPin?
 
-    /// Agrupa ofertas por merchant. Un merchant sin address se excluye.
+    /// Construye los pines a partir de TODOS los merchants en `merchantMap`
+    /// (incluye los que sólo aparecen porque están verificados aunque no tengan
+    /// oferta hoy). Cada pin lleva sus ofertas del día (lista vacía si no tiene).
+    /// Pin sin coords se excluye.
     private var pins: [MerchantPin] {
-        let byMerchant = Dictionary(grouping: menus, by: { $0.businessId })
-        return byMerchant.compactMap { (businessId, offers) -> MerchantPin? in
-            guard let merchant = merchantMap[businessId],
-                  let addr = merchant.address,
+        let offersByMerchant = Dictionary(grouping: menus, by: { $0.businessId })
+        return merchantMap.values.compactMap { merchant -> MerchantPin? in
+            guard let addr = merchant.address,
                   !(addr.lat == 0 && addr.lng == 0) else { return nil }
             return MerchantPin(
-                id: businessId,
+                id: merchant.id,
                 merchant: merchant,
-                offers: offers,
+                offers: offersByMerchant[merchant.id] ?? [],
                 coordinate: CLLocationCoordinate2D(latitude: addr.lat, longitude: addr.lng)
             )
         }
@@ -36,7 +38,7 @@ struct FeedMapView: View {
             Map(position: $cameraPosition, selection: $selectedPin) {
                 ForEach(pins) { pin in
                     Annotation(pin.merchant.name, coordinate: pin.coordinate) {
-                        BrandMarker()
+                        BrandMarker(hasOffers: !pin.offers.isEmpty)
                     }
                     .tag(pin)
                 }
@@ -146,8 +148,8 @@ private struct MerchantPinSheet: View {
 
     @ObservedObject var localization = LocalizationManager.shared
 
-    private var primary: Menu { pin.offers[0] }
-    private var extraCount: Int { pin.offers.count - 1 }
+    private var primary: Menu? { pin.offers.first }
+    private var extraCount: Int { max(0, pin.offers.count - 1) }
     private var distanceKm: Double? {
         guard let user = userLocation else { return nil }
         let merchant = CLLocation(latitude: pin.coordinate.latitude, longitude: pin.coordinate.longitude)
@@ -165,7 +167,10 @@ private struct MerchantPinSheet: View {
                 }
             }
             HStack(alignment: .top, spacing: 12) {
-                AsyncImage(url: primary.photoUrls.first.flatMap(URL.init(string:))) { image in
+                // Foto: si hay oferta, foto de la oferta; si no, cover del comercio.
+                let imgUrl = primary?.photoUrls.first.flatMap(URL.init(string:))
+                    ?? pin.merchant.coverPhotoUrl.flatMap(URL.init(string:))
+                AsyncImage(url: imgUrl) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
                     Color.appSurface
@@ -177,16 +182,27 @@ private struct MerchantPinSheet: View {
                     Text(pin.merchant.name)
                         .font(.custom("Sora-Bold", size: 17))
                         .foregroundColor(.appTextPrimary)
-                    Text(primary.title)
-                        .font(.appBody)
-                        .foregroundColor(.appTextSecondary)
-                        .lineLimit(2)
-                    HStack(spacing: 8) {
-                        Text("\(String(format: "%.2f", primary.priceTotal)) €")
-                            .font(.custom("Sora-Bold", size: 14))
-                            .foregroundColor(.appPrimary)
+                    if let p = primary {
+                        Text(p.title)
+                            .font(.appBody)
+                            .foregroundColor(.appTextSecondary)
+                            .lineLimit(2)
+                        HStack(spacing: 8) {
+                            Text("\(String(format: "%.2f", p.priceTotal)) €")
+                                .font(.custom("Sora-Bold", size: 14))
+                                .foregroundColor(.appPrimary)
+                            if let km = distanceKm {
+                                Text("· \(String(format: "%.1f", km)) km")
+                                    .font(.appCaption)
+                                    .foregroundColor(.appTextSecondary)
+                            }
+                        }
+                    } else {
+                        Text(localization.t("map_no_offer_today"))
+                            .font(.appBody)
+                            .foregroundColor(.appTextSecondary)
                         if let km = distanceKm {
-                            Text("· \(String(format: "%.1f", km)) km")
+                            Text("\(String(format: "%.1f", km)) km")
                                 .font(.appCaption)
                                 .foregroundColor(.appTextSecondary)
                         }
@@ -201,43 +217,58 @@ private struct MerchantPinSheet: View {
                     .foregroundColor(.appTextSecondary)
             }
 
-            Button(action: { onViewOffer(primary.id) }) {
-                Text(localization.t("map_view_offer"))
-                    .font(.appHeadline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.appPrimary))
-            }
-
-            Button(action: { onViewRestaurant(pin.id) }) {
-                Text(localization.t("map_view_restaurant"))
-                    .font(.appHeadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.appPrimary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.appPrimary, lineWidth: 1.5)
-                    )
+            if let p = primary {
+                Button(action: { onViewOffer(p.id) }) {
+                    Text(localization.t("map_view_offer"))
+                        .font(.appHeadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.appPrimary))
+                }
+                Button(action: { onViewRestaurant(pin.id) }) {
+                    Text(localization.t("map_view_restaurant"))
+                        .font(.appHeadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.appPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.appPrimary, lineWidth: 1.5)
+                        )
+                }
+            } else {
+                // Sin oferta: el CTA primario es el perfil del comercio.
+                Button(action: { onViewRestaurant(pin.id) }) {
+                    Text(localization.t("map_view_restaurant"))
+                        .font(.appHeadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.appPrimary))
+                }
             }
         }
         .padding(24)
     }
 }
 
-/// Marker custom con el logo de Zampa sobre círculo naranja con borde blanco.
+/// Marker custom con el logo de Zampa sobre círculo brand.
+/// - `hasOffers == true` → naranja (con oferta hoy).
+/// - `hasOffers == false` → gris (sin oferta hoy, accesible para favoritar/compartir).
 private struct BrandMarker: View {
+    var hasOffers: Bool = true
     var body: some View {
         Image("Logo")
             .resizable()
             .scaledToFit()
-            .frame(width: 28, height: 28)
+            .frame(width: hasOffers ? 28 : 22, height: hasOffers ? 28 : 22)
             .foregroundColor(.white)
-            .padding(8)
-            .background(Circle().fill(Color.appPrimary))
+            .padding(hasOffers ? 8 : 6)
+            .background(Circle().fill(hasOffers ? Color.appPrimary : Color(red: 0.62, green: 0.62, blue: 0.62)))
             .overlay(Circle().stroke(Color.white, lineWidth: 2))
             .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 2)
     }

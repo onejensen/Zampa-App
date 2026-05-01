@@ -13,9 +13,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -71,18 +74,42 @@ class MerchantProfileViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val _isFavorite = MutableStateFlow(false)
+    val isFavorite: StateFlow<Boolean> = _isFavorite
+
+    private var currentMerchantId: String? = null
+
     fun load(merchantId: String) {
+        currentMerchantId = merchantId
         _isLoading.value = true
         viewModelScope.launch {
             try {
                 val merchantDef = async { firebaseService.getMerchantProfile(merchantId) }
                 val offersDef = async { firebaseService.getMenusByMerchant(merchantId) }
+                val favDef = async {
+                    try { firebaseService.isFavorite(merchantId) } catch (_: Exception) { false }
+                }
                 _merchant.value = merchantDef.await()
                 _offers.value = offersDef.await().filter { it.isToday }
+                _isFavorite.value = favDef.await()
             } catch (_: Exception) {
                 // silent
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    /** Optimistic update: el UI se actualiza inmediatamente, se revierte si falla. */
+    fun toggleFavorite() {
+        val merchantId = currentMerchantId ?: return
+        val previous = _isFavorite.value
+        _isFavorite.value = !previous
+        viewModelScope.launch {
+            try {
+                _isFavorite.value = firebaseService.toggleFavorite(merchantId)
+            } catch (_: Exception) {
+                _isFavorite.value = previous
             }
         }
     }
@@ -99,6 +126,7 @@ fun MerchantProfileScreen(
     val merchant by viewModel.merchant.collectAsState()
     val offers by viewModel.offers.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isFavorite by viewModel.isFavorite.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(merchantId) { viewModel.load(merchantId) }
@@ -235,7 +263,7 @@ fun MerchantProfileScreen(
                     }
                 }
 
-                // Botones acción
+                // Botones acción — fila 1: Llamar + Cómo ir
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     merchant?.phone?.takeIf { it.isNotBlank() }?.let { phone ->
                         MerchantProfileActionBtn(
@@ -261,6 +289,33 @@ fun MerchantProfileScreen(
                             }
                             context.startActivity(Intent(Intent.ACTION_VIEW, uri))
                         }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                // Botones acción — fila 2: Favorito + Compartir (siempre disponibles
+                // aunque el comercio no tenga oferta del día).
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    MerchantProfileActionBtn(
+                        icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        label = stringResource(R.string.detail_favorite),
+                        modifier = Modifier.weight(1f),
+                        iconTint = if (isFavorite) androidx.compose.ui.graphics.Color.Red else null
+                    ) { viewModel.toggleFavorite() }
+                    val shareText = stringResource(R.string.merchant_share_text)
+                    val merchantName = merchant?.name ?: ""
+                    MerchantProfileActionBtn(
+                        icon = Icons.Default.Share,
+                        label = stringResource(R.string.detail_share),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        val url = "https://www.getzampa.com/r/$merchantId"
+                        val body = "$shareText $merchantName: $url"
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, body)
+                            putExtra(Intent.EXTRA_SUBJECT, merchantName)
+                        }
+                        context.startActivity(Intent.createChooser(send, null))
                     }
                 }
 
@@ -314,6 +369,7 @@ private fun MerchantProfileActionBtn(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     modifier: Modifier = Modifier,
+    iconTint: androidx.compose.ui.graphics.Color? = null,
     onClick: () -> Unit
 ) {
     Button(
@@ -321,7 +377,12 @@ private fun MerchantProfileActionBtn(
         modifier = modifier.height(48.dp),
         shape = RoundedCornerShape(12.dp),
     ) {
-        Icon(icon, null, modifier = Modifier.size(18.dp))
+        Icon(
+            icon,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = iconTint ?: androidx.compose.ui.graphics.Color.Unspecified
+        )
         Spacer(Modifier.width(6.dp))
         Text(label, fontWeight = FontWeight.SemiBold)
     }

@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,25 +57,17 @@ fun DashboardScreen(
     var showBulkDeleteConfirm by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text("Panel Restaurante", fontWeight = FontWeight.Bold) },
-            navigationIcon = {
-                if (menus.isNotEmpty()) {
-                    TextButton(onClick = {
-                        isSelecting = !isSelecting
-                        if (!isSelecting) selectedIds.clear()
-                    }) {
-                        Text(if (isSelecting) "Listo" else "Editar")
-                    }
-                }
-            },
-            actions = {
-                if (!isSelecting) {
-                    IconButton(onClick = { showCreateSheet = true }) {
-                        Icon(Icons.Default.Add, "Crear menú")
-                    }
-                }
-            }
+        // Header simple — paridad iOS (`navigationTitle("Panel Restaurante")`).
+        // No es un TopAppBar con actions, sólo el título centrado.
+        Text(
+            "Panel Restaurante",
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
         LazyColumn(
@@ -121,22 +114,42 @@ fun DashboardScreen(
             }
 
             // ── BIG PUBLISH BUTTON ──────────────────────────────────────
+            // Espejo del iOS: relleno naranja brand, texto blanco, glow naranja
+            // alrededor (shadow coloreada). `ambientColor`/`spotColor` requieren
+            // API 28+; en API 26-27 la sombra es gris default pero el botón se
+            // sigue viendo correcto.
             item {
-                Button(
-                    onClick = { showCreateSheet = true },
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
+                        .height(64.dp)
+                        .shadow(
+                            elevation = 16.dp,
+                            shape = RoundedCornerShape(16.dp),
+                            ambientColor = MaterialTheme.colorScheme.primary,
+                            spotColor = MaterialTheme.colorScheme.primary,
+                        )
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable { showCreateSheet = true },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        "PUBLICAR OFERTA",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.AddCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(26.dp),
+                            tint = Color.White
+                        )
+                        Text(
+                            "PUBLICAR OFERTA",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
+                    }
                 }
             }
 

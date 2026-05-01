@@ -148,6 +148,15 @@ fun MerchantProfileSetupScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(if (isEditMode) stringResource(R.string.setup_edit_title) else stringResource(R.string.setup_create_title), fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    // Botón cerrar arriba a la izquierda — sólo en modo edición.
+                    // En modo creación no hay back porque es el flow obligatorio post-signup.
+                    if (isEditMode) {
+                        IconButton(onClick = onSkip) {
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )

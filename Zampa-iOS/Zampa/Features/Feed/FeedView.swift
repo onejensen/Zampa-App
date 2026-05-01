@@ -212,6 +212,11 @@ struct FeedView: View {
                 } else {
                     backgroundRefresh()
                 }
+                // Cargar todos los comercios verificados (con o sin oferta) la primera vez
+                // para que el mapa muestre también los que no tienen menú hoy.
+                if merchantMap.isEmpty {
+                    loadAllVerifiedMerchants()
+                }
                 // Prompt location permission if not yet determined
                 if appState.locationManager.authorizationStatus == .notDetermined {
                     showingLocationPrompt = true
@@ -342,6 +347,21 @@ struct FeedView: View {
     private func distanceForMenu(_ menu: Menu, userLoc: CLLocation) -> Double {
         guard let addr = merchantMap[menu.businessId]?.address else { return Double.greatestFiniteMagnitude }
         return userLoc.distance(from: CLLocation(latitude: addr.lat, longitude: addr.lng))
+    }
+
+    /// Carga TODOS los merchants verificados con coords para mostrarlos como pines
+    /// en el mapa (incluso los que no tienen oferta hoy). Best-effort: si falla,
+    /// el mapa se queda con los que vengan vía `loadMenus`. Llamar una vez al iniciar.
+    private func loadAllVerifiedMerchants() {
+        Task {
+            if let all = try? await FirebaseService.shared.getAllVerifiedMerchants() {
+                await MainActor.run {
+                    var map = merchantMap
+                    for m in all { map[m.id] = m }
+                    merchantMap = map
+                }
+            }
+        }
     }
 
     private func loadMenus() {

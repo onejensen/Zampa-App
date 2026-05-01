@@ -419,7 +419,7 @@ fun MenuDetailScreen(
 
             HorizontalDivider()
 
-            // ── CATEGORY TABS ────────────────────────────────────────────
+            // ── CATEGORY TABS (informativos, no seleccionables) ──────────
             currentMenu.tags?.takeIf { it.isNotEmpty() }?.let { tags ->
                 Row(
                     modifier = Modifier
@@ -430,16 +430,16 @@ fun MenuDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     tags.forEach { tag ->
-                        val isSelected = selectedTag == tag
                         Surface(
-                            onClick = { selectedTag = if (isSelected) null else tag },
                             shape = RoundedCornerShape(22.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else ChipBackground
+                            // Gris neutro semi-translúcido — funciona sobre cualquier fondo
+                            // y mantiene texto blanco legible en light + dark.
+                            color = Color.Black.copy(alpha = 0.4f),
                         ) {
                             Text(
                                 tag,
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                color = Color.White,
                                 maxLines = 1,
                                 softWrap = false,
                                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 9.dp)

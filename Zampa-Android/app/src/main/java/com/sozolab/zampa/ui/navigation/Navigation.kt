@@ -24,6 +24,7 @@ sealed class Route(val route: String) {
     data object MerchantSetup : Route("merchant_setup")
     data object LocationOnboarding : Route("location_onboarding")
     data object Stats : Route("stats")
+    data object Subscription : Route("subscription")
     data object DietaryPreferences : Route("dietary_preferences")
     data object NotificationPreferences : Route("notification_preferences")
     data object CurrencyPreference : Route("currency_preference")
@@ -150,6 +151,9 @@ fun ZampaNavHost(
                 onNavigateToStats = {
                     navController.navigate(Route.Stats.route)
                 },
+                onNavigateToSubscription = {
+                    navController.navigate(Route.Subscription.route)
+                },
                 onNavigateToDietaryPreferences = {
                     navController.navigate(Route.DietaryPreferences.route)
                 },
@@ -192,6 +196,11 @@ fun ZampaNavHost(
         composable(Route.Stats.route) {
             com.sozolab.zampa.ui.stats.StatsScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Route.Subscription.route) {
+            com.sozolab.zampa.ui.subscription.SubscriptionScreen(
+                onDismiss = { navController.popBackStack() }
             )
         }
         composable(Route.DietaryPreferences.route) {

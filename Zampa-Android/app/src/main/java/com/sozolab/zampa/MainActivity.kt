@@ -16,9 +16,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.sozolab.zampa.data.ThemeManager
 import com.sozolab.zampa.ui.navigation.ZampaNavHost
+import com.sozolab.zampa.ui.splash.ZampaSplash
 import com.sozolab.zampa.ui.theme.LocalThemeManager
 import com.sozolab.zampa.ui.theme.ZampaTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.isSystemInDarkTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -56,11 +60,18 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        val pendingId by deepLinkOfferId.collectAsState()
-                        ZampaNavHost(
-                            startMenuId = pendingId,
-                            onMenuConsumed = { deepLinkOfferId.value = null }
-                        )
+                        // Splash al estilo iOS: orange + logo + "Zampa" durante 700ms,
+                        // luego cede paso al NavHost real.
+                        var splashDone by remember { mutableStateOf(false) }
+                        if (!splashDone) {
+                            ZampaSplash(onFinish = { splashDone = true })
+                        } else {
+                            val pendingId by deepLinkOfferId.collectAsState()
+                            ZampaNavHost(
+                                startMenuId = pendingId,
+                                onMenuConsumed = { deepLinkOfferId.value = null }
+                            )
+                        }
                     }
                 }
             }

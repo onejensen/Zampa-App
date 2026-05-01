@@ -21,6 +21,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,7 +34,12 @@ class SubscriptionViewModel @Inject constructor(
 
     companion object {
         const val PRODUCT_ID = "zampa_pro_monthly"
+        // Base plan IDs definidos en Play Console.
+        const val BASE_PLAN_MONTHLY = "monthly"
+        const val BASE_PLAN_ANNUAL = "annual"
     }
+
+    enum class Plan { MONTHLY, ANNUAL }
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -54,6 +61,29 @@ class SubscriptionViewModel @Inject constructor(
 
     private val _purchaseSuccessful = MutableStateFlow(false)
     val purchaseSuccessful: StateFlow<Boolean> = _purchaseSuccessful
+
+    private val _selectedPlan = MutableStateFlow(Plan.ANNUAL)
+    val selectedPlan: StateFlow<Plan> = _selectedPlan
+
+    fun selectPlan(plan: Plan) { _selectedPlan.value = plan }
+
+    /** Devuelve la base plan seleccionada (offer details) si está cargada. */
+    val selectedOffer: StateFlow<ProductDetails.SubscriptionOfferDetails?> =
+        kotlinx.coroutines.flow.combine(_productDetails, _selectedPlan) { product, plan ->
+            val targetBasePlanId = when (plan) {
+                Plan.MONTHLY -> BASE_PLAN_MONTHLY
+                Plan.ANNUAL -> BASE_PLAN_ANNUAL
+            }
+            product?.subscriptionOfferDetails?.firstOrNull { it.basePlanId == targetBasePlanId }
+                ?: product?.subscriptionOfferDetails?.firstOrNull()
+        }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, null)
+
+    /** ¿Hay base plans para ambas duraciones? Decide si mostrar el toggle en UI. */
+    val hasBothPlans: StateFlow<Boolean> =
+        _productDetails.map { product ->
+            val ids = product?.subscriptionOfferDetails?.map { it.basePlanId } ?: emptyList()
+            ids.contains(BASE_PLAN_MONTHLY) && ids.contains(BASE_PLAN_ANNUAL)
+        }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
 
     private var billingClient: BillingClient? = null
 
@@ -147,7 +177,16 @@ class SubscriptionViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val token = firebaseService.getOrCreateAppAccountToken()
-                val offerToken = product.subscriptionOfferDetails?.firstOrNull()?.offerToken
+                // Pickea el offer del base plan seleccionado (monthly o annual).
+                // Si no se encuentra el seleccionado, fallback al primero (compat).
+                val targetBasePlanId = when (_selectedPlan.value) {
+                    Plan.MONTHLY -> BASE_PLAN_MONTHLY
+                    Plan.ANNUAL -> BASE_PLAN_ANNUAL
+                }
+                val offer = product.subscriptionOfferDetails
+                    ?.firstOrNull { it.basePlanId == targetBasePlanId }
+                    ?: product.subscriptionOfferDetails?.firstOrNull()
+                val offerToken = offer?.offerToken
                 if (offerToken == null) {
                     _error.value = "El producto no tiene base plan activo en Play Console."
                     _isPurchasing.value = false
@@ -185,6 +224,14 @@ class SubscriptionViewModel @Inject constructor(
                     _error.value = "Acknowledge falló: ${result.debugMessage}"
                 }
             }
+        }
+        // Registrar purchaseToken → merchantId en backend. Es fallback por si
+        // playRTDN no puede llamar a androidpublisher API (cuenta sin permisos
+        // en Play Console). Idempotente: el doc se sobreescribe con cada compra.
+        viewModelScope.launch {
+            try {
+                firebaseService.recordPlayPurchase(purchase.purchaseToken)
+            } catch (_: Exception) { /* silent — el webhook tiene fallback adicional */ }
         }
         _isPurchasing.value = false
         _purchaseSuccessful.value = true

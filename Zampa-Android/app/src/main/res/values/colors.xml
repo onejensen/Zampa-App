@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Naranja brand Zampa. Usado por el windowBackground del Theme.Zampa
+         para que el cold start flash sea naranja en lugar de blanco. -->
+    <color name="brand_orange">#FFAA1C</color>
+</resources>

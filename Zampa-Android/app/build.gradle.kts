@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -8,6 +10,15 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Cargamos `local.properties` manualmente. `providers.gradleProperty()` solo lee
+// `gradle.properties`, así que sin este helper las credenciales de keystore +
+// MAPS_API_KEY que el dev pone en `local.properties` no se ven.
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { stream -> load(stream) }
+}
+fun localProp(name: String): String? = localProps.getProperty(name)
+
 android {
     namespace = "com.sozolab.zampa"
     compileSdk = 35
@@ -16,7 +27,7 @@ android {
         applicationId = "com.sozolab.zampa"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
+        versionCode = 8
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -28,6 +39,7 @@ android {
         // (`MAPS_API_KEY=AIza...`) → placeholder vacío (el mapa mostrará error in-app
         // pero el build no falla, facilitando CI sin clave).
         val mapsApiKey: String = System.getenv("MAPS_API_KEY")
+            ?: localProp("MAPS_API_KEY")
             ?: providers.gradleProperty("MAPS_API_KEY").orNull
             ?: ""
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
@@ -35,16 +47,25 @@ android {
 
     signingConfigs {
         create("release") {
-            // Path resolved from ZAMPA_KEYSTORE_PATH env var or local.properties
-            // (which is gitignored). Avoids hardcoding the developer's machine path.
+            // Resolución: env vars → local.properties (gitignored) → vacío.
+            // Evita hardcodear paths de la máquina del dev.
             val keystorePath: String? = System.getenv("ZAMPA_KEYSTORE_PATH")
+                ?: localProp("ZAMPA_KEYSTORE_PATH")
                 ?: providers.gradleProperty("zampaKeystorePath").orNull
             if (keystorePath != null) {
-                storeFile = file(keystorePath)
+                // Soporta paths con `~` o `$HOME`.
+                val expanded = keystorePath
+                    .replaceFirst("^~".toRegex(), System.getProperty("user.home"))
+                    .replace("\$HOME", System.getProperty("user.home"))
+                storeFile = file(expanded)
             }
-            storePassword = System.getenv("ZAMPA_KEYSTORE_PASS") ?: ""
+            storePassword = System.getenv("ZAMPA_KEYSTORE_PASS")
+                ?: localProp("ZAMPA_KEYSTORE_PASS")
+                ?: ""
             keyAlias = "zampa"
-            keyPassword = System.getenv("ZAMPA_KEY_PASS") ?: ""
+            keyPassword = System.getenv("ZAMPA_KEY_PASS")
+                ?: localProp("ZAMPA_KEY_PASS")
+                ?: ""
         }
     }
 

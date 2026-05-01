@@ -17,12 +17,20 @@ import StoreKit
 final class StoreKitManager: ObservableObject {
     static let shared = StoreKitManager()
 
-    /// Product ID que coincide con App Store Connect, Play Console y backend.
-    static let productId = "zampa_pro_monthly"
+    /// Product IDs activos. Apple requiere un product por duración.
+    /// Si alguno no está creado en App Store Connect todavía, se ignora silenciosamente
+    /// (la UI sólo muestra los planes que cargaron OK).
+    static let monthlyProductId = "zampa_pro_monthly"
+    static let annualProductId = "zampa_pro_annual"
+    static let productIds = [monthlyProductId, annualProductId]
 
-    @Published private(set) var product: Product?
+    @Published private(set) var monthlyProduct: Product?
+    @Published private(set) var annualProduct: Product?
     @Published private(set) var isPurchasing: Bool = false
     @Published var lastError: String?
+
+    /// Compatibilidad con código viejo que usaba `product` singular: devuelve el mensual.
+    var product: Product? { monthlyProduct }
 
     private var updatesTask: Task<Void, Never>?
 
@@ -41,26 +49,24 @@ final class StoreKitManager: ObservableObject {
         }
     }
 
-    /// Carga el producto desde la App Store. Llamar al abrir la pantalla de suscripción.
+    /// Carga ambos productos (mensual + anual) desde la App Store. Si alguno no
+    /// está configurado todavía, se queda nil y la UI sólo muestra el que cargó.
     func loadProduct() async {
         do {
-            let products = try await Product.products(for: [Self.productId])
-            self.product = products.first
-            if products.first == nil {
-                self.lastError = "Producto no disponible (¿configurado en App Store Connect?)"
+            let products = try await Product.products(for: Set(Self.productIds))
+            self.monthlyProduct = products.first { $0.id == Self.monthlyProductId }
+            self.annualProduct = products.first { $0.id == Self.annualProductId }
+            if monthlyProduct == nil && annualProduct == nil {
+                self.lastError = "Productos no disponibles (¿configurados en App Store Connect?)"
             }
         } catch {
-            self.lastError = "No se pudo cargar el producto: \(error.localizedDescription)"
+            self.lastError = "No se pudieron cargar los productos: \(error.localizedDescription)"
         }
     }
 
-    /// Lanza el flujo de compra. Devuelve `true` si terminó OK (purchased o pending),
-    /// `false` si el usuario canceló o hubo error.
-    func purchase() async -> Bool {
-        guard let product else {
-            lastError = "Producto no cargado todavía."
-            return false
-        }
+    /// Lanza el flujo de compra del producto indicado. Devuelve `true` si terminó OK
+    /// (purchased o pending), `false` si el usuario canceló o hubo error.
+    func purchase(_ product: Product) async -> Bool {
         isPurchasing = true
         defer { isPurchasing = false }
 

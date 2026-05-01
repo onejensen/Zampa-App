@@ -65,15 +65,18 @@ fun FeedMapView(
     onNavigateToMerchant: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    // Construimos pines a partir de TODOS los merchants en merchantMap (incluye
+    // los que cargó `loadAllMerchants` además de los que vienen de `loadMenus`).
+    // Cada pin lleva sus ofertas del día (lista vacía si no tiene). El estilo del
+    // marker se decide en BrandMarker según si offers está vacío o no.
     val pins = remember(menus, merchantMap) {
-        menus
-            .groupBy { it.businessId }
-            .mapNotNull { (businessId, offers) ->
-                val m = merchantMap[businessId] ?: return@mapNotNull null
-                val addr = m.address ?: return@mapNotNull null
-                if (addr.lat == 0.0 && addr.lng == 0.0) return@mapNotNull null
-                MerchantPin(businessId, m, offers, addr.lat, addr.lng)
-            }
+        val offersByMerchant = menus.groupBy { it.businessId }
+        merchantMap.values.mapNotNull { m ->
+            val addr = m.address ?: return@mapNotNull null
+            if (addr.lat == 0.0 && addr.lng == 0.0) return@mapNotNull null
+            val merchantOffers = offersByMerchant[m.id] ?: emptyList()
+            MerchantPin(m.id, m, merchantOffers, addr.lat, addr.lng)
+        }
     }
 
     val cameraPositionState = rememberCameraPositionState {
@@ -122,7 +125,7 @@ fun FeedMapView(
                     selectedPin = pin
                     true
                 },
-                clusterItemContent = { BrandMarker() },
+                clusterItemContent = { pin -> BrandMarker(hasOffers = pin.offers.isNotEmpty()) },
                 clusterContent = { cluster -> BrandClusterMarker(count = cluster.size) },
             )
         }
@@ -187,8 +190,8 @@ private fun MerchantPinSheet(
     onViewOffer: (String) -> Unit,
     onViewRestaurant: (String) -> Unit,
 ) {
-    val primary = pin.offers.first()
-    val extraCount = pin.offers.size - 1
+    val primary = pin.offers.firstOrNull()
+    val extraCount = (pin.offers.size - 1).coerceAtLeast(0)
     val distanceKm: Double? = userLocation?.let { user ->
         val m = android.location.Location("").apply {
             latitude = pin.position.latitude
@@ -213,8 +216,9 @@ private fun MerchantPinSheet(
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Foto: si hay oferta, foto de la oferta; si no, cover photo del comercio.
             AsyncImage(
-                model = primary.photoUrls.firstOrNull(),
+                model = primary?.photoUrls?.firstOrNull() ?: pin.merchant.coverPhotoUrl,
                 contentDescription = null,
                 modifier = Modifier
                     .size(80.dp)
@@ -227,21 +231,37 @@ private fun MerchantPinSheet(
                     pin.merchant.name,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
-                Text(
-                    primary.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                )
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (primary != null) {
                     Text(
-                        "${"%.2f".format(primary.priceTotal)} €",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        primary.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "${"%.2f".format(primary.priceTotal)} €",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        distanceKm?.let {
+                            Text(
+                                "· ${"%.1f".format(it)} km",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                } else {
+                    // Sin oferta hoy
+                    Text(
+                        stringResource(R.string.map_no_offer_today),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     distanceKm?.let {
                         Text(
-                            "· ${"%.1f".format(it)} km",
+                            "${"%.1f".format(it)} km",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -258,42 +278,56 @@ private fun MerchantPinSheet(
             )
         }
 
-        Button(
-            onClick = { onViewOffer(primary.id) },
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-        ) {
-            Text(stringResource(R.string.map_view_offer))
-        }
-
-        OutlinedButton(
-            onClick = { onViewRestaurant(pin.merchantId) },
-            modifier = Modifier.fillMaxWidth().height(44.dp),
-            shape = RoundedCornerShape(12.dp),
-        ) {
-            Text(stringResource(R.string.map_view_restaurant))
+        if (primary != null) {
+            Button(
+                onClick = { onViewOffer(primary.id) },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text(stringResource(R.string.map_view_offer))
+            }
+            OutlinedButton(
+                onClick = { onViewRestaurant(pin.merchantId) },
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text(stringResource(R.string.map_view_restaurant))
+            }
+        } else {
+            // Sin oferta: el CTA principal es el perfil del comercio (donde puede
+            // favoritar / compartir / llamar).
+            Button(
+                onClick = { onViewRestaurant(pin.merchantId) },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text(stringResource(R.string.map_view_restaurant))
+            }
         }
     }
 }
 
 /**
- * Marker custom que muestra el logo de Zampa sobre un círculo con el color brand.
- * Se renderiza una vez por item (maps-compose cachea el bitmap).
+ * Marker custom que muestra el logo de Zampa.
+ * - `hasOffers == true` → círculo naranja brand (comercio con oferta hoy).
+ * - `hasOffers == false` → círculo gris (comercio sin oferta hoy, todavía
+ *   accesible para favoritar/compartir).
  */
 @Composable
-private fun BrandMarker() {
+private fun BrandMarker(hasOffers: Boolean = true) {
+    val bg = if (hasOffers) Color(0xFFFFAA1C) else Color(0xFF9E9E9E)
     Box(
         modifier = Modifier
-            .size(46.dp)
+            .size(if (hasOffers) 46.dp else 38.dp)
             .shadow(4.dp, CircleShape)
-            .background(Color(0xFFFFAA1C), CircleShape)
+            .background(bg, CircleShape)
             .border(2.dp, Color.White, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Image(
             painter = painterResource(R.drawable.logo_zampa),
             contentDescription = null,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(if (hasOffers) 28.dp else 22.dp),
             contentScale = ContentScale.Fit,
         )
     }
