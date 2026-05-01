@@ -22,7 +22,6 @@
 		4C081338C8B8EB2CFB3F504E /* ZampaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26913EC8DC18A79A8B61CAC /* ZampaApp.swift */; };
 		4F2B58F7EEE488982F649040 /* Sora-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 711C918F4FBF2ACF97FCA9DE /* Sora-SemiBold.ttf */; };
 		5C5C94682F5CF617153B749F /* it.json in Resources */ = {isa = PBXBuildFile; fileRef = 6F9B0AEF396233EFA4241CF8 /* it.json */; };
-		60F9AA21C774037D6646AE23 /* LogoEatOut 2.png in Resources */ = {isa = PBXBuildFile; fileRef = A06A48C293CD4F281B8F0D21 /* LogoEatOut 2.png */; };
 		6180807EBBD3A99B1013A59A /* EditMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF52E86CE5265A6F404BD3F2 /* EditMenuView.swift */; };
 		73EAEC92454B010CD8B17B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 89DD49D2FCCDC0617DF75DE3 /* Assets.xcassets */; };
 		7559513E79D23DCE1A35C048 /* google-services.json in Resources */ = {isa = PBXBuildFile; fileRef = BAEEE50E3527EEE2B1C78835 /* google-services.json */; };
@@ -76,7 +75,6 @@
 		DD1122334455667788990011 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1122334455667788990012 /* CachedAsyncImage.swift */; };
 		DEADBEEF00010000CAFE0001 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = DEADBEEF00020000CAFE0002 /* FirebaseCrashlytics */; };
 		E00F722EB5E986B310A55AFA /* eu.json in Resources */ = {isa = PBXBuildFile; fileRef = 0EC362306572E296B641FE9A /* eu.json */; };
-		E5FF94083B516974A44F1409 /* icon.json in Resources */ = {isa = PBXBuildFile; fileRef = FEB596DBDBD3A16CC83CA9D6 /* icon.json */; };
 		E6F943CAA695D3345278B376 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F612DC95FA115FF9781B2B /* AuthView.swift */; };
 		E88EFED8C803ABD7826CD752 /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD83BCDEFBF76FB8AA4CFF8 /* FirebaseService.swift */; };
 		EC1A2B3C4D5E6F7A8B9C0D1E /* RecurringDaysPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC1A2B3C4D5E6F7A8B9C0D1F /* RecurringDaysPicker.swift */; };
@@ -133,7 +131,6 @@
 		94F1403637B03AE1A929A3CD /* fr.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = fr.json; sourceTree = "<group>"; };
 		9AA021CD0DDD42274F2C6BA0 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		9BB8F0C75C33096BA4851176 /* LanguagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguagePickerView.swift; sourceTree = "<group>"; };
-		A06A48C293CD4F281B8F0D21 /* LogoEatOut 2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LogoEatOut 2.png"; sourceTree = "<group>"; };
 		A0B3548FFBA815F7905DBB95 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		A0B3548FFBA815F7905DBB98 /* DietaryPreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietaryPreferencesView.swift; sourceTree = "<group>"; };
 		A0B3548FFBA815F7905DBBA2 /* MerchantDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantDashboardView.swift; sourceTree = "<group>"; };
@@ -181,7 +178,6 @@
 		DF52E86CE5265A6F404BD3F2 /* EditMenuView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditMenuView.swift; sourceTree = "<group>"; };
 		E780E787E234D6606C650EA6 /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedView.swift; sourceTree = "<group>"; };
 		EC1A2B3C4D5E6F7A8B9C0D1F /* RecurringDaysPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringDaysPicker.swift; sourceTree = "<group>"; };
-		FEB596DBDBD3A16CC83CA9D6 /* icon.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = icon.json; sourceTree = "<group>"; };
 		FEED0002CAFEBABE00020002 /* FeedMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedMapView.swift; sourceTree = "<group>"; };
 		FEED0004CAFEBABE00040004 /* MerchantProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantProfileView.swift; sourceTree = "<group>"; };
 		FF1122334455667788990012 /* SocialAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialAuthService.swift; sourceTree = "<group>"; };
@@ -258,20 +254,11 @@
 				F260AE877314EF7411A875ED /* Localization */,
 				44B0AE079DA51CC74119FBA9 /* App */,
 				86E1717D305D2F143467FAC0 /* Core */,
-				AA02274265F3415838E9B26B /* EatOut_icon.icon */,
 				A0B3548FFBA815F7905DBB87 /* Features */,
 				E114BA4AB8CD4BD62890563C /* Services */,
 				C8D31FC92ED8D272000D0042 /* GoogleService-Info.plist */,
 			);
 			path = Zampa;
-			sourceTree = "<group>";
-		};
-		2C7276E016D60DBA087482E1 /* Assets */ = {
-			isa = PBXGroup;
-			children = (
-				A06A48C293CD4F281B8F0D21 /* LogoEatOut 2.png */,
-			);
-			path = Assets;
 			sourceTree = "<group>";
 		};
 		4162F3A02419AC8CB1AEE863 /* Auth */ = {
@@ -374,15 +361,6 @@
 				92DDDF050ABE186E082ED6A9 /* ZampaUITests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		AA02274265F3415838E9B26B /* EatOut_icon.icon */ = {
-			isa = PBXGroup;
-			children = (
-				FEB596DBDBD3A16CC83CA9D6 /* icon.json */,
-				2C7276E016D60DBA087482E1 /* Assets */,
-			);
-			path = EatOut_icon.icon;
 			sourceTree = "<group>";
 		};
 		BE333A1A2B3C4D5E6F789012 /* Sounds */ = {
@@ -583,12 +561,10 @@
 				4F2B58F7EEE488982F649040 /* Sora-SemiBold.ttf in Resources */,
 				D770884C1A18EFA67BABD489 /* Sora-Bold.ttf in Resources */,
 				73EAEC92454B010CD8B17B11 /* Assets.xcassets in Resources */,
-				60F9AA21C774037D6646AE23 /* LogoEatOut 2.png in Resources */,
 				C85B57A52F68733300E5B414 /* Launch Screen.storyboard in Resources */,
 				C8DCB8C52F5F4C5900C4D1FB /* Zampa.icon in Resources */,
 				C8D31FCA2ED8D272000D0042 /* GoogleService-Info.plist in Resources */,
 				7559513E79D23DCE1A35C048 /* google-services.json in Resources */,
-				E5FF94083B516974A44F1409 /* icon.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
