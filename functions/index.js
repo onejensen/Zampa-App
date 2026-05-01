@@ -820,8 +820,6 @@ exports.playRTDN = onMessagePublished(
     { topic: "play-rtdn", region: "us-central1" },
     async (event) => {
         try {
-            const { google } = require("googleapis");
-
             const data = event.data?.message?.data;
             if (!data) {
                 logger.warn("playRTDN: mensaje sin data.");
@@ -830,7 +828,7 @@ exports.playRTDN = onMessagePublished(
 
             // Pub/Sub manda data en base64.
             const decoded = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
-            const { subscriptionNotification, oneTimeProductNotification, testNotification, packageName } = decoded;
+            const { subscriptionNotification, testNotification, packageName } = decoded;
 
             // Test events del Play Console:
             if (testNotification) {
@@ -860,60 +858,96 @@ exports.playRTDN = onMessagePublished(
             //   20=PENDING_PURCHASE_CANCELED
             const eventId = `google_${purchaseToken}_${notificationType}_${decoded.eventTimeMillis}`;
 
-            // Validar el purchaseToken contra Google Play Developer API.
-            // Application Default Credentials funciona en Cloud Functions sin más
-            // setup siempre que la cuenta de servicio del proyecto esté linkeada en
-            // Play Console.
-            const auth = new google.auth.GoogleAuth({
-                scopes: ["https://www.googleapis.com/auth/androidpublisher"],
-            });
-            const androidpublisher = google.androidpublisher({ version: "v3", auth });
+            // Estrategia híbrida:
+            // (A) Intentamos validar contra androidpublisher para tener datos ricos
+            //     (expiryTime, subscriptionState, obfuscatedAccountId). Requiere que
+            //     la SA tenga permisos en Play Console → API access.
+            // (B) Si (A) falla por permisos (o no está configurada API access aún),
+            //     fallback: derivamos estado del notificationType + lookup del
+            //     `playPurchases/{purchaseToken}` que la app registra tras la compra.
+            let businessId = null;
+            let expirationMs = null;
+            let subState = "";
+            let apiData = null;
 
-            const subResp = await androidpublisher.purchases.subscriptionsv2.get({
-                packageName,
-                token: purchaseToken,
-            });
-            const sub = subResp.data || {};
+            try {
+                const { google } = require("googleapis");
+                const auth = new google.auth.GoogleAuth({
+                    scopes: ["https://www.googleapis.com/auth/androidpublisher"],
+                });
+                const androidpublisher = google.androidpublisher({ version: "v3", auth });
+                const subResp = await androidpublisher.purchases.subscriptionsv2.get({
+                    packageName,
+                    token: purchaseToken,
+                });
+                apiData = subResp.data || {};
+                const expiryTimeIso = apiData.lineItems?.[0]?.expiryTime;
+                expirationMs = expiryTimeIso ? Date.parse(expiryTimeIso) : null;
+                businessId = await resolveMerchantId(
+                    apiData.externalAccountIdentifiers?.obfuscatedExternalAccountId
+                );
+                subState = apiData.subscriptionState || "";
+            } catch (apiErr) {
+                logger.warn(
+                    `playRTDN: androidpublisher API no disponible (${apiErr.code || apiErr.message}). ` +
+                    `Usando fallback con purchaseToken lookup.`,
+                );
+                // Fallback (B): mapear merchant via doc registrado por la app.
+                const db = admin.firestore();
+                const lookupDoc = await db.collection("playPurchases").doc(purchaseToken).get();
+                if (lookupDoc.exists) {
+                    businessId = lookupDoc.data().businessId || null;
+                }
+            }
 
-            // sub.lineItems[0].expiryTime es ISO string. sub.subscriptionState =
-            // SUBSCRIPTION_STATE_ACTIVE / IN_GRACE_PERIOD / ON_HOLD / PAUSED / EXPIRED / CANCELED / PENDING.
-            const expiryTimeIso = sub.lineItems?.[0]?.expiryTime;
-            const expirationMs = expiryTimeIso ? Date.parse(expiryTimeIso) : null;
-            // obfuscatedExternalAccountId = el mismo UUID guardado en businesses (lo
-            // mantenemos consistente entre ambas plataformas para simplificar el lookup).
-            const businessId = await resolveMerchantId(
-                sub.externalAccountIdentifiers?.obfuscatedExternalAccountId
-            );
-            const subState = sub.subscriptionState || "";
-
+            // Si tenemos subState (de la API), úsalo. Si no, derivamos del notificationType.
             let newStatus = null;
-            switch (subState) {
-                case "SUBSCRIPTION_STATE_ACTIVE":
-                case "SUBSCRIPTION_STATE_IN_GRACE_PERIOD":
-                case "SUBSCRIPTION_STATE_CANCELED":  // cancelado pero válido hasta expiry
-                    newStatus = "active";
-                    break;
-                case "SUBSCRIPTION_STATE_ON_HOLD":
-                case "SUBSCRIPTION_STATE_PAUSED":
-                case "SUBSCRIPTION_STATE_EXPIRED":
-                    newStatus = "expired";
-                    break;
-                case "SUBSCRIPTION_STATE_PENDING":
-                    // Compra esperando confirmación (e.g. transferencia bancaria).
-                    // No tocamos status hasta que se confirme.
-                    break;
-                default:
-                    logger.info(`playRTDN: subscriptionState desconocido '${subState}'.`);
+            if (subState) {
+                switch (subState) {
+                    case "SUBSCRIPTION_STATE_ACTIVE":
+                    case "SUBSCRIPTION_STATE_IN_GRACE_PERIOD":
+                    case "SUBSCRIPTION_STATE_CANCELED":
+                        newStatus = "active";
+                        break;
+                    case "SUBSCRIPTION_STATE_ON_HOLD":
+                    case "SUBSCRIPTION_STATE_PAUSED":
+                    case "SUBSCRIPTION_STATE_EXPIRED":
+                        newStatus = "expired";
+                        break;
+                    case "SUBSCRIPTION_STATE_PENDING":
+                        break;  // sin cambio
+                    default:
+                        logger.info(`playRTDN: subscriptionState desconocido '${subState}'.`);
+                }
+            } else {
+                // Fallback: derivar de notificationType (RTDN reference).
+                switch (Number(notificationType)) {
+                    case 1: case 2: case 4: case 7:  // RECOVERED, RENEWED, PURCHASED, RESTARTED
+                    case 6:  // IN_GRACE_PERIOD
+                    case 3:  // CANCELED → sigue activo hasta expiry
+                        newStatus = "active";
+                        break;
+                    case 5:  // ON_HOLD
+                    case 10: // PAUSED
+                    case 12: // REVOKED
+                    case 13: // EXPIRED
+                        newStatus = "expired";
+                        break;
+                    case 8: case 9: case 11: case 20:  // PRICE_CHANGE / DEFERRED / PAUSE_SCHEDULE / PENDING_PURCHASE_CANCELED
+                    default:
+                        // Sin cambio de estado.
+                        break;
+                }
             }
 
             await applySubscriptionUpdate({
                 eventId,
                 businessId,
-                platform: "google",
-                type: `RTDN_${notificationType}_${subState}`,
+                platform: apiData ? "google" : "google_fallback",
+                type: `RTDN_${notificationType}_${subState || "noApi"}`,
                 expirationMs,
                 productId: subscriptionId,
-                rawEvent: { notification: decoded, subscription: sub },
+                rawEvent: { notification: decoded, subscription: apiData },
                 newStatus,
             });
         } catch (err) {
@@ -922,3 +956,8 @@ exports.playRTDN = onMessagePublished(
         }
     }
 );
+
+// Nota: NO hay callable function para registrar purchaseToken — el cliente
+// Android escribe directamente a `playPurchases/{token}` vía Firestore (las rules
+// permiten que cada usuario sólo escriba con su propio uid como businessId).
+// Más simple que un callable y misma seguridad efectiva.

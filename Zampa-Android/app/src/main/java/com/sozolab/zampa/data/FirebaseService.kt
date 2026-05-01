@@ -430,7 +430,29 @@ class FirebaseService @Inject constructor() {
     suspend fun getMerchantProfile(merchantId: String): Merchant? {
         val doc = db.collection("businesses").document(merchantId).get().await()
         val d = doc.data ?: return null
+        return parseMerchantDoc(merchantId, d)
+    }
 
+    /**
+     * Devuelve todos los comercios verificados con dirección geocodificada,
+     * para mostrarlos como pines en el mapa del feed (incluso sin oferta del día).
+     * Filtramos cliente-side por `isVerified != false` (ausente o true cuenta como
+     * verificado, compat legacy) y por coordenadas no-cero.
+     */
+    suspend fun getAllVerifiedMerchants(): List<Merchant> {
+        val snap = db.collection("businesses").get().await()
+        return snap.documents.mapNotNull { doc ->
+            val d = doc.data ?: return@mapNotNull null
+            val m = parseMerchantDoc(doc.id, d)
+            if (m.isVerified == false) return@mapNotNull null
+            val addr = m.address ?: return@mapNotNull null
+            if (addr.lat == 0.0 && addr.lng == 0.0) return@mapNotNull null
+            m
+        }
+    }
+
+    /** Helper compartido entre `getMerchantProfile` y `getAllVerifiedMerchants`. */
+    private fun parseMerchantDoc(merchantId: String, d: Map<String, Any?>): Merchant {
         val address = (d["address"] as? Map<*, *>)?.let { addrMap ->
             val formatted = addrMap["formatted"] as? String ?: return@let null
             val lat = (addrMap["lat"] as? Number)?.toDouble() ?: return@let null
@@ -485,6 +507,26 @@ class FirebaseService @Inject constructor() {
         val token = java.util.UUID.randomUUID().toString()
         ref.set(mapOf("appAccountToken" to token), com.google.firebase.firestore.SetOptions.merge()).await()
         return token
+    }
+
+    /**
+     * Registra `purchaseToken → merchantId` en `playPurchases/{purchaseToken}`.
+     * La llama el `BillingClient` tras un acknowledgePurchase exitoso. Sirve como
+     * fallback para que `playRTDN` (Cloud Function) pueda mapear la compra al
+     * merchant cuando la cuenta de Play Console no tiene API access habilitada
+     * (situación común en cuentas nuevas).
+     *
+     * Idempotente: el doc se sobreescribe en cada llamada.
+     */
+    suspend fun recordPlayPurchase(purchaseToken: String) {
+        val uid = currentUid ?: throw Exception("No autenticado")
+        db.collection("playPurchases").document(purchaseToken).set(
+            mapOf(
+                "businessId" to uid,
+                "recordedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
+            ),
+            com.google.firebase.firestore.SetOptions.merge()
+        ).await()
     }
 
     /**
